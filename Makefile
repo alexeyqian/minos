@@ -9,13 +9,13 @@ boot/boot_sect.bin: boot/boot_sect.asm
 	nasm $< -f bin -I 'boot/' -o $@
 
 kernel/kernel.bin: kernel/kernel_entry.o kernel/kernel.o
-	ld -o $@ -Ttext 0x1000 $^ --oformat binary
+	ld -m elf_i386 -o $@ -Ttext 0x1000 $^ --oformat binary
 
 kernel/kernel_entry.o: kernel/kernel_entry.asm
-	nasm $< -f elf -I 'kernel/' -o $@
+	nasm $< -f elf32 -I 'kernel/' -o $@
 
 kernel/kernel.o: kernel/kernel.c
-	gcc -ffreestanding -c $< -o $@
+	gcc -m32 -ffreestanding -fno-pie -g -c $< -o $@
 
 clean:	
 	@rm -rf kernel/*.o kernel/*.bin boot/*.o boot/*.bin drivers/*.o drivers/*.bin

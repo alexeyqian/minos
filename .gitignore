@@ -1,0 +1,9 @@
+bochsrc.bxrc
+kernel/*.o
+kernel/*.bin
+boot/*.o
+boot/*.bin
+drivers/*.o
+drivers/*.bin
+os-image
+build/
