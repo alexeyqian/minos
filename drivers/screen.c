@@ -69,7 +69,7 @@ void print_char(char c, int row, int col, char attribute){
         vidmem[offset+1] = attribute;
     }
 
-    offset =+ 2;
+    offset += 2;
     // make scrolling adjustment, for when we reach the bottom of the screen
     offset = scroll(offset);
     // update the cursor position on the screen device
