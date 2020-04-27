@@ -37,12 +37,12 @@ int scroll(int cursor_offset){
     // shuffle the rows back one.
     int i = 0;
     for(i = 1; i < MAX_ROWS; i++)
-        memory_copy(get_screen_offset(i, 0)   + VIDEO_ADDRESS,
-                    get_screen_offset(i-1, 0) + VIDEO_ADDRESS,
+        memory_copy((char*)(get_screen_offset(i, 0)   + VIDEO_ADDRESS),
+                    (char*)(get_screen_offset(i-1, 0) + VIDEO_ADDRESS),
                     MAX_COLS*2);
 
     // Black the last line by setting all bytes to 0
-    char* last_line = get_screen_offset(MAX_ROWS - 1, 0) + VIDEO_ADDRESS;
+    char* last_line = (char*)(get_screen_offset(MAX_ROWS - 1, 0) + VIDEO_ADDRESS);
     for(i = 0; i < MAX_COLS*2; i++)
         last_line[i] = 0;
 
