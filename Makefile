@@ -8,7 +8,7 @@ os-image: boot/boot_sect.bin kernel/kernel.bin
 boot/boot_sect.bin: boot/boot_sect.asm
 	nasm $< -f bin -I 'boot/' -o $@
 
-kernel/kernel.bin: kernel/kernel_entry.o kernel/kernel.o drivers/low_level.o drivers/screen.o
+kernel/kernel.bin: kernel/kernel_entry.o kernel/kernel.o kernel/low_level.o drivers/screen.o
 	ld -m elf_i386 -o $@ -Ttext 0x1000 $^ --oformat binary
 
 kernel/kernel_entry.o: kernel/kernel_entry.asm
@@ -17,7 +17,7 @@ kernel/kernel_entry.o: kernel/kernel_entry.asm
 kernel/kernel.o: kernel/kernel.c
 	gcc -m32 -ffreestanding -fno-pie -g -c $< -o $@
 
-drivers/low_level.o: drivers/low_level.c
+kernel/low_level.o: kernel/low_level.c
 	gcc -m32 -ffreestanding -fno-pie -g -c $< -o $@
 
 drivers/screen.o: drivers/screen.c
