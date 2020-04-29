@@ -1,5 +1,5 @@
 #include "system.h"
-#include "../drivers/low_level.h"
+#include "low_level.h"
 
 extern void irq0();
 extern void irq1();

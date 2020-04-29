@@ -1,3 +1,8 @@
+C_SOURCES = $(wildcard kernel/*.c drivers/*.c)
+HEADERS = $(wildcard kernel/*.h drivers/*.h)
+OBJ = ${C_SOURCERS: .c=.o}
+
+
 all: os-image
 
 # This is the actual disk image that the computer loads
@@ -8,20 +13,16 @@ os-image: boot/boot_sect.bin kernel/kernel.bin
 boot/boot_sect.bin: boot/boot_sect.asm
 	nasm $< -f bin -I 'boot/' -o $@
 
-kernel/kernel.bin: kernel/kernel_entry.o kernel/kernel.o kernel/low_level.o drivers/screen.o
+kernel/kernel.bin: kernel/kernel_entry.o ${OBJ}
 	ld -m elf_i386 -o $@ -Ttext 0x1000 $^ --oformat binary
 
 kernel/kernel_entry.o: kernel/kernel_entry.asm
 	nasm $< -f elf32 -I 'kernel/' -o $@
 
-kernel/kernel.o: kernel/kernel.c
-	gcc -m32 -ffreestanding -fno-pie -g -c $< -o $@
-
-kernel/low_level.o: kernel/low_level.c
-	gcc -m32 -ffreestanding -fno-pie -g -c $< -o $@
-
-drivers/screen.o: drivers/screen.c
-	gcc -m32 -ffreestanding -fno-pie -g -c $< -o $@
+#kernel/kernel.o: kernel/kernel.c
+#	gcc -m32 -ffreestanding -fno-pie -g -c $< -o $@
+%.o: %.c ${HEADERS}
+	gcc -m32 -ffreestanding -fno-pie -c $< -o $@
 
 clean:	
 	@rm -rf kernel/*.o kernel/*.bin boot/*.o boot/*.bin drivers/*.o drivers/*.bin

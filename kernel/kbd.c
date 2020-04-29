@@ -1,5 +1,5 @@
 #include "../drivers/screen.h"
-#include "../drivers/low_level.h"
+#include "low_level.h"
 #include "system.h"
 
 unsigned char kbdus[128];

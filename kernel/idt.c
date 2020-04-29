@@ -1,5 +1,5 @@
 #include "system.h"
-#include "../drivers/low_level.h"
+#include "low_level.h"
 
 //define an idt entry
 // base is 32 bit value, split in two parts
