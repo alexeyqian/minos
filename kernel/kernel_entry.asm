@@ -6,12 +6,6 @@
 call kmain
 jmp $
 
-; TODO: below lines should be move to .c file as inline asm
-extern idtp
-global idt_load
-idt_load:
-    lidt [idtp]
-    ret
-    
-%include "isrs_def.asm"
-%include "irq_def.asm"
+%include "idt_def.inc"
+%include "isrs_def.inc"
+%include "irq_def.inc"
