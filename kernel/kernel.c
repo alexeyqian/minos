@@ -11,7 +11,7 @@ void kmain(){
    isrs_install();
    irq_install();
 
-   __asm__ __volatime__("sti");
+   __asm__ __volatile__ ("sti");
 
    timer_install();
    keyboard_install();

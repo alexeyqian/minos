@@ -18,7 +18,7 @@ extern void irq13();
 extern void irq14();
 extern void irq15();
 
-void *irq_routings[16] = {
+void *irq_routines[16] = {
     0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0
 };
@@ -31,8 +31,9 @@ void irq_uninstall_handler(int irq){
     irq_routines[irq] = 0;
 }
 
-// TODO: ?
-void irq_remap(){
+void irq_install()
+{
+    //TODO: ? irq_remap 
     port_byte_out(0x20, 0x11);
     port_byte_out(0xA0, 0x11);
     port_byte_out(0x21, 0x20);
@@ -43,11 +44,6 @@ void irq_remap(){
     port_byte_out(0xA1, 0x01);
     port_byte_out(0x21, 0x0);
     port_byte_out(0xA1, 0x0);
-}
-
-void irq_install()
-{
-    irq_remap();
 
     idt_set_gate(32, (unsigned)irq0, 0x08, 0x8E);    
     idt_set_gate(33, (unsigned)irq1, 0x08, 0x8E);
@@ -71,7 +67,7 @@ void irq_install()
 void irq_handler(struct regs *r){
     void (*handler)(struct regs *r);
 
-    handler = irq_routings[r->int_no - 32];
+    handler = irq_routines[r->int_no - 32];
     if(handler) handler(r);
 
     /* If the IDT entry that was invoked was greater than 40
