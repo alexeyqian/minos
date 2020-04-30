@@ -8,7 +8,8 @@ void timer_handler(struct regs *r){
     // every 18 clocks - around 1 second,
     // we will display a message to the screen
     if(timer_ticks % 18 == 0)
-        print("One second has passed\n");
+        //print("One second has passed\n");
+        print(timer_ticks);
 }
 
 void timer_wait(int ticks){
