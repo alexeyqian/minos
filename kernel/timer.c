@@ -1,14 +1,15 @@
 #include "../drivers/screen.h"
 #include "system.h"
 
-//#define TIMER_HZ 100
+#define CLOCK_HZ 100
+#define CLOCK_DIVIDOR 11931
 int timer_ticks = 0;
 
 void timer_handler(struct regs *r){
     timer_ticks++;
     // every 18 clocks - around 1 second,
     // we will display a message to the screen
-    if(timer_ticks % 18 == 0)
+    if(timer_ticks % CLOCK_HZ == 0)
         //print("One second has passed\n");
         print(timer_ticks);
 }
@@ -30,7 +31,7 @@ void timer_phase(int hz)
 }
 
 void timer_install(){    
-    //timer_phase(TIMER_HZ);
+    timer_phase(CLOCK_DIVIDOR);
     timer_ticks = 0;
     irq_install_handler(0, timer_handler);
 }
