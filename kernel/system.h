@@ -1,6 +1,7 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
+// This structure must matching the stack defined in isrs_def.inc:isr_common_stub
 struct regs{
     unsigned int gs, fs, es, ds; // pushed the segs last
     unsigned int edi, esi, ebp, esp, ebx, edx, ecx, eax; // pushed by pusha

@@ -1,15 +1,17 @@
 #include "../drivers/screen.h"
 #include "system.h"
 
+// only gdt is setup in real mode
+// idt and others are all setup in protected mode
 void kmain(){
    
    clear_screen();
    print("minos\n");
    print("kernel v0.1\n");
 
-   idt_install();
-   isrs_install();
-   irq_install();
+   idt_install();  
+   isrs_install(); // setup handlers for NMI and exceptions
+   irq_install(); // setup handlers for interrupts
 
    __asm__ __volatile__ ("sti");
 

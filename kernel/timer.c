@@ -1,6 +1,7 @@
 #include "../drivers/screen.h"
 #include "system.h"
 
+//#define TIMER_HZ 100
 int timer_ticks = 0;
 
 void timer_handler(struct regs *r){
@@ -19,7 +20,17 @@ void timer_wait(int ticks){
         ;    // busy waiting
 }
 
-void timer_install(){
+// TODO: not used yet, for later to set timer to 100HZ
+void timer_phase(int hz)
+{
+    int divisor = 1193180 / hz;       /* Calculate our divisor */
+    port_byte_out(0x43, 0x36);             /* Set our command byte 0x36 */
+    port_byte_out(0x40, divisor & 0xFF);   /* Set low byte of divisor */
+    port_byte_out(0x40, divisor >> 8);     /* Set high byte of divisor */
+}
+
+void timer_install(){    
+    //timer_phase(TIMER_HZ);
     timer_ticks = 0;
     irq_install_handler(0, timer_handler);
 }

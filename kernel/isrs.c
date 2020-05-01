@@ -36,6 +36,9 @@ extern void isr31();
 
 char *exception_messages[32];
 
+// We set the access flags to 0x8E. This means that the entry is present, 
+// is running in ring 0 (kernel level), and has the lower 5 bits
+// set to the required '14', which is represented by 'E' in hex. 
 void isrs_install() {
 	idt_set_gate(0, (unsigned)isr0, 0x08, 0x8E);
 	idt_set_gate(1, (unsigned)isr1, 0x08, 0x8E);
@@ -104,6 +107,9 @@ void isrs_install() {
 	exception_messages[31] = "Reserved";
 }
 
+// All ISRs disable interrupts while they are being
+// serviced as a 'locking' mechanism to prevent an IRQ from
+// happening and messing up kernel data structures 
 void fault_handler(struct regs *r) {
 	if (r->int_no < 32) {
 		print(exception_messages[r->int_no]);

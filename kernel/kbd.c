@@ -10,6 +10,8 @@ void keyboard_handler(struct regs *r){
 
     // read from the keyboard's data buffer
     scancode = port_byte_in(0x60);
+	// if bit 7 is set (test with 'scancode & 0x80'), 
+	// then this is the keyboard's way of telling us that a key was just released.
     if(scancode & 0x80){
         /* You can use this one to see if the user released the
 		*  shift, alt, or control keys... */
