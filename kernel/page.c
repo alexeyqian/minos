@@ -24,10 +24,10 @@ void page_install(){
     for(int j = 1; j < 1024; j++)
         page_directory[j] = 0 | 2;
 
-        extern read_cr0;
-    extern write_cr0;
-    extern read_cr3;
-    extern write_cr3;
+    extern unsigned long read_cr0();
+    extern void write_cr0();
+    extern unsigned long read_cr3();
+    extern void write_cr3();
     write_cr3(page_directory);
     write_cr0(read_cr0() | 0x80000000); // set the page bit in cr0 to 1
 }

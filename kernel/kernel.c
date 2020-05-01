@@ -12,11 +12,12 @@ void kmain(){
    idt_install();  
    isrs_install(); // setup handlers for NMI and exceptions
    irq_install(); // setup handlers for interrupts
+   page_install();
 
    __asm__ __volatile__ ("sti");
 
    timer_install();
-   keyboard_install();
+   keyboard_install();   
 
    print("wait started.\n");
    timer_wait(18*2); // 2 seconds wait
