@@ -22,4 +22,6 @@ void timer_install();
 void timer_wait(int ticks);
 void keyboard_install();
 
+void page_install();
+
 #endif
