@@ -6,6 +6,7 @@
 call kmain
 jmp $
 
+%include "utils.inc"
 %include "idt_def.inc"
 %include "isrs_def.inc"
 %include "irq_def.inc"
