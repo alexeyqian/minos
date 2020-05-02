@@ -1,0 +1,55 @@
+#include "pmap.h"
+
+struct page_info *pages; // physical page state array
+static struct page_info *page_free_list; 
+
+struct page_info* page_alloc(int alloc_flags){
+    struct page_info* allocated_page;
+
+    // out of free pages?
+    if(page_free_list == NULL)
+        return NULL;
+
+    // take the first page off the list and update the page_free_list
+    allocated_page = page_free_list;
+    page_free_list = page_free_list->pp_link;
+    allocated_page->pp_link = NULL;
+
+    // if the caller wants it zero'ed out
+    if(alloc_flags & ALLOC_ZERO)
+        memset(page2kva(allocated_page), 0, PGSIZE);
+
+    num_page_allocated++;
+
+    return allocated_page;
+}
+
+// pp: physical page to be inserted.
+// va: a virtual address to which the physical page is to be mapped.
+int page_insert(pde_t *pgdir, struct page_info *pp, void *va, int perm){
+    pte_t *pte;
+
+    // get a point to the page table entry for the page
+    // in which va points.
+    // the third parameter 1 instructs the pgdir_walk()
+    // to create a new empty page table if it doesn't exist yet.
+    pte = pgdir_walk(pgdir, va, 1);
+    if(pte == NULL)
+        return -E_NO_MEM;
+    
+    // increment the reference count of the physical page.
+    pp->pp_ref++;
+
+    // remove any physical page that would already be ma[[ed at va.
+    // that is to say, if the present bit is set in the page table entry
+    // for va, we chaeck the address stored in the entry, decrement the reference count
+    // of the physical page pointed to by the address in the entry,
+    // and unset the present bit in the page table entry.
+    // the net effect is that any mapped physical page is removed from the address.
+    page_remove(pgdir, va);
+
+    // rewrite the page table entry with pp's physical address.
+    // page2pa() calculates the physical address.
+    *pte = page2pa(pp) | perm | PTE_P;
+    return 0;
+}

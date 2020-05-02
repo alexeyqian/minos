@@ -20,7 +20,7 @@ void port_word_out(unsigned short port , unsigned short data) {
 	__asm__("out %%ax, %%dx " : :"a" (data) , "d" (port));
 }
 
-unsigned char *memset(unsigned char *dest, unsigned char val, int count){
+char *memset(char *dest, char val, int count){
 	for(int i = 0; i < count; i++)
 		*(dest + i) = val;
 	

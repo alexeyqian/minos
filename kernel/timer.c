@@ -1,5 +1,7 @@
 #include "../drivers/screen.h"
+#include "low_level.h"
 #include "system.h"
+#include "kstd.h"
 
 #define CLOCK_HZ 100
 #define CLOCK_DIVIDOR 11931
@@ -9,9 +11,13 @@ void timer_handler(struct regs *r){
     timer_ticks++;
     // every 18 clocks - around 1 second,
     // we will display a message to the screen
-    if(timer_ticks % CLOCK_HZ == 0)
+    if(timer_ticks % CLOCK_HZ == 0){
+        char str[10];
+        itoa(timer_ticks, str, 10);
+        print(str);
+    }
         //print("One second has passed\n");
-        print(timer_ticks);
+        //print(timer_ticks);
 }
 
 void timer_wait(int ticks){

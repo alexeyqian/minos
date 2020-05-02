@@ -9,6 +9,7 @@ unsigned char port_byte_in(unsigned short port);
 void port_byte_out(unsigned short port, unsigned char data);
 unsigned short port_word_in(unsigned short port);
 void port_word_out(unsigned short port, unsigned short data);
-unsigned char *memset(unsigned char *dest, unsigned char val, int count);
+
+char *memset(char *dest, char val, int count);
 void memory_copy(char* source, char* dest, int num_bytes);
 #endif
