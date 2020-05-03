@@ -112,8 +112,8 @@ void isrs_install() {
 // happening and messing up kernel data structures 
 void fault_handler(struct regs *r) {
 	if (r->int_no < 32) {
-		print(exception_messages[r->int_no]);
-		print(" - Exception. System Halted!\n");
+		kprint(exception_messages[r->int_no]);
+		kprint(" - Exception. System Halted!\n");
 		for (;;)
 			;
 	}

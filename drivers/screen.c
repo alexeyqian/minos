@@ -76,7 +76,7 @@ void print_char(char c, int row, int col, char attribute){
     set_cursor(offset);
 }
 
-void print(char* str){
+void kprint(char* str){
     for(int i=0; str[i]!='\0'; i++)
 		print_char(str[i], -1, -1, 0);
 }

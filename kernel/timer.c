@@ -14,10 +14,10 @@ void timer_handler(struct regs *r){
     if(timer_ticks % CLOCK_HZ == 0){
         char str[10];
         itoa(timer_ticks, str, 10);
-        print(str);
+        kprint(str);
     }
-        //print("One second has passed\n");
-        //print(timer_ticks);
+        //kprint("One second has passed\n");
+        //kprint(timer_ticks);
 }
 
 void timer_wait(int ticks){

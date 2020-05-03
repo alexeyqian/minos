@@ -15,6 +15,6 @@ int  get_cursor();
 void set_cursor(int offset);
 void print_at(char* str, int row, int col);
 void print_char(char c, int row, int col, char attribute);
-void print(char *str);
+void kprint(char *str);
 
 #endif

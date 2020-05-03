@@ -3,7 +3,7 @@
 KERNEL_OFFSET equ 0x1000
 KERNEL_STACK_OFFSET equ 0x90000
 
-mov bp, 0x9000            ; Here we set out stack safely away from occupied memory
+mov bp, 0x5000            ; Here we set out stack safely away from occupied memory
 mov sp, bp
 
 mov [BOOT_DRIVE], dl      ; BIOS stores our boot drive in DL, 
