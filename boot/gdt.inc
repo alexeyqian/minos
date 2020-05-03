@@ -32,7 +32,7 @@ gdt_data:               ; the data segment descriptor
 
 gdt_end:
 
-gdt_descriptor:
+gdt_ptr:
     dw gdt_end - gdt_start - 1  ; Size of gdt
     dd gdt_start                ; Start address of our GDT
 

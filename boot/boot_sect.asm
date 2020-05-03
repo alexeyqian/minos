@@ -1,9 +1,9 @@
 [org 0x7c00]
 
+RM_STACK_OFFSET equ 0x9000
 KERNEL_OFFSET equ 0x1000
-KERNEL_STACK_OFFSET equ 0x90000
 
-mov bp, 0x5000            ; Here we set out stack safely away from occupied memory
+mov bp, RM_STACK_OFFSET            ; Here we set out stack safely away from occupied memory
 mov sp, bp
 
 mov [BOOT_DRIVE], dl      ; BIOS stores our boot drive in DL, 
@@ -20,7 +20,6 @@ call switch_to_pm        ; Note that we never return from here
 jmp $
 
 %include "rmprint.inc"
-%include "disk_load.inc"
 %include "load_kernel_from_disk.inc"
 %include "gdt.inc"
 %include "switch_to_pm.inc"
