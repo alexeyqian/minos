@@ -1,4 +1,37 @@
-print_hex:
+;========== function rmprint ==========
+; real mode, print string end with '\0'
+rmprint: 
+    pusha
+    mov ah, 0x0e
+
+rmprint_loop:
+    mov al, [bx]
+    cmp al, 0
+    je rmprint_loop_done
+    
+    int 0x10
+    add bx, 1
+    jmp rmprint_loop
+
+rmprint_loop_done:
+    popa
+    ret
+
+;========== function rmprint_nl ==========
+; real mode, print new line 
+rmprint_nl:
+    mov ah, 0x0e
+
+    mov al, 0x0d
+    int 0x10
+    mov al, 0x0a
+    int 0x10
+
+    ret
+
+;========== function rmprint_hex ==========
+; ream mode, print string in hex
+rmprint_hex:
     ; manipulate chars at HEX_OUT to reflect DX
     mov cx, dx
     and cx, 0xf000
@@ -24,7 +57,7 @@ print_hex:
     mov [HEX_OUT + 5], cx
 
     mov bx, HEX_OUT
-    call print_string
+    call rmprint
     mov byte [HEX_OUT + 2], '0'
     mov byte [HEX_OUT + 3], '0'
     mov byte [HEX_OUT + 4], '0'

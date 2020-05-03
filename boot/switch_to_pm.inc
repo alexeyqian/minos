@@ -23,7 +23,13 @@ init_pm:
     mov es, ax
     mov fs, ax
     mov gs, ax
-    mov ebp, 0x90000 ; Update our stack position at the top of free space
+    mov ebp, KERNEL_STACK_OFFSET
     mov esp, ebp
 
-    call BEGIN_PM 
+    call begin_pm 
+
+begin_pm:
+    mov ebx, MSG_PROT_MODE
+    call print_string_pm
+    call KERNEL_OFFSET
+    jmp $

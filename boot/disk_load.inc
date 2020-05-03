@@ -25,7 +25,7 @@ disk_load:
 
 disk_error:
     mov bx, MSG_DIS_ERROR
-    call print_string
+    call rmprint
     jmp $
 
 ; variables
