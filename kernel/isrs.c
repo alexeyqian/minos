@@ -1,4 +1,4 @@
-#include "../drivers/screen.h"
+#include "screen.h"
 #include "system.h"
 
 extern void isr0();

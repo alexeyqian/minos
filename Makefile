@@ -1,5 +1,5 @@
-C_SOURCES=$(wildcard kernel/*.c drivers/*.c)
-HEADERS=$(wildcard kernel/*.h drivers/*.h)
+C_SOURCES=$(wildcard kernel/*.c)
+HEADERS=$(wildcard kernel/*.h)
 OBJ=$(C_SOURCES:.c=.o)
 $(info $$C_SOURCES is [${C_SOURCES}])
 $(info $$OBJ is [${OBJ}])
@@ -27,4 +27,4 @@ kernel/kernel_entry.o: kernel/kernel_entry.asm
 	gcc -m32 -ffreestanding -fno-pie -c $< -o $@
 
 clean:	
-	@rm -rf os-image kernel/*.o kernel/*.bin boot/*.o boot/*.bin drivers/*.o drivers/*.bin
+	@rm -rf os-image kernel/*.o kernel/*.bin boot/*.o boot/*.bin drivers/*.o

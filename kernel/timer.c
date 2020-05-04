@@ -1,4 +1,4 @@
-#include "../drivers/screen.h"
+#include "screen.h"
 #include "low_level.h"
 #include "system.h"
 #include "kstd.h"
