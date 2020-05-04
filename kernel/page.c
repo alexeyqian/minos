@@ -1,5 +1,4 @@
 #include "system.h"
-// page directory has to be 4K aligned (last 12 bits have to all 0s), 
 // we choose 0x9C000 here, and make sure it's matching kernel address
 
 extern unsigned long read_cr0();

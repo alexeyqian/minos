@@ -9,15 +9,14 @@ int timer_ticks = 0;
 
 void timer_handler(struct regs *r){
     timer_ticks++;
-    // every 18 clocks - around 1 second,
+    // every 18 clocks - around 1*100 second,
     // we will display a message to the screen
-    if(timer_ticks % CLOCK_HZ == 0){
+    /*if(timer_ticks % (CLOCK_HZ*100) == 0){
         char str[10];
         itoa(timer_ticks, str, 10);
         kprint(str);
-    }
-        //kprint("One second has passed\n");
-        //kprint(timer_ticks);
+        kprint(" ");
+    }*/
 }
 
 void timer_wait(int ticks){

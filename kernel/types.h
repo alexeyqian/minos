@@ -18,6 +18,4 @@ typedef uint32_t size_t;
 typedef int32_t ssize_t;
 typedef int32_t off_t;
 
-// page number
-typedef uint32_t ppn_t;
 #endif

@@ -18,10 +18,10 @@ void irq_install();
 void irq_uninstall_handler(int irq);
 void irq_install_handler(int irq, void(*handler)(struct regs *r));
 
+void page_install();
+
 void timer_install();
 void timer_wait(int ticks);
 void keyboard_install();
-
-void page_install();
 
 #endif

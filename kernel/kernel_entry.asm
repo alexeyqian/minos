@@ -6,6 +6,7 @@
 call kmain
 jmp $
 
+; TODO: all functions in below included files will be moved to C version functions
 %include "utils.inc"
 %include "idt_def.inc"
 %include "isrs_def.inc"
