@@ -4,7 +4,7 @@
 #include "types.h"
 
 
-void* memset(void*, unsigned char, size_t);
+//void* memset(void*, unsigned char, size_t);
 void* memcpy(void*, const void*, size_t);
 int memcmp(const void*, const void*, size_t);
 
