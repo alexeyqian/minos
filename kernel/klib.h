@@ -2,17 +2,17 @@
 #define KLIB_H
 
 #include "types.h"
+#include "screen.h"
 
-
-//void* memset(void*, unsigned char, size_t);
-void* memcpy(void*, const void*, size_t);
+char *memset(char *dest, char val, int count);
+void memcpy(char* source, char* dest, int num_bytes);
 int memcmp(const void*, const void*, size_t);
 
 size_t strlen(const char*);
+char* itoa(int num, char* str, int base);
 
-//int kputchar(int);
-//int kputs(const char*);
-//int kprintf(const char*, ...);
+void kprint(char *str);
+void kprintf(const char* format, ...);
 
 void abort(void);
 

@@ -1,7 +1,6 @@
 #include "screen.h"
 #include "low_level.h"
 #include "system.h"
-#include "kstd.h"
 
 #define CLOCK_HZ 100
 #define CLOCK_DIVIDOR 11931

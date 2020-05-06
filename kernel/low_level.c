@@ -19,15 +19,3 @@ unsigned short port_word_in(unsigned short port) {
 void port_word_out(unsigned short port , unsigned short data) {
 	__asm__("out %%ax, %%dx " : :"a" (data) , "d" (port));
 }
-
-char *memset(char *dest, char val, int count){
-	for(int i = 0; i < count; i++)
-		*(dest + i) = val;
-	
-	return dest;
-}
-
-void memory_copy(char* source, char* dest, int num_bytes){
-    for(int i = 0; i < num_bytes; i++)
-        *(dest + i) = *(source + i);
-}
