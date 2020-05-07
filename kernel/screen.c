@@ -37,7 +37,7 @@ int scroll(int cursor_offset){
     // shuffle the rows back one.
     int i = 0;
     for(i = 1; i < MAX_ROWS; i++)
-        memory_copy((char*)(get_screen_offset(i, 0)   + VIDEO_ADDRESS),
+        memcpy((char*)(get_screen_offset(i, 0)   + VIDEO_ADDRESS),
                     (char*)(get_screen_offset(i-1, 0) + VIDEO_ADDRESS),
                     MAX_COLS*2);
 
