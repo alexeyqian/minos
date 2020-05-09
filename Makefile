@@ -1,16 +1,18 @@
 C_SOURCES=$(wildcard kernel/*.c)
 HEADERS=$(wildcard kernel/*.h)
 OBJ=$(C_SOURCES:.c=.o)
-$(info $$C_SOURCES is [${C_SOURCES}])
-$(info $$OBJ is [${OBJ}])
+#$(info $$C_SOURCES is [${C_SOURCES}])
+#$(info $$OBJ is [${OBJ}])
 
 all: os-image
 
 run: all
 	"/mnt/c/Program FIles/Bochs-2.6.11/bochs.exe"
-
-os-image: boot/boot.bin kernel/kernel.bin
+os-image: boot/boot1.bin
 	cat $^ > $@
+
+#os-image: boot/boot.bin kernel/kernel.bin
+#	cat $^ > $@
 
 boot/boot.bin: boot/boot1.bin boot/boot2.bin
 	cat $^ > $@

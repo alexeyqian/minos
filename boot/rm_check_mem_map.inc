@@ -1,11 +1,7 @@
 ; real mode, check memory range map
 [bits 16]
 rm_check_mem_map:
-	mov ax, cs
-	mov ds, ax
-	mov es, ax
-	mov ss, ax
-	mov sp, 0x100 ;  TODO: remove?
+	pusha
 
 	mov ebx, 0
 	mov di, mem_range_map
@@ -24,7 +20,9 @@ rm_check_mem_map:
 
 .fail:
 	mov dword [mem_range_count], 0
-.ok: ; TODO: call sth?
+.ok: 
+	popa
+	ret
 
 ;global variables
 mem_range_count:
