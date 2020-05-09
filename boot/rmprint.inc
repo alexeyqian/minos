@@ -1,4 +1,5 @@
 ;========== function rmprint ==========
+
 ; real mode, print string end with '\0'
 rmprint: 
     pusha

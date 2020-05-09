@@ -9,12 +9,16 @@ all: os-image
 run: all
 	"/mnt/c/Program FIles/Bochs-2.6.11/bochs.exe"
 
-# This is the actual disk image that the computer loads
-# which is the combination of our compiled bootsector and kernel
-os-image: boot/boot_sect.bin kernel/kernel.bin
+os-image: boot/boot.bin kernel/kernel.bin
 	cat $^ > $@
 
-boot/boot_sect.bin: boot/boot_sect.asm
+boot/boot.bin: boot/boot1.bin boot/boot2.bin
+	cat $^ > $@
+
+boot/boot1.bin: boot/boot1.asm
+	nasm $< -f bin -I 'boot/' -o $@
+
+boot/boot2.bin: boot/boot2.asm
 	nasm $< -f bin -I 'boot/' -o $@
 
 kernel/kernel.bin: kernel/kernel_entry.o kernel/kernel.o ${OBJ}
