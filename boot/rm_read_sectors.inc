@@ -1,5 +1,5 @@
 ; from sector in ax, read cl sectors into es:bx
-read_sectors:
+rm_read_sectors:
     push bp
     mov bp, sp
     sub esp, 2 ; reserve 2 bytes in stack to store

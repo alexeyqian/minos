@@ -18,22 +18,17 @@ boot_start:
 
     ; BIOS stores our boot drive in dl, 
     ; so it's best to remember this for later.
-    mov [boot_drive], dl      
+    mov [boot_drive], dl  
 
-    mov bx, msg_start_real_mode
-    call rm_print_str
-
-    call rm_read_loader
-
-    jmp $
+    call rm_load_loader
 
 %include "rm_lib.inc"
-%include "rm_read_loader.inc"
+%include "rm_read_sectors.inc"
+%include "rm_get_fat_entry.inc"
+%include "rm_load_loader.inc"
 
 ; global variables
 boot_drive:
     db 0
-msg_start_real_mode:
-    db 'start in real mode', 0
 times 510-($-$$) db 0
 dw 0xaa55

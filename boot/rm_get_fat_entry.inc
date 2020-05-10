@@ -19,7 +19,7 @@ rm_get_fat_entry:
 	cmp dx, 0
 	jz .even
 	mov byte [is_odd], 1
-.even
+.even:
 	xor dx, dx ; now the value in ax = index of fat entry in fat
 	mov bx, [bpb_bytes_per_sector]
 	div bx ; dx:ax / bpb_bytes_per_sector
@@ -28,14 +28,14 @@ rm_get_fat_entry:
 	mov bx, 0
 	add ax, FIRST_SECTOR_OF_FAT1 ; after this ax value is the sector num of the fat entry
 	mov cl, 2
-	call rm_read_sector ; read 2 sectors, just in case that one fat entry might cross 2 sectors
+	call rm_read_sectors ; read 2 sectors, just in case that one fat entry might cross 2 sectors
 	pop dx
 	add bx, dx
 	mov ax, [es:bx]
 	cmp byte [is_odd], 1
 	jnz .even2
 	shr ax, 4
-.even2
+.even2:
 	and ax, 0xfff
 .get_fat_entry_ok:
 	pop bx

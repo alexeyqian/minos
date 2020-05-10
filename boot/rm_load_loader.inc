@@ -7,7 +7,7 @@ ROOT_DIR_FIRST_SECTOR equ 19
 FIRST_SECTOR_OF_FAT1  equ 1
 DELTA_SECTOR_NUM      equ 17
 
-rm_read_loader:	
+rm_load_loader:	
 	; reset floppy
 	xor ah, ah
 	xor dl, dl
@@ -23,9 +23,9 @@ rm_read_loader:
 	mov ax, LOADER_BASE_ADDR
 	mov es, ax
 	mov bx, LOADER_OFFSET ; es:bx = LOADER_BASE_ADDR:LOADER_OFFSET
-	mov ax, [sector_no] ; sector num in root dir which occupied 14 sectors
+	mov ax, [sector_num] ; sector num in root dir which occupied 14 sectors
 	mov cl, 1
-	call rm_read_sector
+	call rm_read_sectors
 
 	mov si, loader_file_name ; ds:si='loader  bin' 11 chars, 2 spaces
 	mov di, LOADER_OFFSET    ; es:di=LOADER_BASE_ADDR:0100
@@ -94,7 +94,7 @@ rm_read_loader:
 	mov cl, 1
 	call rm_read_sectors
 	pop ax ; read out the index of the sector in fat
-	call get_fat_entry
+	call rm_get_fat_entry
 	cmp ax, 0xfff
 	jz .file_loaded
 
@@ -115,9 +115,6 @@ rm_read_loader:
     jmp LOADER_BASE_ADDR:LOADER_OFFSET
 
     ; ==========================================================================
-
-
-%include "rm_read_sectors.inc"
 
 ; global variables
 loader_file_name:       db 'loader  bin', 0 ; 11 chars, 2 spaces
