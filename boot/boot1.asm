@@ -3,10 +3,11 @@
 [bits 16]
 
 ; begin of standard fat boot sector ====================== 
-jmp short boot_start
+; this format makes dos or windows can recognize the image
+jmp boot_start
 nop
 bs_oem_name:          db 'ForestY' ; must be 8 bytes;
-;above 11 bytes will be ignored by fat12
+; above 11 bytes will be ignored by fat12
 
 ; BIOS Parameter Block
 bpb_bytes_per_sector:        dw 512
@@ -30,11 +31,12 @@ bs_volumn_label:       DB 'Minos0.01  ' ; must be 11 bytes
 bs_file_system_type:   DB 'FAT12   '    ; must be 8 bytes
 ; end of standard boot sector ======================
 
-RM_STACK_OFFSET equ 0x7bff ; just below 0x7c00
+RM_STACK_OFFSET equ 0x7bff ; just below 0x7c00, or can use 0x7c00 directly
 boot_start:
 mov ax, cs
 mov ds, ax
 mov es, ax
+mov ss, ax
 mov bp, RM_STACK_OFFSET ; set stack safely away from occupied memory    
 mov sp, bp
 
@@ -49,17 +51,7 @@ jmp $
 
 ;call rm_check_mem_map
 
-;call load_kernel_from_disk
-
-;call switch_to_pm
-
 %include "rm_lib.inc"
-;%include "rm_check_mem_map.inc"
-
-;%include "rm_load_kernel_from_disk.inc"
-;%include "rm_gdt.inc"
-
-;%include "pm_start"
 
 ; global variables
 boot_drive:

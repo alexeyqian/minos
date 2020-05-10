@@ -4,13 +4,15 @@ OBJ=$(C_SOURCES:.c=.o)
 #$(info $$C_SOURCES is [${C_SOURCES}])
 #$(info $$OBJ is [${OBJ}])
 
-all: os-image
+all: os.img
 
-run: all
-	"/mnt/c/Program FIles/Bochs-2.6.11/bochs.exe"
-os-image: boot/boot1.bin
-	cat $^ > $@
+os.img: boot/boot1.bin
+	dd if=/dev/zero of=os.img bs=512 count=2880
+	mkfs.msdos os.img
+	dd if=boot/boot1.bin of=os.img bs=512 count=1 conv=notrunc
 
+#os-image: boot/boot1.bin
+#	cat $^ > $@
 #os-image: boot/boot.bin kernel/kernel.bin
 #	cat $^ > $@
 
@@ -33,4 +35,4 @@ kernel/kernel_entry.o: kernel/kernel_entry.asm
 	gcc -m32 -ffreestanding -fno-pie -c $< -o $@
 
 clean:	
-	@rm -rf os-image kernel/*.o kernel/*.bin boot/*.o boot/*.bin drivers/*.o
+	@rm -rf os.img kernel/*.o kernel/*.bin boot/*.o boot/*.bin drivers/*.o
