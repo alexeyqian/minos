@@ -124,7 +124,7 @@ rm_load_loader:
     ; =========================================================
 
 ; global variables
-loader_file_name:       db 'loader  bin', 0 ; 11 chars, 2 spaces
+loader_file_name:       db 'LOADER  BIN', 0 ; 11 chars, 2 spaces
 msg_loader_found:       db 'loader found', 0
 msg_no_loader_found:    db 'loader not found', 0
 msg_loader_loaded:      db 'loader is loaded', 0
