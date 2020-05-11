@@ -1,5 +1,13 @@
 ; boot loader stage 1
+
+;%define _BOOT_DEBUG_
+
+%ifdef _BOOT_DEBUG_
+[org 0x100]
+%else
 [org 0x7c00]
+%endif
+
 [bits 16]
 
 RM_STACK_BASE equ 0x7c00
@@ -16,19 +24,12 @@ boot_start:
     mov bp, RM_STACK_BASE
     mov sp, bp
 
-    ; BIOS stores our boot drive in dl, 
-    ; so it's best to remember this for later.
-    mov [boot_drive], dl  
-
-    call rm_load_loader
+    jmp rm_load_loader
 
 %include "rm_lib.inc"
 %include "rm_read_sectors.inc"
 %include "rm_get_fat_entry.inc"
 %include "rm_load_loader.inc"
 
-; global variables
-boot_drive:
-    db 0
 times 510-($-$$) db 0
 dw 0xaa55

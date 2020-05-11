@@ -6,23 +6,18 @@ OBJ=$(C_SOURCES:.c=.o)
 
 all: os.img
 
-os.img: boot/boot1.bin boot/boot2.bin
+os.img: boot/boot.bin boot/loader.bin
 	dd if=/dev/zero of=os.img bs=512 count=2880
 	mkfs.msdos os.img
-	dd if=boot/boot1.bin of=os.img bs=512 count=1 conv=notrunc
+	dd if=boot/boot.bin of=os.img bs=512 count=1 conv=notrunc
 	mount -oloop os.img /mnt/floppy
-	cp boot/boot2.bin /mnt/floppy
+	cp boot/loader.bin /mnt/floppy
 	umount /mnt/floppy
 
-#os-image: boot/boot1.bin
-#	cat $^ > $@
-#os-image: boot/boot.bin kernel/kernel.bin
-#	cat $^ > $@
-
-boot/boot1.bin: boot/boot1.asm
+boot/boot.bin: boot/boot.asm
 	nasm $< -f bin -I 'boot/' -o $@
 
-boot/boot2.bin: boot/boot2.asm
+boot/loader.bin: boot/loader.asm
 	nasm $< -f bin -I 'boot/' -o $@
 
 kernel/kernel.bin: kernel/kernel_entry.o kernel/kernel.o ${OBJ}

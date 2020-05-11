@@ -1,7 +1,8 @@
-; from sector in ax, read cl sectors into es:bx
+; from sector index in ax, read cl sectors into es:bx
 rm_read_sectors:
     push bp
     mov bp, sp
+
     sub esp, 2 ; reserve 2 bytes in stack to store
                ; number of sectors. byte [bp - 2]
 
@@ -16,15 +17,17 @@ rm_read_sectors:
     mov ch, al  ; cylinder num        
     and dh, 1   ; header num
     pop bx
-    ; from here, we get cylinder num, sector num and head number.
+    ; from here, we get cylinder num, head num and sector num
 
     mov dl, [bs_driver_num]
-.go_on_reading:
+.continue_reading:
     mov ah, 2   ; read function num
     mov al, byte [bp - 2] ; read al sectors
     int 0x13
-    jc .go_on_reading ; if error, cf will be set, it will continue try
+    jc .continue_reading ; keep try when error
 
-    add esp, 2
+    ;add esp, 2 ; clean local variables, no need
+    
+    mov sp, bp
     pop bp
     ret

@@ -5,6 +5,9 @@
 ; ---------------------------------------------------------
 
 rm_print_str:
+    push bp
+    mov bp, sp
+
     push ax 
     push bx
 
@@ -22,6 +25,9 @@ rm_print_str:
 .done:
     pop bx
     pop ax
+
+    mov sp, bp
+    pop bp
     ret
 
 ; ---------------------------------------------------------
@@ -30,15 +36,20 @@ rm_print_str:
 ; print new line
 ; ---------------------------------------------------------
 rm_print_nl:
+    push bp
+    mov bp, sp
+
     push ax
 
     mov ah, 0x0e
-
     mov al, 0x0d
     int 0x10
     mov al, 0x0a
     int 0x10
 
     pop ax
+
+    mov sp, bp
+    pop bp
     ret
 ; ---------------------------------------------------------

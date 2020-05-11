@@ -1,7 +1,7 @@
 ; read loader.bin from floppy disk, fat12
 
-LOADER_BASE_ADDR      equ 09000h  
-LOADER_OFFSET         equ 0100h 
+LOADER_BASE_ADDR      equ 0x9000 
+LOADER_OFFSET         equ 0x100 
 ROOT_DIR_SECTORS      equ 14  ; 224*32/512
 ROOT_DIR_FIRST_SECTOR equ 19
 FIRST_SECTOR_OF_FAT1  equ 1
@@ -20,36 +20,42 @@ rm_load_loader:
 	cmp word [root_dir_sectors_for_loop], 0 ; loop 14 times max
 	jz .no_loader_found
 	dec word [root_dir_sectors_for_loop]
+	
+	; setup es:bx
 	mov ax, LOADER_BASE_ADDR
 	mov es, ax
 	mov bx, LOADER_OFFSET ; es:bx = LOADER_BASE_ADDR:LOADER_OFFSET
-	mov ax, [sector_num] ; sector num in root dir which occupied 14 sectors
+	
+	mov ax, [sector_num] ; ax is the sector_index
 	mov cl, 1
 	call rm_read_sectors
 
 	mov si, loader_file_name ; ds:si='loader  bin' 11 chars, 2 spaces
-	mov di, LOADER_OFFSET    ; es:di=LOADER_BASE_ADDR:0100
+	mov di, LOADER_OFFSET    ; es:di=LOADER_BASE_ADDR:LOADER_OFFSET
 	cld
 
+	; 0x10 = 16 dir entris per sector
 	mov dx, 0x10 ; sector size 512 / dir entry size 32 = 16 = 0x10
 ; ---- loop for search filename
 .search_filename_in_dir_entry:
 	cmp dx, 0
 	jz .goto_next_sector_in_root_dir
 	dec dx
+
 	mov cx, 11 ; file name contains 11 chars
 .cmp_filename:
 	cmp cx, 0
 	jz .loader_found ; if compard 11 chars are all equal, then found
-	dec cx
+	dec cx	
 	lodsb ; ds:si -> al, and increase si at same time
 	cmp al, byte [es:di]
-	jz .go_on_cmp_filename
+	jz .continue_cmp_filename
 	jmp .different_filename
-.go_on_cmp_filename:
+.continue_cmp_filename:
 	inc di
 	jmp .cmp_filename
-.different_filename:
+
+.different_filename: ; search in next dir entry
 	and di, 0xffe0 ; di &= e0, for it to point to start of current entry
 	add di, 0x20   ; dir entry size is 0x20, make it point to next dir entry
 	mov si, loader_file_name
@@ -108,13 +114,14 @@ rm_load_loader:
 	mov bx, msg_loader_loaded
     call rm_print_str
 
-    ; =========================================================================
-    ; from here, we jump to loader.bin and execute the first instruction there.
+    ; =========================================================
+    ; from here, we jump to loader.bin 
+    ; and execute the first instruction there.
     ; and also the task of boot sector is completed.
 
     jmp LOADER_BASE_ADDR:LOADER_OFFSET
 
-    ; ==========================================================================
+    ; =========================================================
 
 ; global variables
 loader_file_name:       db 'loader  bin', 0 ; 11 chars, 2 spaces
