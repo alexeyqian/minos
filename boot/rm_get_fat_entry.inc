@@ -1,12 +1,13 @@
 ; get fat entry
 ; find index of sector(ax) in fat
+; BASE_ADDR is in bx
 ; return value in ax
 rm_get_fat_entry:
 	push es
 	push bx
 	
 	push ax
-	mov ax, LOADER_BASE_ADDR
+	mov ax, bx ; LOADER_BASE_ADDR
 	sub ax, 0x100 ; reserve 4K for fat behind LOADER_BASE_ADDR
 	mov es, ax
 	pop ax

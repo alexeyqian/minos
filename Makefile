@@ -30,4 +30,4 @@ kernel/kernel_entry.o: kernel/kernel_entry.asm
 	gcc -m32 -ffreestanding -fno-pie -c $< -o $@
 
 clean:	
-	@rm -rf os.img kernel/*.o kernel/*.bin boot/*.o boot/*.bin drivers/*.o
+	@rm -rf os.img boot/*.o boot/*.bin kernel/*.o kernel/*.bin drivers/*.o

@@ -1,6 +1,7 @@
 ; loader: boot loader stage 2
+[org 0x100] ; has to be ox100 ???
 [bits 16]
-RM_STACK_BASE equ 0x7c00
+RM_STACK_BASE equ 0x100 ; has to be ox100 ??
 KERNEL_BASE equ 0x8000
 KERNEL_OFFSET equ 0
 
@@ -9,7 +10,7 @@ ROOT_DIR_FIRST_SECTOR equ 19
 FIRST_SECTOR_OF_FAT1  equ 1
 DELTA_SECTOR_NUM      equ 17
 
-jmp start
+jmp short start
 ; include it because below code 
 ; is using some of definitions
 %include "fixed_bios_parameter_block.inc"
@@ -20,13 +21,7 @@ start:
     mov es, ax
     mov ss, ax
     mov sp, RM_STACK_BASE  
-
-    mov ah, 0x0e
-    mov al, 'X'
-    int 0x10
-    mov al, 'Y'
-    int 0x10
-
+       
     mov bx, msg_in_loader
     call rm_print_str
 
@@ -50,7 +45,7 @@ start:
 	call rm_read_sectors
 
 	mov si, kernel_file_name ; ds:si='KERNEL  BIN' 11 chars, 2 spaces
-	mov di, LOADER_OFFSET    ; es:di=LOADER_BASE_ADDR:LOADER_OFFSET
+	mov di, KERNEL_OFFSET    ; es:di=KERNEL_BASE:KERNEL_OFFSET
 	cld
 
 	; 0x10 = 16 dir entris per sector
@@ -107,9 +102,9 @@ start:
 	push cx ; save index of sector in fat
 	add cx, ax
 	add cx, DELTA_SECTOR_NUM ; c1 =  first sector of file loader.bin
-	mov ax, LOADER_BASE_ADDR
+	mov ax, KERNEL_BASE
 	mov es, ax
-	mov bx, LOADER_OFFSET
+	mov bx, KERNEL_OFFSET
 	mov ax, cx
 
 .begin_loading_file:
@@ -126,7 +121,10 @@ start:
 	mov cl, 1
 	call rm_read_sectors
 	pop ax ; read out the index of the sector in fat
+    push bx
+    mov bx, KERNEL_BASE
 	call rm_get_fat_entry
+    pop bx
 	cmp ax, 0xfff
 	jz .file_loaded
 
@@ -137,7 +135,7 @@ start:
 	add bx, [bpb_bytes_per_sector]
 	jmp .begin_loading_file
 .file_loaded:
-	mov bx, msg_loader_loaded
+	mov bx, msg_kernel_loaded
     call rm_print_str
 
     call kill_motor
@@ -153,6 +151,7 @@ kill_motor:
 
 %include "rm_lib.inc"
 %include "rm_read_sectors.inc"
+%include "rm_get_fat_entry.inc"
 
 ; global variables
 kernel_file_name:       db 'KERNEL  BIN', 0 ; 11 chars, 2 spaces, must be UPPER CASE!!

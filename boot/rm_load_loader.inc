@@ -100,7 +100,10 @@ rm_load_loader:
 	mov cl, 1
 	call rm_read_sectors
 	pop ax ; read out the index of the sector in fat
+	push bx
+	mov bx, LOADER_BASE_ADDR
 	call rm_get_fat_entry
+	pop bx
 	cmp ax, 0xfff
 	jz .file_loaded
 
