@@ -1,13 +1,4 @@
-; boot loader stage 1
-
-;%define _BOOT_DEBUG_
-
-%ifdef _BOOT_DEBUG_
-[org 0x100]
-%else
 [org 0x7c00]
-%endif
-
 [bits 16]
 
 RM_STACK_BASE equ 0x7c00

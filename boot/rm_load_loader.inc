@@ -88,14 +88,14 @@ rm_load_loader:
 
 .begin_loading_file:
 	; print one dot per sector
-	push ax
-	push bx
-	mov ah, 0xe
-	mov al, '.'
-	mov bl, 0xf
-	int 0x10
-	pop bx
-	pop ax
+	;push ax
+	;push bx
+	;mov ah, 0xe
+	;mov al, '.'
+	;mov bl, 0xf
+	;int 0x10
+	;pop bx
+	;pop ax
 
 	mov cl, 1
 	call rm_read_sectors
@@ -124,10 +124,10 @@ rm_load_loader:
     ; =========================================================
 
 ; global variables
-loader_file_name:       db 'LOADER  BIN', 0 ; 11 chars, 2 spaces
-msg_loader_found:       db 'loader found', 0
+loader_file_name:       db 'LOADER  BIN', 0 ; 11 chars, 2 spaces, must be UPPER CASE!!
+msg_loader_found:       db 'loader found|', 0
 msg_no_loader_found:    db 'loader not found', 0
-msg_loader_loaded:      db 'loader is loaded', 0
+msg_loader_loaded:      db 'loader loaded|', 0
 is_odd:                 db 0
 sector_num:             dw 0
 root_dir_sectors_for_loop: dw ROOT_DIR_SECTORS
