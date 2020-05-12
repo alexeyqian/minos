@@ -7,8 +7,8 @@ rm_get_fat_entry:
 	push bx
 	
 	push ax
-	mov ax, bx ; LOADER_BASE_ADDR
-	sub ax, 0x100 ; reserve 4K for fat behind LOADER_BASE_ADDR
+	mov ax, bx ; LOADER_BASE
+	sub ax, 0x100 ; reserve 4K for fat behind LOADER_BASE
 	mov es, ax
 	pop ax
 

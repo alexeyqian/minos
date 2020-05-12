@@ -2,7 +2,7 @@
 [bits 16]
 
 %include "constants.inc"
-RM_STACK_BASE equ 0x7c00
+BOOT_STACK_BASE equ 0x7c00
 
 jmp short boot_start
 nop
@@ -13,7 +13,7 @@ boot_start:
     mov ds, ax
     mov es, ax
     mov ss, ax
-    mov bp, RM_STACK_BASE
+    mov bp, BOOT_STACK_BASE
     mov sp, bp
 
     jmp rm_load_loader

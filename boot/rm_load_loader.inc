@@ -1,11 +1,4 @@
 ; read loader.bin from floppy disk, fat12
-
-
-ROOT_DIR_SECTORS      equ 14  ; 224*32/512
-ROOT_DIR_FIRST_SECTOR equ 19
-FIRST_SECTOR_OF_FAT1  equ 1
-DELTA_SECTOR_NUM      equ 17
-
 rm_load_loader:	
 	; reset floppy
 	xor ah, ah
@@ -21,16 +14,16 @@ rm_load_loader:
 	dec word [root_dir_sectors_for_loop]
 	
 	; setup es:bx
-	mov ax, LOADER_BASE_ADDR
+	mov ax, LOADER_BASE
 	mov es, ax
-	mov bx, LOADER_OFFSET ; es:bx = LOADER_BASE_ADDR:LOADER_OFFSET
+	mov bx, LOADER_OFFSET ; es:bx = LOADER_BASE:LOADER_OFFSET
 	
 	mov ax, [sector_num] ; ax is the sector_index
 	mov cl, 1
 	call rm_read_sectors
 
 	mov si, loader_file_name ; ds:si='loader  bin' 11 chars, 2 spaces
-	mov di, LOADER_OFFSET    ; es:di=LOADER_BASE_ADDR:LOADER_OFFSET
+	mov di, LOADER_OFFSET    ; es:di=LOADER_BASE:LOADER_OFFSET
 	cld
 
 	; 0x10 = 16 dir entris per sector
@@ -80,7 +73,7 @@ rm_load_loader:
 	push cx ; save index of sector in fat
 	add cx, ax
 	add cx, DELTA_SECTOR_NUM ; c1 =  first sector of file loader.bin
-	mov ax, LOADER_BASE_ADDR
+	mov ax, LOADER_BASE
 	mov es, ax
 	mov bx, LOADER_OFFSET
 	mov ax, cx
@@ -100,7 +93,7 @@ rm_load_loader:
 	call rm_read_sectors
 	pop ax ; read out the index of the sector in fat
 	push bx
-	mov bx, LOADER_BASE_ADDR
+	mov bx, LOADER_BASE
 	call rm_get_fat_entry
 	pop bx
 	cmp ax, 0xfff
@@ -121,7 +114,7 @@ rm_load_loader:
     ; and execute the first instruction there.
     ; and also the task of boot sector is completed.
 
-    jmp LOADER_BASE_ADDR:LOADER_OFFSET
+    jmp LOADER_BASE:LOADER_OFFSET
 
     ; =========================================================
 

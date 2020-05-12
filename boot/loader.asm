@@ -1,22 +1,14 @@
 ; loader: boot loader stage 2
-[org 0x100] ; has to be ox100 ???
+[org 0x100] ; has to be 0x100 ???
 [bits 16]
 %include "constants.inc"
-RM_STACK_BASE equ 0x100
+LOADER_STACK_BASE equ 0x100
 KERNEL_BASE equ 0x8000
 KERNEL_OFFSET equ 0
-
-ROOT_DIR_SECTORS      equ 14  ; 224*32/512
-ROOT_DIR_FIRST_SECTOR equ 19
-FIRST_SECTOR_OF_FAT1  equ 1
-DELTA_SECTOR_NUM      equ 17
-
 PAGE_DIR_BASE   equ 0x100000 ; 1M
 PAGE_TABLE_BASE equ 0x101000 ; 1M + 4K
 
 jmp short start
-; include it because below code 
-; is using some of definitions
 %include "fixed_bios_parameter_block.inc"
 %include "pm.inc"
 %include "rm_gdt.inc"
@@ -26,7 +18,7 @@ start:
     mov ds, ax
     mov es, ax
     mov ss, ax
-    mov sp, RM_STACK_BASE  
+    mov sp, LOADER_STACK_BASE  
        
     mov bx, msg_in_loader
     call rm_print_str
@@ -150,7 +142,10 @@ start:
 	mov bx, msg_kernel_loaded
     call rm_print_str
 
-    call kill_motor
+    ; stop floppy motor
+	mov dx, 0x3f2
+    mov al, 0
+    out dx, al
 	
     ; prepare for proteded mode========================
 	lgdt [gdt_ptr]
@@ -164,16 +159,8 @@ start:
 	mov cr0, eax
 
 	; jump into protected mode =============================
-	jmp dword CODE_SELECTOR: (LOADER_PHYSICAL_ADDR + pm_start)
+	jmp dword code_selector: (LOADER_PHYSICAL_ADDR + pm_start)
     jmp $
-
-kill_motor:
-    push dx
-    mov dx, 0x3f2
-    mov al, 0
-    out dx, al
-    pop dx
-    ret
 
 %include "rm_lib.inc"
 %include "rm_read_sectors.inc"
@@ -193,20 +180,18 @@ root_dir_sectors_for_loop: dw ROOT_DIR_SECTORS
 ;=========================================
 ; all below code running in protected mode
 ;=========================================
-[bits 32]
+[section .s32]
 align 32
+[bits 32]
 pm_start:
-	mov ax, VIDEO_SELECTOR
+	mov ax, video_selector
 	mov gs, ax
-	mov ax, DATA_SELECTOR
+	mov ax, data_selector
 	mov ds, ax
 	mov es, ax
 	mov fs, ax
 	mov ss, ax
-	mov esp, RM_STACK_BASE
-
-	;mov bx, msg_in_protected_mode
-	;call pm_print_string
+	mov esp, pm_stack_top
 
 	; display memo info
 	push mem_table_title
@@ -224,5 +209,5 @@ pm_start:
 align 32
 mem_table_title: db 'base_addr_low base_addr_high length_low length_high', 0xa, 0
 ; stack is at the end of data section
-STACK_SPACE: times 0x1000 db 0
-STACK_TOP    equ   LOADER_PHYSICAL_ADDR + $
+stack_space: times 0x1000 db 0
+pm_stack_top    equ   LOADER_PHYSICAL_ADDR + $
