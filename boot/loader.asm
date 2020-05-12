@@ -1,7 +1,8 @@
 ; loader: boot loader stage 2
 [org 0x100] ; has to be ox100 ???
 [bits 16]
-RM_STACK_BASE equ 0x100 ; has to be ox100 ??
+%include "constants.inc"
+RM_STACK_BASE equ 0x100
 KERNEL_BASE equ 0x8000
 KERNEL_OFFSET equ 0
 
@@ -10,10 +11,15 @@ ROOT_DIR_FIRST_SECTOR equ 19
 FIRST_SECTOR_OF_FAT1  equ 1
 DELTA_SECTOR_NUM      equ 17
 
+PAGE_DIR_BASE   equ 0x100000 ; 1M
+PAGE_TABLE_BASE equ 0x101000 ; 1M + 4K
+
 jmp short start
 ; include it because below code 
 ; is using some of definitions
 %include "fixed_bios_parameter_block.inc"
+%include "pm.inc"
+%include "rm_gdt.inc"
 
 start:
     mov ax, cs
@@ -25,10 +31,16 @@ start:
     mov bx, msg_in_loader
     call rm_print_str
 
+	; begin get memory size
+	; TODO ==================
+	; end of get memory size
+
+	; reset floppy
     xor ah, ah
     xor dl, dl
     int 0x13
 
+	; search and load kernel from floppy disk
     mov word [sector_num], ROOT_DIR_FIRST_SECTOR
 .search_kernel:
 	cmp word [root_dir_sectors_for_loop], 0 ; loop 14 times max
@@ -139,6 +151,20 @@ start:
     call rm_print_str
 
     call kill_motor
+	
+    ; prepare for proteded mode========================
+	lgdt [gdt_ptr]
+	cli
+	in al, 0x92
+	or al, 0b00000010
+	out 0x92, al
+
+	mov eax, cr0
+	or eax, 1
+	mov cr0, eax
+
+	; jump into protected mode =============================
+	jmp dword CODE_SELECTOR: (LOADER_PHYSICAL_ADDR + pm_start)
     jmp $
 
 kill_motor:
@@ -155,7 +181,7 @@ kill_motor:
 
 ; global variables
 kernel_file_name:       db 'KERNEL  BIN', 0 ; 11 chars, 2 spaces, must be UPPER CASE!!
-msg_in_loader:          db 'in loader|', 0
+msg_in_loader:          db 'running in loader|', 0
 msg_kernel_found:       db 'kernel found|', 0
 msg_no_kernel_found:    db 'kernel not found', 0
 msg_kernel_loaded:      db 'kernel loaded|', 0
@@ -163,3 +189,40 @@ is_odd:                 db 0
 sector_num:             dw 0
 kernel_size:            dd 0
 root_dir_sectors_for_loop: dw ROOT_DIR_SECTORS
+
+;=========================================
+; all below code running in protected mode
+;=========================================
+[bits 32]
+align 32
+pm_start:
+	mov ax, VIDEO_SELECTOR
+	mov gs, ax
+	mov ax, DATA_SELECTOR
+	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov ss, ax
+	mov esp, RM_STACK_BASE
+
+	;mov bx, msg_in_protected_mode
+	;call pm_print_string
+
+	; display memo info
+	push mem_table_title
+	call pm_print_str
+	add esp, 4
+
+	; call setup_paging
+	; display sthing
+
+	jmp $
+
+%include "pm_lib.inc"
+
+[section .data]
+align 32
+mem_table_title: db 'base_addr_low base_addr_high length_low length_high', 0xa, 0
+; stack is at the end of data section
+STACK_SPACE: times 0x1000 db 0
+STACK_TOP    equ   LOADER_PHYSICAL_ADDR + $

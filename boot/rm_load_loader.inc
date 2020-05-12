@@ -1,7 +1,6 @@
 ; read loader.bin from floppy disk, fat12
 
-LOADER_BASE_ADDR      equ 0x9000 
-LOADER_OFFSET         equ 0x100 
+
 ROOT_DIR_SECTORS      equ 14  ; 224*32/512
 ROOT_DIR_FIRST_SECTOR equ 19
 FIRST_SECTOR_OF_FAT1  equ 1

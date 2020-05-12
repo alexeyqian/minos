@@ -1,3 +1,116 @@
+
+; ---------------------------------------------------------
+; protected mode, print byte in al as hex
+; require: 
+; - byte in al
+; - edi should always points to the next positon on screen for print
+; ---------------------------------------------------------
+pm_print_byte_in_al_as_hex:
+    pusha
+    push edi
+
+    mov edi, [_position_on_screen]
+
+    mov ah, WHITE_ON_BLACK
+
+    mov dl, al
+    shr al, 4
+    mov ecx, 2  ; each byte displayed as two digits, so count set to 2
+
+.begin:
+    and al, 0b1111
+    cmp al, 9
+    ja  .1
+    add al, '0'
+    jmp .2
+.1:
+    sub al, 0xa
+    add al, 'A'
+.2:
+    mov gs, VIDEO_MEMORY
+    mov [gs:edi], ax
+    add edi, 2
+
+    mov al, dl
+    loop .begin
+
+    mov [_position_on_screen], edi
+    
+    pop edi
+    popa
+    ret
+
+; ---------------------------------------------------------
+
+; ---------------------------------------------------------
+; protected mode, print dword pointed by stack as hex
+; require: 
+; - uint32_t pointed by esp
+; - edi should always points to the next positon on screen for print
+; ---------------------------------------------------------
+pm_print_int_in_stack_as_hex:    
+    mov eax, [esp + 4]
+    shr eax, 24
+    call pmprint_byte_in_al_as_hex
+
+    mov eax, [esp + 4]
+    shr eax, 16
+    call pmprint_byte_in_al_as_hex
+
+    mov eax, [esp + 4]
+    shr eax, 8
+    call pmprint_byte_in_al_as_hex
+
+    mov eax, [esp + 4]
+    call pmprint_byte_in_al_as_hex
+
+    mov ah, WHITE_ON_BLACK
+    mov al, 'h'
+    push edi
+    push gs
+    
+    mov edi, [_position_on_screen]
+    mov gs, VIDEO_MEMORY
+    mov [gs:edi], ax
+    add edi, 4
+    mov [_position_on_screen], edi
+    
+    pop gs
+    pop edi
+   
+    ret
+; ---------------------------------------------------------
+
+
+; ---------------------------------------------------------
+; protected mode, print new line: c: printf("\n");
+; ---------------------------------------------------------
+pm_print_new_line:
+    push _new_line
+    call pmprint_string
+    ret
+; ---------------------------------------------------------
+
+; Prints a null terminated string pointed by EBX
+pm_print_string:
+    pusha
+    mov edx, VIDEO_MEMORY
+
+.loop:
+    mov al, [ebx]  ; Store the char at EBX in AL
+    mov ah, WHITE_ON_BLACK
+    cmp al, 0 ; if al == 0 then at end of string
+    je .done
+
+    mov [edx], ax ; Store char and attribute at current character cell.
+    add ebx, 1
+    add edx, 2
+    jmp .loop
+
+.done:
+    popa
+    ret
+
 ; ---------------------------------------------------------
 ; print string in hex
 ; ---------------------------------------------------------

@@ -1,45 +1,15 @@
-; GDT
 gdt_start:
-
-gdt_null:   ; The mandatory null descriptor
-    dd 0x0
-    dd 0x0
-
-gdt_code:   ; the code segment descriptor
-            ; base =0x0 , limit =0xfffff ,
-            ; 1st flags : ( present )1 ( privilege )00 ( descriptor type )1 -> 1001 b
-            ; type flags : ( code )1 ( conforming )0 ( readable )1 ( accessed )0 -> 1010 b
-            ; 2nd flags : ( granularity )1 (32 - bit default )1 (64 - bit seg )0 ( AVL )0 -> 1100 b
-    
-    dw 0xffff           ; Limit ( bits 0 -15)
-    dw 0x0              ; Base ( bits 0 -15)
-    db 0x0              ; Base ( bits 16 -23)
-    db 10011010b        ; 1st flags , type flags
-    db 11001111b        ; 2nd flags , Limit ( bits 16 -19)
-    db 0x0              ; Base ( bits 24 -31)
-
-gdt_data:               ; the data segment descriptor
-                        ; Same as code segment except for the type flags :
-                        ; type flags : ( code )0 ( expand down )0 ( writable )1 ( accessed )0 -> 0010 b
-    
-    dw 0xffff           ; Limit ( bits 0 -15)
-    dw 0x0              ; Base ( bits 0 -15)
-    db 0x0              ; Base ( bits 16 -23)
-    db 10010010b        ; 1st flags , type flags
-    db 11001111b        ; 2nd flags , Limit ( bits 16 -19)
-    db 0x0              ; Base ( bits 24 -31)
-
-
+;                     base-----limit----attr
+gdt_null:  Descriptor 0,       0,       0 ;  LABEL_GDT
+gdt_code:  Descriptor 0,       0xfffff, DA_CR|DA_32|DA_LIMIT_4K  ; DESC_FLAT_C 0 - 4G
+gdt_data:  Descriptor 0,       0xfffff, DA_DRW|DA_32|DA_LIMIT_4K ; DESC_FLAT_RW 0 -4G
+gdt_video: Descriptor 0xB8000, 0xffff,  DA_DRW|DA_DPL3 
 gdt_end:
 
 gdt_ptr:
-    dw gdt_end - gdt_start - 1  ; Size of gdt
-    dd gdt_start                ; Start address of our GDT
+	dw gdt_end - gdt_start - 1            ; gdt length
+	dd LOADER_PHYSICAL_ADDR + gdt_start ; gdt base address
 
-; Define some handy constants for the GDT segment descriptor offsets , which
-; are what segment registers must contain when in protected mode. For example ,
-; when we set DS = 0 x10 in PM , the CPU knows that we mean it to use the
-; segment described at offset 0 x10 ( i.e. 16 bytes ) in our GDT , which in our
-; case is the DATA segment (0 x0 -> NULL ; 0 x08 -> CODE ; 0 x10 -> DATA )
-CODE_SEG equ gdt_code - gdt_start
-DATA_SEG equ gdt_data - gdt_start
+CODE_SELECTOR  equ gdt_code  - gdt_start 
+DATA_SELECTOR  equ gdt_data  - gdt_start
+VIDEO_SELECTOR equ gdt_video - gdt_start + SA_RPL3

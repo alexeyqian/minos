@@ -1,6 +1,7 @@
 [org 0x7c00]
 [bits 16]
 
+%include "constants.inc"
 RM_STACK_BASE equ 0x7c00
 
 jmp short boot_start
