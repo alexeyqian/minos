@@ -210,9 +210,12 @@ pm_start:
 	mov ebp, pm_stack_top
 	mov esp, ebp
 
+	; TODO clear screen
+
 	push pm_running_in_pm_str ; c caller convention, caller prepares parameters.
 	call pm_print_str	
 	add esp, 4 ; c caller convention, caller cleans parameters
+	call pm_print_nl
 
 	call pm_print_mem_ranges	
 	
@@ -243,7 +246,7 @@ rm_mem_range_struct:
 	rm_mr_length_high:    dd 0
 	rm_mr_type:           dd 0
 rm_mem_range_buf: times 512 db 0 ; buffer to store address range structures array
-rm_mem_table_title: db  'base_addr_low-base_addr_high-length_low-length_high', 0
+rm_mem_table_title: db  'addr_low  addr_high  length_low  length_high', 0
 
 pm_mem_size_str equ LOADER_PHYSICAL_ADDR + rm_mem_size_str
 pm_mem_size equ LOADER_PHYSICAL_ADDR + rm_mem_size

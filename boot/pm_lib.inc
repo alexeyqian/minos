@@ -4,6 +4,82 @@
 VIDEO_MEMORY equ 0xb8000
 WHITE_ON_BLACK equ 0x0f
 
+pm_print_al_as_hex:
+    push ebp
+    mov ebp, esp
+	
+    push	ecx
+	push	edx
+	push	edi
+
+	mov	edi, [pm_position_on_screen]
+
+	mov	ah, WHITE_ON_BLACK
+	mov	dl, al
+	shr	al, 4
+	mov	ecx, 2
+.loop: ; loop 2 times, display each byte as two hex digitals
+	and	al, 0b1111
+	cmp	al, 9
+	ja	.if_letter
+.if_number:
+	add	al, '0'
+	jmp	.print_char
+.if_letter:
+	sub	al, 0xa
+	add	al, 'A'
+.print_char:
+	mov	[gs:edi], ax
+	add	edi, 2
+
+	mov	al, dl
+	loop .loop
+
+.done:
+    ;  update pm_position_on_screen to next avialable position
+	mov	[pm_position_on_screen], edi 
+
+	pop	edi
+	pop	edx
+	pop	ecx
+
+    mov esp, ebp
+    pop ebp
+	ret
+
+pm_print_int_as_hex:
+    push ebp
+    mov ebp, esp
+
+    mov	eax, [esp + 8]
+	shr	eax, 24
+	call	pm_print_al_as_hex
+
+	mov	eax, [esp + 8]
+	shr	eax, 16
+	call	pm_print_al_as_hex
+
+	mov	eax, [esp + 8]
+	shr	eax, 8
+	call	pm_print_al_as_hex
+
+	mov	eax, [esp + 8]
+	call	pm_print_al_as_hex
+
+	mov	ah, WHITE_ON_BLACK
+	mov	al, 'h'
+	push	edi
+	mov	edi, [pm_position_on_screen]
+	mov	[gs:edi], ax
+	add	edi, 4 ; adding 4 instead of 2 for an extra space after char:h
+	mov	[pm_position_on_screen], edi
+	pop	edi
+
+    mov esp, ebp
+    pop ebp
+	ret
+
+
 ; print string in protected mode
 pm_print_str:
     push ebp
@@ -56,7 +132,7 @@ pm_print_str:
 ; ---------------------------------------------------------
 
 ; print new line in protected mode 
-.pm_print_nl:
+pm_print_nl:
     push ebp
     mov ebp, esp
 
