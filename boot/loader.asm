@@ -1,5 +1,6 @@
 ; loader: boot loader stage 2
-[org 0x100] ; has to be 0x100 ???
+[org 0x100] 
+;[section .text]
 [bits 16]
 %include "constants.inc"
 LOADER_STACK_BASE equ 0x100
@@ -23,9 +24,24 @@ start:
     mov bx, msg_in_loader
     call rm_print_str
 
-	; begin get memory size
-	; TODO ==================
-	; end of get memory size
+	; begin get memory range info ========================================
+	mov	ebx, 0			            ; ebx = next address range address, init to 0
+	mov	di, rm_mem_range_buf		; es:di point to next（Address Range Descriptor Structure）
+.mem_check_loop:
+	mov	eax, 0E820h		    ; eax = 0000E820h
+	mov	ecx, 20			    ; ecx = size of ARD Structure
+	mov	edx, 0534D4150h		; edx = 'SMAP' a magic number
+	int	15h			
+	jc	.mem_check_fail
+	add	di, 20
+	inc	dword [rm_mem_range_count]
+	cmp	ebx, 0
+	jne	.mem_check_loop
+	jmp	.mem_check_ok
+.mem_check_fail:
+	mov	dword [rm_mem_range_count], 0
+.mem_check_ok:
+	; end of get memory range info ========================================
 
 	; reset floppy
     xor ah, ah
@@ -166,7 +182,8 @@ start:
 %include "rm_read_sectors.inc"
 %include "rm_get_fat_entry.inc"
 
-; global variables
+; [section .data]
+[bits 16]
 kernel_file_name:       db 'KERNEL  BIN', 0 ; 11 chars, 2 spaces, must be UPPER CASE!!
 msg_in_loader:          db 'running in loader|', 0
 msg_kernel_found:       db 'kernel found|', 0
@@ -180,8 +197,7 @@ root_dir_sectors_for_loop: dw ROOT_DIR_SECTORS
 ;=========================================
 ; all below code running in protected mode
 ;=========================================
-;[section .s32]
-;align 32
+;[section .text]
 [bits 32]
 pm_start:
 	mov ax, video_selector
@@ -194,22 +210,54 @@ pm_start:
 	mov ebp, pm_stack_top
 	mov esp, ebp
 
-	; display memo info
-	push pm_mem_table_title ; c caller convention, caller prepares parameters.
-	call pm_print_str
+	push pm_running_in_pm_str ; c caller convention, caller prepares parameters.
+	call pm_print_str	
 	add esp, 4 ; c caller convention, caller cleans parameters
 
-	; call setup_paging
-	; display sthing
+	call pm_print_mem_ranges	
+	
+	; begin of setup paging ===========================
+	; end of setup paging =============================
 
 	jmp $
 
 %include "pm_lib.inc"
+%include "pm_print_mem_ranges.inc"
 
 ;[section .data]
-;align 32
+[bits 32]
+rm_new_line_str: db 0xa, 0
+rm_running_in_pm_str: db 'running in protected mode now.', 0
+
+pm_new_line_str equ LOADER_PHYSICAL_ADDR + rm_new_line_str
+pm_running_in_pm_str  equ	LOADER_PHYSICAL_ADDR + rm_running_in_pm_str
+
+; ================ begin of variables for check and display memory range =====================
+rm_mem_size_str: db 'mem size:', 0
+rm_mem_size:           dd 0
+rm_mem_range_count:    dd 0
+rm_mem_range_struct: 
+	rm_mr_base_addr_low:  dd 0
+	rm_mr_base_addr_high: dd 0
+	rm_mr_length_low:     dd 0
+	rm_mr_length_high:    dd 0
+	rm_mr_type:           dd 0
+rm_mem_range_buf: times 512 db 0 ; buffer to store address range structures array
 rm_mem_table_title: db  'base_addr_low-base_addr_high-length_low-length_high', 0
+
+pm_mem_size_str equ LOADER_PHYSICAL_ADDR + rm_mem_size_str
+pm_mem_size equ LOADER_PHYSICAL_ADDR + rm_mem_size
+pm_mem_range_count equ LOADER_PHYSICAL_ADDR + rm_mem_range_count
+pm_mem_range_struct equ LOADER_PHYSICAL_ADDR + rm_mem_range_struct
+	pm_mr_base_addr_low equ LOADER_PHYSICAL_ADDR + rm_mr_base_addr_low
+	pm_mr_base_addr_high equ LOADER_PHYSICAL_ADDR + rm_mr_base_addr_high
+	pm_mr_length_low equ LOADER_PHYSICAL_ADDR + rm_mr_length_low
+	pm_mr_length_high equ LOADER_PHYSICAL_ADDR + rm_mr_length_high
+	pm_mr_type equ LOADER_PHYSICAL_ADDR + rm_mr_type
+pm_mem_range_buf equ LOADER_PHYSICAL_ADDR + rm_mem_range_buf
 pm_mem_table_title  equ	LOADER_PHYSICAL_ADDR + rm_mem_table_title
+; ============= end of variables for check and display memory range =====================
+
 ; 4K appended to the end of loader.bin to be used as stack.
 pm_stack_space: times 0x1000 db 0 
 pm_stack_top    equ   LOADER_PHYSICAL_ADDR + $
