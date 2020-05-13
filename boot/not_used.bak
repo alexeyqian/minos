@@ -91,25 +91,6 @@ pm_print_new_line:
     ret
 ; ---------------------------------------------------------
 
-; Prints a null terminated string pointed by EBX
-pm_print_string:
-    pusha
-    mov edx, VIDEO_MEMORY
-
-.loop:
-    mov al, [ebx]  ; Store the char at EBX in AL
-    mov ah, WHITE_ON_BLACK
-    cmp al, 0 ; if al == 0 then at end of string
-    je .done
-
-    mov [edx], ax ; Store char and attribute at current character cell.
-    add ebx, 1
-    add edx, 2
-    jmp .loop
-
-.done:
-    popa
-    ret
 
 ; ---------------------------------------------------------
 ; print string in hex

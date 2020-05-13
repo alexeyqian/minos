@@ -2,10 +2,44 @@
 
 VIDEO_MEMORY equ 0xb8000
 WHITE_ON_BLACK equ 0x0f
+
+; Prints a null terminated string 
+;  string address is pushed as first parameter
+pm_print_str:
+    push ebp
+    mov ebp, esp
+
+    push eax
+    push ebx
+    push edx
+    
+    mov edx, VIDEO_MEMORY
+    mov ebx, [ebp+8] ; assign address of first char in string to ebx   
+
+.loop:
+    mov al, [ebx]   ; store char into al
+    mov ah, WHITE_ON_BLACK
+    cmp al, 0 ; if al == 0 then at end of string
+    je .done
+
+    mov [edx], ax ; Store char and attribute at current character cell.
+    add ebx, 1 ; make ebx point to next char in the string
+    add edx, 2
+    jmp .loop
+
+.done:
+    pop edx
+    pop ebx
+    pop eax
+
+    mov esp, ebp
+    pop ebp
+    ret
+
 ; ---------------------------------------------------------
 ; protected mode, print string
 ; ---------------------------------------------------------
-pm_print_str:
+pm_print_str_not_used:
     push ebp
     mov ebp, esp
 

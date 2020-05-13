@@ -180,23 +180,24 @@ root_dir_sectors_for_loop: dw ROOT_DIR_SECTORS
 ;=========================================
 ; all below code running in protected mode
 ;=========================================
-[section .s32]
-align 32
+;[section .s32]
+;align 32
 [bits 32]
 pm_start:
-	mov ax, video_selector
-	mov gs, ax
+	;mov ax, video_selector
+	;mov gs, ax
 	mov ax, data_selector
 	mov ds, ax
 	mov es, ax
 	mov fs, ax
 	mov ss, ax
-	mov esp, pm_stack_top
+	mov ebp, pm_stack_top
+	mov esp, ebp
 
 	; display memo info
-	push mem_table_title
+	push pm_mem_table_title ; c caller convention, caller prepares parameters.
 	call pm_print_str
-	add esp, 4
+	add esp, 4 ; c caller convention, caller cleans parameters
 
 	; call setup_paging
 	; display sthing
@@ -205,9 +206,10 @@ pm_start:
 
 %include "pm_lib.inc"
 
-[section .data]
-align 32
-mem_table_title: db 'base_addr_low base_addr_high length_low length_high', 0xa, 0
+;[section .data]
+;align 32
+rm_mem_table_title: db  'base_addr_low-base_addr_high-length_low-length_high', 0
+pm_mem_table_title  equ	LOADER_PHYSICAL_ADDR + rm_mem_table_title
 ; stack is at the end of data section
 stack_space: times 0x1000 db 0
 pm_stack_top    equ   LOADER_PHYSICAL_ADDR + $
