@@ -12,4 +12,4 @@ gdt_ptr:
 
 code_selector  equ gdt_code  - gdt_start 
 data_selector  equ gdt_data  - gdt_start
-video_selector equ gdt_video - gdt_start ; + SA_RPL3 ?? TODO??
+video_selector equ gdt_video - gdt_start + SA_RPL3

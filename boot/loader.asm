@@ -184,8 +184,8 @@ root_dir_sectors_for_loop: dw ROOT_DIR_SECTORS
 ;align 32
 [bits 32]
 pm_start:
-	;mov ax, video_selector
-	;mov gs, ax
+	mov ax, video_selector
+	mov gs, ax
 	mov ax, data_selector
 	mov ds, ax
 	mov es, ax
@@ -210,6 +210,6 @@ pm_start:
 ;align 32
 rm_mem_table_title: db  'base_addr_low-base_addr_high-length_low-length_high', 0
 pm_mem_table_title  equ	LOADER_PHYSICAL_ADDR + rm_mem_table_title
-; stack is at the end of data section
-stack_space: times 0x1000 db 0
+; 4K appended to the end of loader.bin to be used as stack.
+pm_stack_space: times 0x1000 db 0 
 pm_stack_top    equ   LOADER_PHYSICAL_ADDR + $
