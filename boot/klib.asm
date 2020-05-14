@@ -1,9 +1,13 @@
 
+WHITE_ON_BLACK equ 0x0f
+
 [section .data]
 position_on_screen dd 0
 
 [section .text]
 global kprint_str
+global memcpy
+
 ; print string in protected mode, void kprint_str(char* msg)
 kprint_str:
     push ebp
@@ -52,5 +56,42 @@ kprint_str:
 
     mov esp, ebp
     pop ebp    
+    ret
+; ---------------------------------------------------------
+
+
+; void* memcpy(void * es:dest, void* ds:src, int size)
+memcpy:
+    push ebp
+    mov ebp, esp
+
+    push esi
+    push edi
+    push ecx
+
+    mov edi, [ebp + 8] ;dest
+    mov esi, [ebp + 12] ; src
+    mov ecx, [ebp + 16] ; counter
+
+.loop:
+    cmp ecx, 0
+    jz .done
+
+    mov al, [ds:esi];
+    inc esi
+    mov byte [es:edi], al
+    inc edi
+
+    dec ecx
+    jmp .loop
+.done:
+    mov eax, [ebp + 8] ; return value in first parameter
+
+    pop ecx
+    pop edi
+    pop esi
+
+    mov esp, ebp
+    pop ebp
     ret
 ; ---------------------------------------------------------

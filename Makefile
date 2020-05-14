@@ -21,9 +21,11 @@ boot/boot.bin: boot/boot.asm
 boot/loader.bin: boot/loader.asm
 	nasm $< -f bin -I 'boot/' -o $@
 
-boot/kernel.bin: boot/kernel.asm
-	nasm $< -f elf32 -I 'boot/' -o boot/kernel.o
-	ld -m elf_i386 -s -Ttext 0x30400 -o $@ boot/kernel.o
+boot/kernel.bin: boot/kernel.asm boot/klib.asm boot/start.c
+	nasm boot/kernel.asm -f elf32 -I 'boot/' -o boot/kernel.o
+	nasm boot/klib.asm   -f elf32 -I 'boot/' -o boot/klib.o
+	gcc -c -m32 -fno-builtin -o boot/start.o boot/start.c
+	ld -m elf_i386 -s -Ttext 0x30400 -o $@ boot/kernel.o boot/klib.o boot/start.o
 
 kernel/kernel.bin: kernel/kernel_entry.o kernel/kernel.o ${OBJ}
 	ld -m elf_i386 -Ttext 0x1000 --oformat binary -o $@  $^ 
