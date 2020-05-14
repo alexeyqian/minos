@@ -144,34 +144,36 @@ pm_print_nl:
     pop ebp
     ret
 
-; Prints a null terminated string 
-;  string address is pushed as first parameter
-pm_print_str_not_used2:
+; void* mem_copy(void * es:dest, void* ds:src, int size)
+pm_mem_copy:
     push ebp
     mov ebp, esp
 
-    push eax
-    push ebx
-    push edx
-    
-    mov edx, VIDEO_MEMORY
-    mov ebx, [ebp+8] ; assign address of first char in string to ebx   
+    push esi
+    push edi
+    push ecx
+
+    mov edi, [ebp + 8] ;dest
+    mov esi, [ebp + 12] ; src
+    mov ecx, [ebp + 16] ; counter
 
 .loop:
-    mov al, [ebx]   ; store char into al
-    mov ah, WHITE_ON_BLACK
-    cmp al, 0 ; if al == 0 then at end of string
-    je .done
+    cmp ecx, 0
+    jz .done
 
-    mov [edx], ax ; Store char and attribute at current character cell.
-    add ebx, 1 ; make ebx point to next char in the string
-    add edx, 2
+    mov al, [ds:esi];
+    inc esi
+    mov byte [es:edi], al
+    inc edi
+
+    dec ecx
     jmp .loop
-
 .done:
-    pop edx
-    pop ebx
-    pop eax
+    mov eax, [ebp + 8] ; return value in first parameter
+
+    pop ecx
+    pop edi
+    pop esi
 
     mov esp, ebp
     pop ebp

@@ -51,7 +51,8 @@ pm_print_mem_ranges:
     push dword [pm_mem_size]
     call pm_print_int_as_hex
     add esp, 4
- 
+    call pm_print_nl
+    
 	pop ecx
 	pop edi
 	pop esi

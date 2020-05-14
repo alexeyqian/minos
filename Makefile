@@ -23,7 +23,7 @@ boot/loader.bin: boot/loader.asm
 
 boot/kernel.bin: boot/kernel.asm
 	nasm $< -f elf32 -I 'boot/' -o boot/kernel.o
-	ld -m elf_i386 -s -o $@ boot/kernel.o
+	ld -m elf_i386 -s -Ttext 0x30400 -o $@ boot/kernel.o
 
 kernel/kernel.bin: kernel/kernel_entry.o kernel/kernel.o ${OBJ}
 	ld -m elf_i386 -Ttext 0x1000 --oformat binary -o $@  $^ 

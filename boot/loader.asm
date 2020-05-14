@@ -14,6 +14,9 @@
 LOADER_STACK_BASE equ 0x100
 KERNEL_BASE equ 0x8000
 KERNEL_OFFSET equ 0
+KERNEL_PHYSICAL_BASE equ KERNEL_BASE * 0x10
+KERNEL_PHYSICAL_ENTRY_POINT equ 0x30400 ; must match -Ttext in makefile
+
 PAGE_DIR_BASE   equ 0x100000 ; 1M
 PAGE_TABLE_BASE equ 0x101000 ; 1M + 4K
 
@@ -228,16 +231,25 @@ pm_start:
 	call pm_print_mem_ranges	
 	
 	call pm_setup_paging
-	
+
 	push pm_paging_enabled_str
 	call pm_print_str	
 	add esp, 4
+	call pm_print_nl
 
-	jmp $
+	call pm_init_kernel
+
+	; LOADER'S JOB ENDS AFTER THIS JMP
+	; ================ enter kernel code ========================
+	jmp code_selector: KERNEL_PHYSICAL_ENTRY_POINT
+	;=============================================================
+	
+	;jmp $
 
 %include "pm_lib.inc"
 %include "pm_print_mem_ranges.inc"
 %include "pm_setup_paging.inc"
+%include "pm_init_kernel.inc"
 
 ;[section .data]
 [bits 32]
@@ -273,7 +285,7 @@ pm_mem_range_buf equ LOADER_PHYSICAL_ADDR + rm_mem_range_buf
 pm_mem_table_title  equ	LOADER_PHYSICAL_ADDR + rm_mem_table_title
 ; ============= end of variables for check and display memory range =====================
 
-rm_paging_enabled_str: db 'paging is enabled.', 0xa, 0
+rm_paging_enabled_str: db 'paging is enabled.', 0
 pm_paging_enabled_str  equ	LOADER_PHYSICAL_ADDR + rm_paging_enabled_str
 
 ; 4K appended to the end of loader.bin to be used as stack.
