@@ -1,4 +1,12 @@
 ; loader: boot loader stage 2
+; loader.bin is loaded to 0x900100, 
+; and 0x90000 - 0x900100 is used as stack for loader.bin before entering protected mode.
+; after entering PM, the loader using it top 4K space as stack space for itself.
+; so means after entering PM, the ebp = esp = 0x90000 + size of loader.bin
+; then PM stack grow downward, max size 4K, beyond that will crash the system.
+; 4K is way large enough for loader.bin to use.
+; after entering kernel, we'll use another stack space.
+
 [org 0x100] 
 ;[section .text]
 [bits 16]
@@ -219,13 +227,17 @@ pm_start:
 
 	call pm_print_mem_ranges	
 	
-	; begin of setup paging ===========================
-	; end of setup paging =============================
+	call pm_setup_paging
+	
+	push pm_paging_enabled_str
+	call pm_print_str	
+	add esp, 4
 
 	jmp $
 
 %include "pm_lib.inc"
 %include "pm_print_mem_ranges.inc"
+%include "pm_setup_paging.inc"
 
 ;[section .data]
 [bits 32]
@@ -246,7 +258,7 @@ rm_mem_range_struct:
 	rm_mr_length_high:    dd 0
 	rm_mr_type:           dd 0
 rm_mem_range_buf: times 512 db 0 ; buffer to store address range structures array
-rm_mem_table_title: db  'addr_low  addr_high  length_low  length_high', 0
+rm_mem_table_title: db  'addr_low addr_high length_low length_high type', 0
 
 pm_mem_size_str equ LOADER_PHYSICAL_ADDR + rm_mem_size_str
 pm_mem_size equ LOADER_PHYSICAL_ADDR + rm_mem_size
@@ -260,6 +272,9 @@ pm_mem_range_struct equ LOADER_PHYSICAL_ADDR + rm_mem_range_struct
 pm_mem_range_buf equ LOADER_PHYSICAL_ADDR + rm_mem_range_buf
 pm_mem_table_title  equ	LOADER_PHYSICAL_ADDR + rm_mem_table_title
 ; ============= end of variables for check and display memory range =====================
+
+rm_paging_enabled_str: db 'paging is enabled.', 0xa, 0
+pm_paging_enabled_str  equ	LOADER_PHYSICAL_ADDR + rm_paging_enabled_str
 
 ; 4K appended to the end of loader.bin to be used as stack.
 pm_stack_space: times 0x1000 db 0 
