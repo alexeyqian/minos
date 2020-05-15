@@ -9,7 +9,7 @@
 ; esp, and GDT will also be moved from loader to kernel for easy control
 
 kernel_selector equ 8
-extern cstart
+extern kstart
 extern gdt_ptr
 
 [section .bss]
@@ -27,7 +27,7 @@ _start:
 	mov esp, ebp
 
 	sgdt [gdt_ptr] ; store GDTR into memory
-	call cstart ; gdt_ptr modified inside cstart
+	call kstart ; gdt_ptr modified inside kstart
 	lgdt [gdt_ptr] ; use new GDT
 
 	jmp kernel_selector:csinit

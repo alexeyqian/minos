@@ -1,8 +1,5 @@
 
-
-#include "type.h"
-#include "const.h"
-#include "protect.h"
+#include "klib.h"
 
 PUBLIC uint8_t gdt_ptr[6]; // bits 0-15 limits, 16-47 base
 PUBLIC struct descriptor gdt[GDT_SIZE];
@@ -10,8 +7,8 @@ PUBLIC struct descriptor gdt[GDT_SIZE];
 PUBLIC void kprint_str(char* msg);
 PUBLIC void memcpy(void* dest, void* src, int size);
 
-PUBLIC void cstart(){
-    kprint_str("\n cstart ...");
+PUBLIC void kstart(){
+    kprint_str("\n kstart ...");
 
     // copy old gdt_ptr to new gdt
     memcpy(&gdt, // new gdt
