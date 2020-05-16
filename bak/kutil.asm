@@ -5,11 +5,11 @@ WHITE_ON_BLACK equ 0x0f
 position_on_screen dd 0
 
 [section .text]
-global kmemcpy
+global memcpy
 global kprint_str
 
-; void* kmemcpy(void * es:dest, void* ds:src, int size)
-kmemcpy:
+; void* memcpy(void * es:dest, void* ds:src, int size)
+memcpy:
     push ebp
     mov ebp, esp
 
