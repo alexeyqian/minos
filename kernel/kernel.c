@@ -40,6 +40,43 @@ uint32_t __stack_chk_fail_local(){
     return 0;
 }
 
+// below exception and interruption handlers are defined in kernel_entry.asm
+// exception handlers
+void	divide_error();
+void	single_step_exception();
+void	nmi();
+void	breakpoint_exception();
+void	overflow();
+void	bounds_check();
+void	inval_opcode();
+void	copr_not_available();
+void	double_fault();
+void	copr_seg_overrun();
+void	inval_tss();
+void	segment_not_present();
+void	stack_exception();
+void	general_protection();
+void	page_fault();
+void	copr_error();
+
+// interrupt handlers
+void	irq00(); 
+void	irq01();
+void	irq02();
+void	irq03();
+void	irq04();
+void	irq05();
+void	irq06();
+void	irq07();
+void	irq08();
+void	irq09();
+void	irq10();
+void	irq11();
+void	irq12();
+void	irq13();
+void	irq14();
+void	irq15();
+
 // setup chip 8259A which is a bridge between interrupting devices and CPU
 // ICW: Initialization Command Word
 // there are 4 types of ICW, from ICW1 - ICW4, each has specific format
@@ -60,47 +97,6 @@ void init_8259a(){
 	out_byte(INT_S_CTLMASK,	0xFF);	             // Slave , OCW1. 
 }
 
-void spurious_irq(int irq){
-    kprint("spurious irq: ");
-	print_int_as_hex(irq);
-	kprint("\n");
-}
-// exception handlers
-void	divide_error();
-void	single_step_exception();
-void	nmi();
-void	breakpoint_exception();
-void	overflow();
-void	bounds_check();
-void	inval_opcode();
-void	copr_not_available();
-void	double_fault();
-void	copr_seg_overrun();
-void	inval_tss();
-void	segment_not_present();
-void	stack_exception();
-void	general_protection();
-void	page_fault();
-void	copr_error();
-
-// hardware interrupt handlers
-void	hwint00(); 
-void	hwint01();
-void	hwint02();
-void	hwint03();
-void	hwint04();
-void	hwint05();
-void	hwint06();
-void	hwint07();
-void	hwint08();
-void	hwint09();
-void	hwint10();
-void	hwint11();
-void	hwint12();
-void	hwint13();
-void	hwint14();
-void	hwint15();
-
 void init_idt_desc(unsigned char vector, uint8_t desc_type, pf_int_handler_t handler, unsigned char privilege){
     struct gate* p_gate	= &idt[vector];
 	uint32_t	 base	= (uint32_t)handler;
@@ -114,7 +110,7 @@ void init_idt_desc(unsigned char vector, uint8_t desc_type, pf_int_handler_t han
 void init_idt(){
     init_8259a();
 
-    // init interrupt gates
+    // init interrupt gates (descriptors)
 	init_idt_desc(INT_VECTOR_DIVIDE,	    DA_386IGate, divide_error,		    PRIVILEGE_KRNL);
 	init_idt_desc(INT_VECTOR_DEBUG,		    DA_386IGate, single_step_exception,	PRIVILEGE_KRNL);
 	init_idt_desc(INT_VECTOR_NMI,		    DA_386IGate, nmi,			        PRIVILEGE_KRNL);
@@ -132,24 +128,23 @@ void init_idt(){
 	init_idt_desc(INT_VECTOR_PAGE_FAULT,	DA_386IGate, page_fault,		    PRIVILEGE_KRNL);
 	init_idt_desc(INT_VECTOR_COPROC_ERR,	DA_386IGate, copr_error,		    PRIVILEGE_KRNL);
 
-	init_idt_desc(INT_VECTOR_IRQ0 + 0,   	DA_386IGate, hwint00,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ0 + 1,  	DA_386IGate, hwint01,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ0 + 2,  	DA_386IGate, hwint02,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ0 + 3,  	DA_386IGate, hwint03,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ0 + 4,	    DA_386IGate, hwint04,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ0 + 5,	    DA_386IGate, hwint05,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ0 + 6,  	DA_386IGate, hwint06,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ0 + 7,  	DA_386IGate, hwint07,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ8 + 0,  	DA_386IGate, hwint08,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ8 + 1,	    DA_386IGate, hwint09,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ8 + 2,  	DA_386IGate, hwint10,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ8 + 3,  	DA_386IGate, hwint11,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ8 + 4,	    DA_386IGate, hwint12,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ8 + 5,  	DA_386IGate, hwint13,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ8 + 6,  	DA_386IGate, hwint14,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ8 + 7,  	DA_386IGate, hwint15,			    PRIVILEGE_KRNL);
+	init_idt_desc(INT_VECTOR_IRQ0 + 0,   	DA_386IGate, irq00,			    PRIVILEGE_KRNL);
+	init_idt_desc(INT_VECTOR_IRQ0 + 1,  	DA_386IGate, irq01,			    PRIVILEGE_KRNL);
+	init_idt_desc(INT_VECTOR_IRQ0 + 2,  	DA_386IGate, irq02,			    PRIVILEGE_KRNL);
+	init_idt_desc(INT_VECTOR_IRQ0 + 3,  	DA_386IGate, irq03,			    PRIVILEGE_KRNL);
+	init_idt_desc(INT_VECTOR_IRQ0 + 4,	    DA_386IGate, irq04,			    PRIVILEGE_KRNL);
+	init_idt_desc(INT_VECTOR_IRQ0 + 5,	    DA_386IGate, irq05,			    PRIVILEGE_KRNL);
+	init_idt_desc(INT_VECTOR_IRQ0 + 6,  	DA_386IGate, irq06,			    PRIVILEGE_KRNL);
+	init_idt_desc(INT_VECTOR_IRQ0 + 7,  	DA_386IGate, irq07,			    PRIVILEGE_KRNL);
+	init_idt_desc(INT_VECTOR_IRQ8 + 0,  	DA_386IGate, irq08,			    PRIVILEGE_KRNL);
+	init_idt_desc(INT_VECTOR_IRQ8 + 1,	    DA_386IGate, irq09,			    PRIVILEGE_KRNL);
+	init_idt_desc(INT_VECTOR_IRQ8 + 2,  	DA_386IGate, irq10,			    PRIVILEGE_KRNL);
+	init_idt_desc(INT_VECTOR_IRQ8 + 3,  	DA_386IGate, irq11,			    PRIVILEGE_KRNL);
+	init_idt_desc(INT_VECTOR_IRQ8 + 4,	    DA_386IGate, irq12,			    PRIVILEGE_KRNL);
+	init_idt_desc(INT_VECTOR_IRQ8 + 5,  	DA_386IGate, irq13,			    PRIVILEGE_KRNL);
+	init_idt_desc(INT_VECTOR_IRQ8 + 6,  	DA_386IGate, irq14,			    PRIVILEGE_KRNL);
+	init_idt_desc(INT_VECTOR_IRQ8 + 7,  	DA_386IGate, irq15,			    PRIVILEGE_KRNL);
 }
-
 
 void exception_handler(int vec_no, int err_code, int eip, int cs, int eflags){   
     char err_description[][64] = {	
@@ -175,9 +170,9 @@ void exception_handler(int vec_no, int err_code, int eip, int cs, int eflags){
         "#XF SIMD Floating-Point Exception"
     };
 
-    kprint("Exception!");
+    kprint("Exception handler:");
     kprint(err_description[vec_no]);
-    kprint("\n\n");
+    kprint("\n");
     kprint("EFLAGS: ");
     print_int_as_hex(eflags);
     kprint(" CS: ");
@@ -189,4 +184,10 @@ void exception_handler(int vec_no, int err_code, int eip, int cs, int eflags){
         kprint("Error Code: ");
         print_int_as_hex(err_code);
     }    
+}
+
+void irq_handler(int irq){
+    kprint("IRQ handler: ");
+	print_int_as_hex(irq);
+	kprint("\n");
 }
