@@ -8,7 +8,8 @@
 
 ; esp, and GDT will also be moved from loader to kernel for easy control
 
-kernel_selector equ 8
+KERNEL_SELECTOR equ 8
+
 extern kstart
 extern gdt_ptr
 
@@ -30,7 +31,7 @@ _start:
 	call kstart ; gdt_ptr modified inside kstart
 	lgdt [gdt_ptr] ; use new GDT
 
-	jmp kernel_selector:csinit
+	jmp KERNEL_SELECTOR:csinit
 
 csinit:
 	push 0

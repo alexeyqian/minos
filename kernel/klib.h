@@ -1,22 +1,20 @@
 #ifndef _MINOS_KLIB_H_
 #define _MINOS_KLIB_H_
 
-#define PUBLIC
-#define PRIVATE static // limit scope
-#define GDT_SIZE 128 // number of descriptors in GDT/LDT 
+#include "types.h"
 
-typedef unsigned int   uint32_t;
-typedef unsigned short uint16_t;
-typedef unsigned char  uint8_t;
-typedef int            bool_t;
+// IO read and write
+// in: read data from device register, out: write data to device register
+// I/O addresses/ports that are mapped to speciﬁc controller registers
 
-struct descriptor{
-    uint16_t limit_low;
-    uint16_t base_low;
-    uint8_t  base_mid;
-    uint8_t attr;
-    uint8_t limit_high_attr2;
-    uint8_t base_high;
-};
+uint8_t in_byte(io_port_t port);
+void out_byte(io_port_t port, uint8_t data);
+uint16_t in_word(io_port_t port);
+void out_word(io_port_t, uint16_t data);
+
+void kmemcpy(void* dest, void* src, int size);
+void kprint_str(char* msg);
+void kprint_int_as_hex(int irq);
+char *itoa(char* buf, int num);
 
 #endif

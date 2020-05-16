@@ -5,7 +5,7 @@
 #include "screen.h"
 
 char *memset(char *dest, char val, int count);
-void memcpy(char* source, char* dest, int num_bytes);
+void kmemcpy(char* source, char* dest, int num_bytes);
 int memcmp(const void*, const void*, size_t);
 
 size_t strlen(const char*);
