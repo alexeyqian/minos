@@ -8,13 +8,47 @@
 
 ; esp, and GDT will also be moved from loader to kernel for easy control
 
+; TODO: move to kernel_entry.inc
 KERNEL_SELECTOR equ 8
+
+P_STACKBASE	equ	0
+GSREG		equ	P_STACKBASE
+FSREG		equ	GSREG		+ 4
+ESREG		equ	FSREG		+ 4
+DSREG		equ	ESREG		+ 4
+EDIREG		equ	DSREG		+ 4
+ESIREG		equ	EDIREG		+ 4
+EBPREG		equ	ESIREG		+ 4
+KERNELESPREG	equ	EBPREG		+ 4
+EBXREG		equ	KERNELESPREG	+ 4
+EDXREG		equ	EBXREG		+ 4
+ECXREG		equ	EDXREG		+ 4
+EAXREG		equ	ECXREG		+ 4
+RETADR		equ	EAXREG		+ 4
+EIPREG		equ	RETADR		+ 4
+CSREG		equ	EIPREG		+ 4
+EFLAGSREG	equ	CSREG		+ 4
+ESPREG		equ	EFLAGSREG	+ 4
+SSREG		equ	ESPREG		+ 4
+P_STACKTOP	equ	SSREG		+ 4
+P_LDT_SEL	equ	P_STACKTOP
+P_LDT		equ	P_LDT_SEL	+ 4
+
+TSS3_S_SP0	equ	4
+
+; have to match kernel.h 
+SELECTOR_CODE		 equ 0x08		; Defined in loader
+SELECTOR_TSS		 equ 0x20		; TSS. jump from outer to inner, the values of SS and ESP will be restored from it.
+SELECTOR_KERNEL_CODE equ SELECTOR_CODE
 
 ; extern global variable
 extern gdt_ptr
 extern idt_ptr
+extern p_proc_ready
+extern tss
 ; extern functions
 extern kstart
+extern kmain
 extern exception_handler
 extern irq_handler
 
@@ -26,6 +60,7 @@ stack_top:
 
 [section .text]
 global _start
+global resume
 
 _start:    	
 	mov ebp, stack_top
@@ -39,28 +74,37 @@ _start:
 	jmp KERNEL_SELECTOR:csinit
 
 csinit:
-	push 0
-	popfd ; pop top of stack into eflag, set eflags = 0
+	;push 0
+	;popfd ; pop top of stack into eflag, set eflags = 0
+	;sti ; iretd in IRQ0 will enable it.
+	;hlt
 
-	sti
-	hlt
+	xor eax, eax
+	mov ax, SELECTOR_TSS
+	ltr ax ; load task register
+
+	jmp kmain
 
 ; ======== not used yet
-restart:
-	mov esp, [p_proc_ready] ; point to the proc table of next ready process
-	lldt [esp + P_LDT_SEL]
-	lea eax, [esp + P_STACKTOP]
+; general steps to resume a process
+; move esp to point to the struct proc pointer
+; then pop up all registers to resume the process
+resume: 
+	mov esp, [p_proc_ready] ; point to the struct proc of ready process
+	lldt [esp + P_LDT_SEL] ; equals the p_proc_ready->ldt_sel
+	lea eax, [esp + P_STACKTOP] ; point to beginning of eip, cs, eflags, esp, ss
 	mov dword [tss + TSS3_S_SP0], eax
-restart_krnl_int:
-	dec dword [k_reenter]
+resume_krnl_int:
+	;dec dword [k_reenter] ; purpose of k_reenter??
 	; the pop order have to match the stack_frame inside p_proc_ready
 	pop gs ; from top address to bottom: 
 	pop fs ; eax, ecx, edx, ebx, esp, ebp, esi edi  (restored by popad)
 	pop es ; ds, es, fs, gs.
 	pop ds
 	popad
-	add esp, 4
-	iretd
+	add esp, 4 ; remove retaddr from stack_frame ; PURPOSE OF retaddr?
+	iretd      ; so then when do the iretd, the stack is exactly: 
+			   ; eip, cs, eflags, esp, ss
 
 ; ======== end of not used
 
@@ -176,7 +220,8 @@ exception:
 
 ALIGN	16
 irq00:		; Interrupt routine for irq 0 (the clock).
-	irq_master	0
+	;irq_master	0
+	iretd ; TODO: for now
 
 ALIGN	16
 irq01:		; Interrupt routine for irq 1 (keyboard)

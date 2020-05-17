@@ -1,4 +1,4 @@
-#include "const.h"
+#include "kernel.h"
 #include "klib.h"
 
 //global variables
@@ -6,13 +6,15 @@ uint8_t			    gdt_ptr[6];	// 0~15:Limit  16~47:Base
 struct descriptor   gdt[GDT_SIZE];
 uint8_t			    idt_ptr[6];	// 0~15:Limit  16~47:Base
 struct gate			idt[IDT_SIZE];
-//struct tss tss;
+struct tss          tss;
 struct proc*        p_proc_ready;
-struct proc         proc_table[];
-char                task_stack[];
+struct proc         proc_table[NR_TASKS];
+char                task_stack[STACK_SIZE_TOTAL];
 
 
 void init_idt();
+void init_tss_and_ldt();
+void resume();
 
 void kstart(){
     clear_screen();
@@ -43,39 +45,77 @@ void kstart(){
 	*p_idt_base  = (uint32_t)&idt;
 
 	init_idt();
+	init_tss_and_ldt();
 
 	kprint("\n----- kstart end -----\n");
 }
 
+// from segment to physical address
+uint32_t seg_to_physical(uint16_t seg){
+	struct descriptor* p_dest = &gdt[seg >> 3];
+	return (p_dest->base_high << 24) | (p_dest->base_mid << 16) | (p_dest->base_low);
+}
+
+void init_descriptor(struct descriptor* p_desc, uint32_t base, uint32_t limit, uint16_t attribute);
+void init_tss_and_ldt(){
+	// Fill TSS descriptor in GDT
+	memset((char*)&tss, 0, sizeof(tss));
+	tss.ss0 = SELECTOR_KERNEL_DATA;
+	init_descriptor((struct descriptor*)&gdt[INDEX_TSS],
+			virtual_to_physical(seg_to_physical(SELECTOR_KERNEL_DATA), &tss),
+			sizeof(tss) - 1,
+			DA_386TSS);
+	tss.iobase	= sizeof(tss);	// NO IOPL map
+
+	// Fill LDT descriptor in GDT
+	init_descriptor((struct descriptor*)&gdt[INDEX_LDT_FIRST],
+			virtual_to_physical(seg_to_physical(SELECTOR_KERNEL_DATA), proc_table[0].ldts),
+			LDT_SIZE * sizeof(struct descriptor) - 1,
+			DA_LDT);
+
+}
+
+// TODO: move to klib
+void delay(int time){
+	int i, j, k;
+	for(i = 0; i < time; i++)
+		for(j = 0; j < 10000; j++)
+			for(k = 0; k < 10000; k ++){}
+}
+
+void test_a();
 void kmain(){ // entrance of process
 	kprint("\n -------- main begin --------- \n");
 	struct proc* p_proc = proc_table;
 	p_proc->ldt_sel = SELECTOR_LDT_FIRST;
 	
 	memcpy(
-		&p_proc->ldts[0], 
-		&gdt[SELECTOR_KERNEL_CODE >> 3], 
+		(char*)&p_proc->ldts[0], 
+		(char*)&gdt[SELECTOR_KERNEL_CODE >> 3], 
 		sizeof(struct descriptor));	
 	p_proc->ldts[0].attr1 = DA_C | PRIVILEGE_TASK << 5;	// change the DPL
 	
 	memcpy(
-		&p_proc->ldts[1], 
-		&gdt[SELECTOR_KERNEL_DATA >> 3], 
+		(char*)&p_proc->ldts[1], 
+		(char*)&gdt[SELECTOR_KERNEL_DATA >> 3], 
 		sizeof(struct descriptor));
 	p_proc->ldts[1].attr1 = DA_DRW | PRIVILEGE_TASK << 5;	// change the DPL
 	
+	// cs points to first LDT descriptor
+	// ds, es, fs, ss point to sencod LDT descriptor
+	// gs points to video descroptor in GDT
 	p_proc->regs.cs		= ((8 * 0) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | RPL_TASK;
 	p_proc->regs.ds		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | RPL_TASK;
 	p_proc->regs.es		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | RPL_TASK;
 	p_proc->regs.fs		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | RPL_TASK;
 	p_proc->regs.ss		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | RPL_TASK;
-	p_proc->regs.gs		= (SELECTOR_KERNEL_GS & SA_RPL_MASK) | RPL_TASK;
+	p_proc->regs.gs		= (SELECTOR_KERNEL_VIDEO & SA_RPL_MASK) | RPL_TASK;
 	p_proc->regs.eip	= (uint32_t)test_a;
 	p_proc->regs.esp	= (uint32_t) task_stack + STACK_SIZE_TOTAL;
 	p_proc->regs.eflags	= 0x1202;	// IF=1, IOPL=1, bit 2 is always 1.
 
 	p_proc_ready = proc_table; 
-	restart();
+	resume();
 	while(1){}
 }
 
@@ -149,6 +189,16 @@ void init_8259a(){
 
 	out_byte(INT_M_CTLMASK,	0xFD);	             // Master, OCW1. 
 	out_byte(INT_S_CTLMASK,	0xFF);	             // Slave , OCW1. 
+}
+
+void init_descriptor(struct descriptor* p_desc, uint32_t base, uint32_t limit, uint16_t attribute)
+{
+	p_desc->limit_low		= limit & 0x0FFFF;		     // 段界限 1		(2 字节)
+	p_desc->base_low		= base & 0x0FFFF;		     // 段基址 1		(2 字节)
+	p_desc->base_mid		= (base >> 16) & 0x0FF;		 // 段基址 2		(1 字节)
+	p_desc->attr1			= attribute & 0xFF;		     // 属性 1
+	p_desc->limit_high_attr2	= ((limit >> 16) & 0x0F) | (attribute >> 8) & 0xF0; // 段界限 2 + 属性 2
+	p_desc->base_high		= (base >> 24) & 0x0FF;		 // 段基址 3		(1 字节)
 }
 
 void init_idt_desc(unsigned char vector, uint8_t desc_type, pf_int_handler_t handler, unsigned char privilege){
