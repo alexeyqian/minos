@@ -15,6 +15,7 @@ void out_word(io_port_t, uint16_t data);
 char* memset(char *dst, char val, int count);
 int memcmp(const char*, const char*, int);
 void memcpy(char* dst, const char* src, int size);
+void strcpy(char* dst, const char* src);
 
 // ==================  screen.h ================== 
 #define VIDEO_ADDRESS 0xb8000

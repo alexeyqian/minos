@@ -97,9 +97,11 @@
 #define	INT_VECTOR_IRQ0			    0x20
 #define	INT_VECTOR_IRQ8			    0x28
 
-// TODO: rename to MAX_TASKS_NUM
-#define MAX_TASKS_NUM 1 // max number of tasks 
-#define STACK_SIZE_TOTAL 0x8000
+#define MAX_TASKS_NUM 3  
+#define STACK_SIZE_TESTA 0x8000
+#define STACK_SIZE_TESTB 0x8000
+#define STACK_SIZE_TESTC 0x8000
+#define STACK_SIZE_TOTAL STACK_SIZE_TESTA+STACK_SIZE_TESTB+STACK_SIZE_TESTC
 
 // MACRO: linear address to physical address
 #define virtual_to_physical(seg_base, virtual) (uint32_t)(((uint32_t)seg_base) + (uint32_t)(virtual))
@@ -207,7 +209,8 @@ typedef struct stack_frame{ // proc_ptr points to here
 typedef struct proc{
     struct stack_frame  regs;           // process registers saved in stack frame
     uint16_t            ldt_sel;        // selector in gdt giving the ldt base and limit
-    struct descriptor   ldts[LDT_SIZE]; // local descriptors for code and data
+    // TODO: rename to ldt
+	struct descriptor   ldts[LDT_SIZE]; // local descriptors for code and data
                                         // descriptor 1 for code, descriptor 2 for data
                                         // LDT_SIZE = 2
     uint32_t            pid;
@@ -216,4 +219,9 @@ typedef struct proc{
 
 // The paging has made LDT almost obsolete, and there is no longer need for multiple LDT descriptors.
 
+typedef struct task{
+	pf_task_t initial_eip;
+	int stack_size;
+	char name[32];
+}task_s;
 #endif

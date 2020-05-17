@@ -1,7 +1,20 @@
 #include "kernel.h"
 #include "klib.h"
 
-//global variables
+// function declaration
+void init_descriptor(struct descriptor* p_desc, uint32_t base, uint32_t limit, uint16_t attribute);
+void init_idt_descriptor(unsigned char vector, uint8_t desc_type, pf_int_handler_t handler, unsigned char privilege);
+uint32_t seg_to_physical(uint16_t seg);
+void init_idt();
+void init_tss();
+void init_ldt_descriptors_in_dgt();
+void delay(int time);
+void resume();
+void test_a();
+void test_b();
+void test_c();
+
+// global variables
 uint8_t			    gdt_ptr[6];	// 0~15:Limit  16~47:Base
 struct descriptor   gdt[GDT_SIZE];
 uint8_t			    idt_ptr[6];	// 0~15:Limit  16~47:Base
@@ -9,18 +22,13 @@ struct gate			idt[IDT_SIZE];
 struct tss          tss;
 struct proc*        p_proc_ready;
 struct proc         proc_table[MAX_TASKS_NUM];
+struct task         task_table[MAX_TASKS_NUM]={
+					{test_a, STACK_SIZE_TESTA, "TestA"},
+					{test_b, STACK_SIZE_TESTB, "TestB"},
+					{test_c, STACK_SIZE_TESTC, "TestC"}
+					};
 char                task_stack[STACK_SIZE_TOTAL];
-
-void init_descriptor(struct descriptor* p_desc, uint32_t base, uint32_t limit, uint16_t attribute);
-void init_idt_descriptor(unsigned char vector, uint8_t desc_type, pf_int_handler_t handler, unsigned char privilege);
-uint32_t seg_to_physical(uint16_t seg);
-void init_idt();
-void init_tss();
-void init_ldt();
-void delay(int time);
-void resume();
-
-void test_a();
+int k_reenter = -1;
 
 void kstart(){
     clear_screen();
@@ -52,40 +60,62 @@ void kstart(){
 
 	init_idt();
 	init_tss();
-	init_ldt();
+	init_ldt_descriptors_in_dgt();
 
 	kprint("\n----- kstart end -----\n");
 }
 
 void kmain(){ // entrance of process
 	kprint("\n -------- main begin --------- \n");
+
+	k_reenter = -1;
+	
 	struct proc* p_proc = proc_table;
-	p_proc->ldt_sel = SELECTOR_LDT_FIRST;
+	struct task* p_task = task_table;
+	char* p_task_stack  = task_stack + STACK_SIZE_TOTAL;
+	uint16_t selector_ldt = SELECTOR_LDT_FIRST;
+
+	// setup proc_table according to task_table
+	// each process will create a LDT descriptor in GDT
+	// added after SELECTOR_LDT_FIRST
+	int i;
+	for(i = 0; i < MAX_TASKS_NUM; i++){
+		strcpy(p_proc->p_name, p_task->name);
+		p_proc->pid = 1;
+		p_proc->ldt_sel = selector_ldt;
+
+		memcpy(
+			(char*)&p_proc->ldts[0], 
+			(char*)&gdt[SELECTOR_KERNEL_CODE >> 3], 
+			sizeof(struct descriptor));	
+		// change the DPL
+		p_proc->ldts[0].attr1 = DA_C | PRIVILEGE_TASK << 5;	
 	
-	memcpy(
-		(char*)&p_proc->ldts[0], 
-		(char*)&gdt[SELECTOR_KERNEL_CODE >> 3], 
-		sizeof(struct descriptor));	
-	p_proc->ldts[0].attr1 = DA_C | PRIVILEGE_TASK << 5;	// change the DPL
+		memcpy(
+			(char*)&p_proc->ldts[1], 
+			(char*)&gdt[SELECTOR_KERNEL_DATA >> 3], 
+			sizeof(struct descriptor));
+		// change the DPL
+		p_proc->ldts[1].attr1 = DA_DRW | PRIVILEGE_TASK << 5;	
+
+		// cs points to first LDT descriptor
+		// ds, es, fs, ss point to sencod LDT descriptor
+		// gs points to video descroptor in GDT
+		p_proc->regs.cs		= ((8 * 0) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | RPL_TASK;
+		p_proc->regs.ds		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | RPL_TASK;
+		p_proc->regs.es		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | RPL_TASK;
+		p_proc->regs.fs		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | RPL_TASK;
+		p_proc->regs.ss		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | RPL_TASK;
+		p_proc->regs.gs		= (SELECTOR_KERNEL_VIDEO & SA_RPL_MASK) | RPL_TASK;
+		p_proc->regs.eip	= (uint32_t)p_task->initial_eip;
+		p_proc->regs.esp	= (uint32_t) p_task_stack;
+		p_proc->regs.eflags	= 0x1202;	// IF=1, IOPL=1, bit 2 is always 1.
 	
-	memcpy(
-		(char*)&p_proc->ldts[1], 
-		(char*)&gdt[SELECTOR_KERNEL_DATA >> 3], 
-		sizeof(struct descriptor));
-	p_proc->ldts[1].attr1 = DA_DRW | PRIVILEGE_TASK << 5;	// change the DPL
-	
-	// cs points to first LDT descriptor
-	// ds, es, fs, ss point to sencod LDT descriptor
-	// gs points to video descroptor in GDT
-	p_proc->regs.cs		= ((8 * 0) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | RPL_TASK;
-	p_proc->regs.ds		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | RPL_TASK;
-	p_proc->regs.es		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | RPL_TASK;
-	p_proc->regs.fs		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | RPL_TASK;
-	p_proc->regs.ss		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | RPL_TASK;
-	p_proc->regs.gs		= (SELECTOR_KERNEL_VIDEO & SA_RPL_MASK) | RPL_TASK;
-	p_proc->regs.eip	= (uint32_t)test_a;
-	p_proc->regs.esp	= (uint32_t) task_stack + STACK_SIZE_TOTAL;
-	p_proc->regs.eflags	= 0x1202;	// IF=1, IOPL=1, bit 2 is always 1.
+		p_task_stack -= p_task->stack_size;
+		p_proc++;
+		p_task++;
+		selector_ldt += 1 << 3;	
+	}
 
 	p_proc_ready = proc_table; 
 	resume();
@@ -106,13 +136,20 @@ void init_tss(){
 	tss.iobase	= sizeof(tss);	// NO IOPL map
 }
 
-void init_ldt(){
-	// Fill LDT descriptor in GDT
-	init_descriptor((struct descriptor*)&gdt[INDEX_LDT_FIRST],
-			virtual_to_physical(seg_to_physical(SELECTOR_KERNEL_DATA), proc_table[0].ldts),
-			LDT_SIZE * sizeof(struct descriptor) - 1,
-			DA_LDT);
-
+// TODO: rename to init_ldt_descriptors_in_dgt
+void init_ldt_descriptors_in_dgt(){
+	int i;
+	struct proc* p_proc = proc_table;
+	uint16_t selector_ldt = INDEX_LDT_FIRST << 3; // ??
+	for(i = 0; i < MAX_TASKS_NUM; i++){
+		// Fill LDT descriptor in GDT
+		init_descriptor((struct descriptor*)&gdt[selector_ldt >> 3],
+				virtual_to_physical(seg_to_physical(SELECTOR_KERNEL_DATA), proc_table[i].ldts),
+				LDT_SIZE * sizeof(struct descriptor) - 1,
+				DA_LDT);
+		p_proc++;
+		selector_ldt += 1 << 3;
+	}
 }
 
 void delay(int time){
@@ -132,6 +169,26 @@ void test_a(){
 	int i = 0;
 	while(1){
 		kprint("A");
+		print_int(i++);
+		kprint(".");
+		delay(1);
+	}
+}
+
+void test_b(){
+	int i = 0x1000;
+	while(1){
+		kprint("B");
+		print_int(i++);
+		kprint(".");
+		delay(1);
+	}
+}
+
+void test_c(){
+	int i = 0x2000;
+	while(1){
+		kprint("C");
 		print_int(i++);
 		kprint(".");
 		delay(1);
@@ -303,4 +360,12 @@ void irq_handler(int irq){
     kprint("IRQ handler: ");
 	print_int_as_hex(irq);
 	kprint("\n");
+}
+
+void clock_handler(int irq){
+	kprint("#");
+	// round robin process scheduler.
+	p_proc_ready++;
+	if(p_proc_ready >= proc_table + MAX_TASKS_NUM)
+		p_proc_ready = proc_table;
 }

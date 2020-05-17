@@ -45,6 +45,14 @@ void memcpy(char* dst, const char* src, int size){
         dst[i] = src[i];    
 }
 
+void strcpy(char* dst, const char* src){
+	int i = 0;
+    while(src[i] != 0){
+        dst[i] = src[i];  
+        i++;
+    }
+}
+
 int get_cursor(){
     out_byte(REG_SCREEN_CTRL, 14);
     int offset = in_byte(REG_SCREEN_DATA) << 8;

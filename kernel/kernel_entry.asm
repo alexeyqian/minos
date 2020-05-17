@@ -11,7 +11,7 @@
 ; TODO: move to kernel_entry.inc
 KERNEL_SELECTOR equ 8
 
-P_STACKBASE	equ	0
+P_STACKBASE	equ	0              ; process stack base
 GSREG		equ	P_STACKBASE
 FSREG		equ	GSREG		+ 4
 ESREG		equ	FSREG		+ 4
@@ -30,9 +30,9 @@ CSREG		equ	EIPREG		+ 4
 EFLAGSREG	equ	CSREG		+ 4
 ESPREG		equ	EFLAGSREG	+ 4
 SSREG		equ	ESPREG		+ 4
-P_STACKTOP	equ	SSREG		+ 4
-P_LDT_SEL	equ	P_STACKTOP
-P_LDT		equ	P_LDT_SEL	+ 4
+P_STACKTOP	equ	SSREG		+ 4 ; process stack top
+P_LDT_SEL	equ	P_STACKTOP      ; process ldt selector
+P_LDT		equ	P_LDT_SEL	+ 4 ; process ldt
 
 TSS3_S_SP0	equ	4
 
@@ -49,12 +49,15 @@ extern gdt_ptr
 extern idt_ptr
 extern p_proc_ready
 extern tss
+extern k_reenter
 ; extern functions
 extern kstart
 extern kmain
 extern exception_handler
 extern irq_handler
+extern clock_handler
 extern kprint
+extern delay
 
 [bits 32]
 
@@ -63,14 +66,14 @@ msg_clock_int db "^", 0
 
 [section .bss]
 stack_space resb 2*1024
-stack_top: ; this is kernel stack
+kernel_stack_top: 
 
 [section .text]
 global _start
 global resume
 
 _start:    	
-	mov ebp, stack_top
+	mov ebp, kernel_stack_top
 	mov esp, ebp
 
 	sgdt [gdt_ptr] ; for moving gdt
@@ -244,25 +247,43 @@ irq00:		; Interrupt routine for irq 0 (the clock).
 	mov ds, dx
 	mov es, dx
 
-	; IMPORTANT PART
-	mov esp, stack_top ; switch to kernel stack
-
 	inc byte [gs:0] ; change first cha on screen for testing
 	mov al, EOI ; reenable master 8259a
 	out INT_M_CTL, al
 
-	; ... other operations ...
-	; testing
-	push msg_clock_int
-	call kprint
+	inc dword [k_reenter]
+	cmp dword [k_reenter], 0
+	jne .re_enter
+
+	; IMPORTANT PART
+	mov esp, kernel_stack_top ; switch to kernel stack
+	sti
+
+	push 0
+	call clock_handler
 	add esp, 4
 
+	; ... other operations ...
+	; testing
+	;push msg_clock_int
+	;call kprint
+	;add esp, 4
+
+	;push 1
+	;call delay
+	;add esp, 4
+
+	cli
+
 	mov esp, [p_proc_ready] ; leave kernel stack
+	lldt [esp + P_LDT_SEL] ; load process LDT
 
 	; setkup tss.esp0 for next process interrupt.
 	lea eax, [esp + P_STACKTOP]
 	mov dword [tss + TSS3_S_SP0], eax
 
+.re_enter:
+	dec dword [k_reenter]
 	pop gs
 	pop fs
 	pop es
