@@ -3,6 +3,7 @@
 
 #include "types.h"
 
+// ==================  low_level.h ================== 
 // IO read and write
 // in: read data from device register, out: write data to device register
 // I/O addresses/ports that are mapped to speciﬁc controller registers
@@ -29,8 +30,8 @@ int  get_cursor();
 void set_cursor(int offset);
 void print_at(char* str, int row, int col);
 void print_char(char c, int row, int col, char attribute);
-// ================== end of screen.h ================== 
 
+// ================== end of string.h ================== 
 uint32_t digit_count(int num);
 int strlen(const char* str);
 // integer to zero terminated string

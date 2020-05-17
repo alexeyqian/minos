@@ -8,13 +8,19 @@ uint8_t			    idt_ptr[6];	// 0~15:Limit  16~47:Base
 struct gate			idt[IDT_SIZE];
 struct tss          tss;
 struct proc*        p_proc_ready;
-struct proc         proc_table[NR_TASKS];
+struct proc         proc_table[MAX_TASKS_NUM];
 char                task_stack[STACK_SIZE_TOTAL];
 
-
+void init_descriptor(struct descriptor* p_desc, uint32_t base, uint32_t limit, uint16_t attribute);
+void init_idt_descriptor(unsigned char vector, uint8_t desc_type, pf_int_handler_t handler, unsigned char privilege);
+uint32_t seg_to_physical(uint16_t seg);
 void init_idt();
-void init_tss_and_ldt();
+void init_tss();
+void init_ldt();
+void delay(int time);
 void resume();
+
+void test_a();
 
 void kstart(){
     clear_screen();
@@ -45,45 +51,12 @@ void kstart(){
 	*p_idt_base  = (uint32_t)&idt;
 
 	init_idt();
-	init_tss_and_ldt();
+	init_tss();
+	init_ldt();
 
 	kprint("\n----- kstart end -----\n");
 }
 
-// from segment to physical address
-uint32_t seg_to_physical(uint16_t seg){
-	struct descriptor* p_dest = &gdt[seg >> 3];
-	return (p_dest->base_high << 24) | (p_dest->base_mid << 16) | (p_dest->base_low);
-}
-
-void init_descriptor(struct descriptor* p_desc, uint32_t base, uint32_t limit, uint16_t attribute);
-void init_tss_and_ldt(){
-	// Fill TSS descriptor in GDT
-	memset((char*)&tss, 0, sizeof(tss));
-	tss.ss0 = SELECTOR_KERNEL_DATA;
-	init_descriptor((struct descriptor*)&gdt[INDEX_TSS],
-			virtual_to_physical(seg_to_physical(SELECTOR_KERNEL_DATA), &tss),
-			sizeof(tss) - 1,
-			DA_386TSS);
-	tss.iobase	= sizeof(tss);	// NO IOPL map
-
-	// Fill LDT descriptor in GDT
-	init_descriptor((struct descriptor*)&gdt[INDEX_LDT_FIRST],
-			virtual_to_physical(seg_to_physical(SELECTOR_KERNEL_DATA), proc_table[0].ldts),
-			LDT_SIZE * sizeof(struct descriptor) - 1,
-			DA_LDT);
-
-}
-
-// TODO: move to klib
-void delay(int time){
-	int i, j, k;
-	for(i = 0; i < time; i++)
-		for(j = 0; j < 10000; j++)
-			for(k = 0; k < 10000; k ++){}
-}
-
-void test_a();
 void kmain(){ // entrance of process
 	kprint("\n -------- main begin --------- \n");
 	struct proc* p_proc = proc_table;
@@ -117,6 +90,42 @@ void kmain(){ // entrance of process
 	p_proc_ready = proc_table; 
 	resume();
 	while(1){}
+}
+
+// used for jump from ring1 to ring0
+// most important change: ss and esp
+// Q: when ss0 is initialized/setup?
+void init_tss(){
+	// Fill TSS descriptor in GDT
+	memset((char*)&tss, 0, sizeof(tss));
+	tss.ss0 = SELECTOR_KERNEL_DATA;
+	init_descriptor((struct descriptor*)&gdt[INDEX_TSS],
+			virtual_to_physical(seg_to_physical(SELECTOR_KERNEL_DATA), &tss),
+			sizeof(tss) - 1,
+			DA_386TSS);
+	tss.iobase	= sizeof(tss);	// NO IOPL map
+}
+
+void init_ldt(){
+	// Fill LDT descriptor in GDT
+	init_descriptor((struct descriptor*)&gdt[INDEX_LDT_FIRST],
+			virtual_to_physical(seg_to_physical(SELECTOR_KERNEL_DATA), proc_table[0].ldts),
+			LDT_SIZE * sizeof(struct descriptor) - 1,
+			DA_LDT);
+
+}
+
+void delay(int time){
+	int i, j, k;
+	for(i = 0; i < time; i++)
+		for(j = 0; j < 1000; j++)
+			for(k = 0; k < 1000; k ++){}
+}
+
+// from segment to physical address
+uint32_t seg_to_physical(uint16_t seg){
+	struct descriptor* p_dest = &gdt[seg >> 3];
+	return (p_dest->base_high << 24) | (p_dest->base_mid << 16) | (p_dest->base_low);
 }
 
 void test_a(){
@@ -187,7 +196,7 @@ void init_8259a(){
 	out_byte(INT_M_CTLMASK,	0x1);			     // Master, ICW4.
 	out_byte(INT_S_CTLMASK,	0x1);		         // Slave , ICW4.
 
-	out_byte(INT_M_CTLMASK,	0xFD);	             // Master, OCW1. 
+	out_byte(INT_M_CTLMASK,	0xFE);	             // Master, OCW1. 
 	out_byte(INT_S_CTLMASK,	0xFF);	             // Slave , OCW1. 
 }
 
@@ -201,7 +210,7 @@ void init_descriptor(struct descriptor* p_desc, uint32_t base, uint32_t limit, u
 	p_desc->base_high		= (base >> 24) & 0x0FF;		 // 段基址 3		(1 字节)
 }
 
-void init_idt_desc(unsigned char vector, uint8_t desc_type, pf_int_handler_t handler, unsigned char privilege){
+void init_idt_descriptor(unsigned char vector, uint8_t desc_type, pf_int_handler_t handler, unsigned char privilege){
     struct gate* p_gate	= &idt[vector];
 	uint32_t	 base	= (uint32_t)handler;
 	p_gate->offset_low	= base & 0xFFFF;
@@ -215,39 +224,39 @@ void init_idt(){
     init_8259a();
 
     // init interrupt gates (descriptors)
-	init_idt_desc(INT_VECTOR_DIVIDE,	    DA_386IGate, divide_error,		    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_DEBUG,		    DA_386IGate, single_step_exception,	PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_NMI,		    DA_386IGate, nmi,			        PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_BREAKPOINT,	DA_386IGate, breakpoint_exception,	PRIVILEGE_USER);
-	init_idt_desc(INT_VECTOR_OVERFLOW,	    DA_386IGate, overflow,			    PRIVILEGE_USER);
-	init_idt_desc(INT_VECTOR_BOUNDS,	    DA_386IGate, bounds_check,		    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_INVAL_OP,	    DA_386IGate, inval_opcode,		    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_COPROC_NOT,	DA_386IGate, copr_not_available,	PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_DOUBLE_FAULT,	DA_386IGate, double_fault,		    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_COPROC_SEG,	DA_386IGate, copr_seg_overrun,		PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_INVAL_TSS,	    DA_386IGate, inval_tss,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_SEG_NOT,	    DA_386IGate, segment_not_present,	PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_STACK_FAULT,	DA_386IGate, stack_exception,		PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_PROTECTION,	DA_386IGate, general_protection,	PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_PAGE_FAULT,	DA_386IGate, page_fault,		    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_COPROC_ERR,	DA_386IGate, copr_error,		    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_DIVIDE,	    DA_386IGate, divide_error,		    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_DEBUG,		    DA_386IGate, single_step_exception,	PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_NMI,		    DA_386IGate, nmi,			        PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_BREAKPOINT,	DA_386IGate, breakpoint_exception,	PRIVILEGE_USER);
+	init_idt_descriptor(INT_VECTOR_OVERFLOW,	    DA_386IGate, overflow,			    PRIVILEGE_USER);
+	init_idt_descriptor(INT_VECTOR_BOUNDS,	    DA_386IGate, bounds_check,		    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_INVAL_OP,	    DA_386IGate, inval_opcode,		    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_COPROC_NOT,	DA_386IGate, copr_not_available,	PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_DOUBLE_FAULT,	DA_386IGate, double_fault,		    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_COPROC_SEG,	DA_386IGate, copr_seg_overrun,		PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_INVAL_TSS,	    DA_386IGate, inval_tss,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_SEG_NOT,	    DA_386IGate, segment_not_present,	PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_STACK_FAULT,	DA_386IGate, stack_exception,		PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_PROTECTION,	DA_386IGate, general_protection,	PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_PAGE_FAULT,	DA_386IGate, page_fault,		    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_COPROC_ERR,	DA_386IGate, copr_error,		    PRIVILEGE_KRNL);
 
-	init_idt_desc(INT_VECTOR_IRQ0 + 0,   	DA_386IGate, irq00,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ0 + 1,  	DA_386IGate, irq01,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ0 + 2,  	DA_386IGate, irq02,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ0 + 3,  	DA_386IGate, irq03,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ0 + 4,	    DA_386IGate, irq04,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ0 + 5,	    DA_386IGate, irq05,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ0 + 6,  	DA_386IGate, irq06,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ0 + 7,  	DA_386IGate, irq07,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ8 + 0,  	DA_386IGate, irq08,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ8 + 1,	    DA_386IGate, irq09,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ8 + 2,  	DA_386IGate, irq10,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ8 + 3,  	DA_386IGate, irq11,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ8 + 4,	    DA_386IGate, irq12,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ8 + 5,  	DA_386IGate, irq13,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ8 + 6,  	DA_386IGate, irq14,			    PRIVILEGE_KRNL);
-	init_idt_desc(INT_VECTOR_IRQ8 + 7,  	DA_386IGate, irq15,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 0,   	DA_386IGate, irq00,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 1,  	DA_386IGate, irq01,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 2,  	DA_386IGate, irq02,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 3,  	DA_386IGate, irq03,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 4,	    DA_386IGate, irq04,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 5,	    DA_386IGate, irq05,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 6,  	DA_386IGate, irq06,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 7,  	DA_386IGate, irq07,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 0,  	DA_386IGate, irq08,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 1,	    DA_386IGate, irq09,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 2,  	DA_386IGate, irq10,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 3,  	DA_386IGate, irq11,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 4,	    DA_386IGate, irq12,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 5,  	DA_386IGate, irq13,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 6,  	DA_386IGate, irq14,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 7,  	DA_386IGate, irq15,			    PRIVILEGE_KRNL);
 }
 
 void exception_handler(int vec_no, int err_code, int eip, int cs, int eflags){   

@@ -41,6 +41,9 @@ SELECTOR_CODE		 equ 0x08		; Defined in loader
 SELECTOR_TSS		 equ 0x20		; TSS. jump from outer to inner, the values of SS and ESP will be restored from it.
 SELECTOR_KERNEL_CODE equ SELECTOR_CODE
 
+EOI       equ 0x20
+INT_M_CTL equ 0x20
+
 ; extern global variable
 extern gdt_ptr
 extern idt_ptr
@@ -51,12 +54,16 @@ extern kstart
 extern kmain
 extern exception_handler
 extern irq_handler
+extern kprint
 
 [bits 32]
 
+[section .data]
+msg_clock_int db "^", 0
+
 [section .bss]
 stack_space resb 2*1024
-stack_top:
+stack_top: ; this is kernel stack
 
 [section .text]
 global _start
@@ -81,7 +88,7 @@ csinit:
 
 	xor eax, eax
 	mov ax, SELECTOR_TSS
-	ltr ax ; load task register
+	ltr ax ; load tss descriptor from GDT to Task Register
 
 	jmp kmain
 
@@ -105,6 +112,8 @@ resume_krnl_int:
 	add esp, 4 ; remove retaddr from stack_frame ; PURPOSE OF retaddr?
 	iretd      ; so then when do the iretd, the stack is exactly: 
 			   ; eip, cs, eflags, esp, ss
+			   ; this iretd will reset eflags to proc->regs.eflags
+			   ; since we've already set IF before, so after this, IF is set.
 
 ; ======== end of not used
 
@@ -221,7 +230,48 @@ exception:
 ALIGN	16
 irq00:		; Interrupt routine for irq 0 (the clock).
 	;irq_master	0
-	iretd ; TODO: for now
+	; when entring interrupt, value of esp is pointing to
+	; proc->regs's high addr
+	sub esp, 4 ; reserve 4 bytes space: for retaddr
+
+	pushad
+	push ds
+	push es
+	push fs
+	push gs
+
+	mov dx, ss
+	mov ds, dx
+	mov es, dx
+
+	; IMPORTANT PART
+	mov esp, stack_top ; switch to kernel stack
+
+	inc byte [gs:0] ; change first cha on screen for testing
+	mov al, EOI ; reenable master 8259a
+	out INT_M_CTL, al
+
+	; ... other operations ...
+	; testing
+	push msg_clock_int
+	call kprint
+	add esp, 4
+
+	mov esp, [p_proc_ready] ; leave kernel stack
+
+	; setkup tss.esp0 for next process interrupt.
+	lea eax, [esp + P_STACKTOP]
+	mov dword [tss + TSS3_S_SP0], eax
+
+	pop gs
+	pop fs
+	pop es
+	pop ds
+	popad
+
+	add esp, 4 ;  remove reserved 4 bytes space
+
+	iretd ; TODO: for now, jump from ring0 to ring1
 
 ALIGN	16
 irq01:		; Interrupt routine for irq 1 (keyboard)

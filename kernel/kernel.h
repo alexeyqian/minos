@@ -98,9 +98,8 @@
 #define	INT_VECTOR_IRQ8			    0x28
 
 // TODO: rename to MAX_TASKS_NUM
-#define NR_TASKS 1 // max number of tasks 
-#define STACK_SIZE_TESTA 0x8000
-#define STACK_SIZE_TOTAL STACK_SIZE_TESTA
+#define MAX_TASKS_NUM 1 // max number of tasks 
+#define STACK_SIZE_TOTAL 0x8000
 
 // MACRO: linear address to physical address
 #define virtual_to_physical(seg_base, virtual) (uint32_t)(((uint32_t)seg_base) + (uint32_t)(virtual))
@@ -124,6 +123,23 @@ typedef struct gate{
     uint16_t offset_high;
 } gate_s;
 
+// tss has a descriptor in GDT, base is the address of tss, limit is the size of the tss.
+// inside tss, ss0 should be set to kernel data segment descriptor.
+// esp0 gets the value the stack-pointer shall get at a system call.
+// iopb may get the value of sizeof(TSS) which is 104, if you don't plan to use this io-bitmap further
+// we need TSS per processor, and most of time use esp0, other tss contents are irrelevant.
+// tss may reside anywhere in memory, a segment register call task register (TR) holds a segment selector
+// that points to a valid TSS segment descriptor which resides in GDT. (a TSS descriptor may not reside in the LDT)
+// Therefore, to use a TSS the following must be done by the operation system kernel:
+// 1. create a tss descriptor entry in the GDT
+// 2. load the TR with the segment selector for that segment
+// 3. add information to the TSS in memory as needed.
+
+// modern OS such as linux and windows donot use TSS fields (hardware task switch), as they implement software task switching.
+// linux creates only one TSS for each CPU, and uses them for all tasks. This approach was selected as it provides easier portability
+// to other architectures, for ex, amd64 does not support hardware task switches.
+// linux only use the io port permission bitmap and inner stack features of the tss;
+// the other reatures are only needed for hardware task switches, whcih the linux kernel does not use.
 typedef struct tss{
     uint32_t	backlink;
 	uint32_t	esp0;		/* stack pointer to use during interrupt */
@@ -151,8 +167,7 @@ typedef struct tss{
 	uint32_t	gs;
 	uint32_t	ldt;
 	uint16_t	trap;
-	uint16_t	iobase;	// if I/O base >= TSS limit，means no IOPL map
-	/*t_8	iomap[2];*/
+	uint16_t	iobase;	// if I/O base >= TSS limit，means no IOPL map // TODO: renamed to iopb_offset
 }tss_s;
 
 typedef struct stack_frame{ // proc_ptr points to here
@@ -199,5 +214,6 @@ typedef struct proc{
     char                p_name[16];               // process name
 }proc_s;
 
+// The paging has made LDT almost obsolete, and there is no longer need for multiple LDT descriptors.
 
 #endif

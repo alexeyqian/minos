@@ -45,7 +45,6 @@ void memcpy(char* dst, const char* src, int size){
         dst[i] = src[i];    
 }
 
-// ========================== screen.c ==========================
 int get_cursor(){
     out_byte(REG_SCREEN_CTRL, 14);
     int offset = in_byte(REG_SCREEN_DATA) << 8;
@@ -73,7 +72,7 @@ void clear_screen(){
     
     set_cursor(get_screen_offset(0, 0));
 }
-
+// TODO: scroll is not working yet
 int scroll(int cursor_offset){
     // if the cursor is within the scree, return it unmodified
     if(cursor_offset < MAX_ROWS * MAX_COLS * 2)
@@ -121,8 +120,6 @@ void print_char(char c, int row, int col, char attribute){
     // update the cursor position on the screen device
     set_cursor(offset);
 }
-
-// ========================== end of screen.c ==========================
 
 uint32_t digit_count(int num){
     uint32_t count = 0;
