@@ -6,6 +6,11 @@ uint8_t			    gdt_ptr[6];	// 0~15:Limit  16~47:Base
 struct descriptor   gdt[GDT_SIZE];
 uint8_t			    idt_ptr[6];	// 0~15:Limit  16~47:Base
 struct gate			idt[IDT_SIZE];
+//struct tss tss;
+struct proc*        p_proc_ready;
+struct proc         proc_table[];
+char                task_stack[];
+
 
 void init_idt();
 
@@ -13,10 +18,16 @@ void kstart(){
     clear_screen();
     kprint("\n----- kernel begin -----\n");
 
-    // copy old gdt_ptr to new gdt
+    // move gdt from loader to kernel
+	// and update the gdt_ptr
+	// Q: why doing this ?
+	// A: since previous gdt is loaded in loader
+	// now to copy it to kernel and uptdate the gdt_ptr
+	// so the gdt will be in kernel memory area
+	// instead of loader memory area.
     memcpy((char*)&gdt, // new gdt
-        (char*)(*((uint32_t*)(&gdt_ptr[2]))),   // Base  of Old GDT
-		*((uint16_t*)(&gdt_ptr[0])) + 1	    // Limit of Old GDT
+        (char*)(*((uint32_t*)(&gdt_ptr[2]))),   // base  of Old GDT
+		*((uint16_t*)(&gdt_ptr[0])) + 1	    // limit of Old GDT
 	);
 
     uint16_t* p_gdt_limit = (uint16_t*)(&gdt_ptr[0]);
@@ -24,6 +35,7 @@ void kstart(){
 	*p_gdt_limit = GDT_SIZE * sizeof(struct descriptor) - 1;
 	*p_gdt_base  = (uint32_t)&gdt;
 
+	// init idt_ptr
     // idt_ptr[6] 6 bytes in tatal：0~15:Limit  16~47:Base
 	uint16_t* p_idt_limit = (uint16_t*)(&idt_ptr[0]);
 	uint32_t* p_idt_base  = (uint32_t*)(&idt_ptr[2]);
@@ -33,6 +45,48 @@ void kstart(){
 	init_idt();
 
 	kprint("\n----- kstart end -----\n");
+}
+
+void kmain(){ // entrance of process
+	kprint("\n -------- main begin --------- \n");
+	struct proc* p_proc = proc_table;
+	p_proc->ldt_sel = SELECTOR_LDT_FIRST;
+	
+	memcpy(
+		&p_proc->ldts[0], 
+		&gdt[SELECTOR_KERNEL_CODE >> 3], 
+		sizeof(struct descriptor));	
+	p_proc->ldts[0].attr1 = DA_C | PRIVILEGE_TASK << 5;	// change the DPL
+	
+	memcpy(
+		&p_proc->ldts[1], 
+		&gdt[SELECTOR_KERNEL_DATA >> 3], 
+		sizeof(struct descriptor));
+	p_proc->ldts[1].attr1 = DA_DRW | PRIVILEGE_TASK << 5;	// change the DPL
+	
+	p_proc->regs.cs		= ((8 * 0) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | RPL_TASK;
+	p_proc->regs.ds		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | RPL_TASK;
+	p_proc->regs.es		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | RPL_TASK;
+	p_proc->regs.fs		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | RPL_TASK;
+	p_proc->regs.ss		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | RPL_TASK;
+	p_proc->regs.gs		= (SELECTOR_KERNEL_GS & SA_RPL_MASK) | RPL_TASK;
+	p_proc->regs.eip	= (uint32_t)test_a;
+	p_proc->regs.esp	= (uint32_t) task_stack + STACK_SIZE_TOTAL;
+	p_proc->regs.eflags	= 0x1202;	// IF=1, IOPL=1, bit 2 is always 1.
+
+	p_proc_ready = proc_table; 
+	restart();
+	while(1){}
+}
+
+void test_a(){
+	int i = 0;
+	while(1){
+		kprint("A");
+		print_int(i++);
+		kprint(".");
+		delay(1);
+	}
 }
 
 // TODO: remove later, it's a hack for linker issue.

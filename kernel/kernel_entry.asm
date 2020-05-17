@@ -31,9 +31,9 @@ _start:
 	mov ebp, stack_top
 	mov esp, ebp
 
-	sgdt [gdt_ptr] ; store GDTR into memory
+	sgdt [gdt_ptr] ; for moving gdt
 	call kstart ; gdt_ptr modified inside kstart
-	lgdt [gdt_ptr] ; use new GDT
+	lgdt [gdt_ptr] ; reload gdt with at new mem location.
 	lidt [idt_ptr]
 
 	jmp KERNEL_SELECTOR:csinit
@@ -44,6 +44,25 @@ csinit:
 
 	sti
 	hlt
+
+; ======== not used yet
+restart:
+	mov esp, [p_proc_ready] ; point to the proc table of next ready process
+	lldt [esp + P_LDT_SEL]
+	lea eax, [esp + P_STACKTOP]
+	mov dword [tss + TSS3_S_SP0], eax
+restart_krnl_int:
+	dec dword [k_reenter]
+	; the pop order have to match the stack_frame inside p_proc_ready
+	pop gs ; from top address to bottom: 
+	pop fs ; eax, ecx, edx, ebx, esp, ebp, esi edi  (restored by popad)
+	pop es ; ds, es, fs, gs.
+	pop ds
+	popad
+	add esp, 4
+	iretd
+
+; ======== end of not used
 
 ; exception and interrupt handlers ==============
 ; exception handlers
