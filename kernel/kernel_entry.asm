@@ -51,7 +51,7 @@ extern p_proc_ready
 extern tss
 extern k_reenter
 ; extern functions
-extern kstart
+extern kinit
 extern kmain
 extern exception_handler
 extern irq_handler
@@ -77,7 +77,7 @@ _start:
 	mov esp, ebp
 
 	sgdt [gdt_ptr] ; for moving gdt
-	call kstart ; gdt_ptr modified inside kstart
+	call kinit ; gdt_ptr modified inside kinit
 	lgdt [gdt_ptr] ; reload gdt with at new mem location.
 	lidt [idt_ptr]
 

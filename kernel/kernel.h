@@ -209,10 +209,9 @@ typedef struct stack_frame{ // proc_ptr points to here
 typedef struct proc{
     struct stack_frame  regs;           // process registers saved in stack frame
     uint16_t            ldt_sel;        // selector in gdt giving the ldt base and limit
-    // TODO: rename to ldt
+    // TODO: rename to process_ldt
 	struct descriptor   ldts[LDT_SIZE]; // local descriptors for code and data
                                         // descriptor 1 for code, descriptor 2 for data
-                                        // LDT_SIZE = 2
     uint32_t            pid;
     char                p_name[16];               // process name
 }proc_s;
