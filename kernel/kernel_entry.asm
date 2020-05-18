@@ -10,8 +10,8 @@
 
 ; TODO: move to kernel_entry.inc
 KERNEL_SELECTOR equ 8
-
-P_STACKBASE	equ	0              ; process stack base
+; below defines must match struct stack_frame
+P_STACKBASE	equ	0              ; proc->regs stack_base
 GSREG		equ	P_STACKBASE
 FSREG		equ	GSREG		+ 4
 ESREG		equ	FSREG		+ 4
@@ -19,20 +19,21 @@ DSREG		equ	ESREG		+ 4
 EDIREG		equ	DSREG		+ 4
 ESIREG		equ	EDIREG		+ 4
 EBPREG		equ	ESIREG		+ 4
-KERNELESPREG	equ	EBPREG		+ 4
-EBXREG		equ	KERNELESPREG	+ 4
+KESPREG	    equ	EBPREG      + 4 ; kernel esp
+EBXREG		equ	KESPREG     + 4
 EDXREG		equ	EBXREG		+ 4
 ECXREG		equ	EDXREG		+ 4
 EAXREG		equ	ECXREG		+ 4
 RETADR		equ	EAXREG		+ 4
-EIPREG		equ	RETADR		+ 4
+EIPREG		equ	RETADR		+ 4 ;  retrun addr for save()
 CSREG		equ	EIPREG		+ 4
 EFLAGSREG	equ	CSREG		+ 4
 ESPREG		equ	EFLAGSREG	+ 4
 SSREG		equ	ESPREG		+ 4
-P_STACKTOP	equ	SSREG		+ 4 ; process stack top
-P_LDT_SEL	equ	P_STACKTOP      ; process ldt selector
-P_LDT		equ	P_LDT_SEL	+ 4 ; process ldt
+
+P_STACKTOP	equ	SSREG		+ 4 ; proc.regs stack top
+P_LDT_SEL	equ	P_STACKTOP      ; proc->ldt_sel
+P_LDT		equ	P_LDT_SEL	+ 4 ; proc->ldt
 
 TSS3_S_SP0	equ	4
 
@@ -49,7 +50,7 @@ extern gdt_ptr
 extern idt_ptr
 extern p_proc_ready
 extern tss
-extern k_reenter
+extern k_reenter ; reenter for the same interrupt
 ; extern functions
 extern kinit
 extern kmain
@@ -65,60 +66,30 @@ extern delay
 msg_clock_int db "^", 0
 
 [section .bss]
-stack_space resb 2*1024
+stack_space resb 2*1024 ; reserved 2K for kernle stack
 kernel_stack_top: 
 
 [section .text]
 global _start
-global resume
+global restart
 
 _start:    	
-	mov ebp, kernel_stack_top
-	mov esp, ebp
+	;mov ebp, kernel_stack_top
+	mov esp, kernel_stack_top ; move esp from loader to kernel
 
 	sgdt [gdt_ptr] ; for moving gdt
-	call kinit ; gdt_ptr modified inside kinit
+	call kinit ; move gdt and init idt, tss, proc_table inside
 	lgdt [gdt_ptr] ; reload gdt with at new mem location.
 	lidt [idt_ptr]
 
-	jmp KERNEL_SELECTOR:csinit
+	jmp KERNEL_SELECTOR:_main
 
-csinit:
-	;push 0
-	;popfd ; pop top of stack into eflag, set eflags = 0
-	;sti ; iretd in IRQ0 will enable it.
-	;hlt
-
+_main:	
 	xor eax, eax
-	mov ax, SELECTOR_TSS
-	ltr ax ; load tss descriptor from GDT to Task Register
+	mov ax, SELECTOR_TSS ; load tss seletor
+	ltr ax               ; which points to a tss descriptor in gdt
 
 	jmp kmain
-
-; ======== not used yet
-; general steps to resume a process
-; move esp to point to the struct proc pointer
-; then pop up all registers to resume the process
-resume: 
-	mov esp, [p_proc_ready] ; point to the struct proc of ready process
-	lldt [esp + P_LDT_SEL] ; equals the p_proc_ready->ldt_sel
-	lea eax, [esp + P_STACKTOP] ; point to beginning of eip, cs, eflags, esp, ss
-	mov dword [tss + TSS3_S_SP0], eax
-resume_krnl_int:
-	;dec dword [k_reenter] ; purpose of k_reenter??
-	; the pop order have to match the stack_frame inside p_proc_ready
-	pop gs ; from top address to bottom: 
-	pop fs ; eax, ecx, edx, ebx, esp, ebp, esi edi  (restored by popad)
-	pop es ; ds, es, fs, gs.
-	pop ds
-	popad
-	add esp, 4 ; remove retaddr from stack_frame ; PURPOSE OF retaddr?
-	iretd      ; so then when do the iretd, the stack is exactly: 
-			   ; eip, cs, eflags, esp, ss
-			   ; this iretd will reset eflags to proc->regs.eflags
-			   ; since we've already set IF before, so after this, IF is set.
-
-; ======== end of not used
 
 ; exception and interrupt handlers ==============
 ; exception handlers
@@ -232,22 +203,27 @@ exception:
 
 ALIGN	16
 irq00:		; Interrupt routine for irq 0 (the clock).
-	;irq_master	0
-	; when entring interrupt, value of esp is pointing to
-	; proc->regs's high addr
+	; jump from ring1/3(user space) into ring0 kernel space.
+	; when entring interrupt, the esp/ss is restored from esp0/ss in TSS
+	; at beginning esp is point to a high addr of a struct proc->regs in proc_table
+	; then CPU automatically (as part of interruption process, invisable to user) 
+	; pushes ss->esp->eflags->cs->eip into struct proc(used as stack)
+	; value of esp is pointing to just above retaddr
 	sub esp, 4 ; reserve 4 bytes space: for retaddr
-
+	; save status of current process
 	pushad
 	push ds
 	push es
 	push fs
-	push gs
+	push gs ;  at this point, all current process's registers are saved in struct proc
 
+	; testing code
 	mov dx, ss
 	mov ds, dx
 	mov es, dx
-
 	inc byte [gs:0] ; change first cha on screen for testing
+	; end of testing code
+
 	mov al, EOI ; reenable master 8259a
 	out INT_M_CTL, al
 
@@ -255,36 +231,34 @@ irq00:		; Interrupt routine for irq 0 (the clock).
 	cmp dword [k_reenter], 0
 	jne .re_enter
 
-	; IMPORTANT PART
-	mov esp, kernel_stack_top ; switch to kernel stack
+	; ======== switch to kernel stack ========
+	mov esp, kernel_stack_top 
 	sti
 
 	push 0
 	call clock_handler
 	add esp, 4
-
-	; ... other operations ...
-	; testing
-	;push msg_clock_int
-	;call kprint
-	;add esp, 4
-
-	;push 1
-	;call delay
-	;add esp, 4
-
+	
 	cli
 
-	mov esp, [p_proc_ready] ; leave kernel stack
-	lldt [esp + P_LDT_SEL] ; load process LDT
+	; ======== leave kernel stack ========
+	; preparing registers for next scheduled process registers
+	mov esp, [p_proc_ready] ; leave kernel stack, using next process's struct proc as stack	
+	lldt [esp + P_LDT_SEL]  ; load process LDT, prepare for next process
 
-	; setkup tss.esp0 for next process interrupt.
-	lea eax, [esp + P_STACKTOP]
-	mov dword [tss + TSS3_S_SP0], eax
+	; setup tss.esp0 for next process.
+	lea eax, [esp + P_STACKTOP] 
+	mov dword [tss + TSS3_S_SP0], eax ; TSS3_S_SP0 now is pointing to p_ready_proc + sizeof(proc) in proc table
+									  ; equals next process's proc->regs high addr (points to ss) (used as proc stack)
+									  ; since after next process started, all proc stack is poped clean,
+									  ; the next process's esp will copy value form this esp0
+									  ; which points to exactly the place it should be as stack top of next process.
+									  ; the next process's esp will be copied from tss:esp0 is automatically done by CPU,
+									  ; not controlled by programmer.
 
 .re_enter:
 	dec dword [k_reenter]
-	pop gs
+	pop gs ; restore all registers form p_proc_ready pointed struct proc.
 	pop fs
 	pop es
 	pop ds
@@ -292,7 +266,7 @@ irq00:		; Interrupt routine for irq 0 (the clock).
 
 	add esp, 4 ;  remove reserved 4 bytes space
 
-	iretd ; TODO: for now, jump from ring0 to ring1
+	iretd ; all registers prepared, return and run the next scheduled process
 
 ALIGN	16
 irq01:		; Interrupt routine for irq 1 (keyboard)
@@ -362,3 +336,24 @@ irq14:		; Interrupt routine for irq 14 (AT winchester)
 ALIGN	16
 irq15:		; Interrupt routine for irq 15
 	irq_slave	15
+
+; ============================= restart =============================
+; ONLY CALLED ONCE IN KMAIN??
+restart:                                  
+	mov esp, [p_proc_ready]              
+	lldt [esp + P_LDT_SEL]             
+	lea eax, [esp + P_STACKTOP]          ; point to p_proc_ready + sizeof(struct stack_frame/proc->regs)
+	mov dword [tss + TSS3_S_SP0], eax    ; TODO: ?? 
+									     ; this sp0 is pushed on stack when jumping from ring1 to ring0 as interrupt happens
+	;dec dword [k_reenter]
+	; the pop order have to match the stack_frame inside p_proc_ready
+	pop gs 
+	pop fs 
+	pop es 
+	pop ds
+	popad
+	add esp, 4 ; remove retaddr from stack_frame ; PURPOSE OF retaddr?
+	iretd      ; so just before the instruction: iretd, the stack is exactly: 
+			   ; eip, cs, eflags, esp, ss
+			   ; then iretd will pop all of them, including reset eflags
+

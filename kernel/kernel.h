@@ -144,8 +144,8 @@ typedef struct gate{
 // the other reatures are only needed for hardware task switches, whcih the linux kernel does not use.
 typedef struct tss{
     uint32_t	backlink;
-	uint32_t	esp0;		/* stack pointer to use during interrupt */
-	uint32_t	ss0;		/*   "   segment  "  "    "        "     */
+	uint32_t	esp0;		// stack pointer to use during interrupt
+	uint32_t	ss0;		
 	uint32_t	esp1;
 	uint32_t	ss1;
 	uint32_t	esp2;
@@ -185,10 +185,10 @@ typedef struct stack_frame{ // proc_ptr points to here
 	uint32_t	edx;		/* ┃						│			*/
 	uint32_t	ecx;		/* ┃						│			*/
 	uint32_t	eax;		/* ┛						│			*/
-	uint32_t	retaddr;	/* return address for assembly code save()	│			*/
+	uint32_t	retaddr;	/* return address for assembly code save()	│ */
 	uint32_t	eip;		/*  ┓						│			*/
 	uint32_t	cs;		    /*  ┃						│			*/
-	uint32_t	eflags;  	/*  ┣ these are pushed by CPU during interrupt	│			*/
+	uint32_t	eflags;  	/*  ┣ these are pushed by CPU during interrupt	│ */
 	uint32_t	esp;     	/*  ┃						│			*/
 	uint32_t	ss;         /*  ┛   	                |High Address */
 }stack_frame_s;

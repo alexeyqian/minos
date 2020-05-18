@@ -12,7 +12,7 @@ void init_tss_descriptor_in_gdt();
 void init_ldt_descriptors_in_dgt();
 void init_proc_table_from_task_table();
 void delay(int time);
-void resume();
+void restart();
 void test_a();
 void test_b();
 void test_c();
@@ -31,7 +31,7 @@ struct task         task_table[MAX_TASKS_NUM]={ // task_table includes sub data 
 					{test_c, STACK_SIZE_TESTC, "TestC"}
 					};
 
-// task_stack is a mem area divided into MAX_TASK_NUM small areas
+// task stack is a mem area divided into MAX_TASK_NUM small areas
 // each small area used as stack for a process/task
 char                task_stack[STACK_SIZE_TOTAL];
 int k_reenter = -1;
@@ -52,7 +52,7 @@ void kinit(){
 void kmain(){ // entrance of process
 	kprint("\n -------- kmain begin --------- \n");	
 	//k_reenter = -1;	
-	resume();
+	restart();
 	while(1){}
 }
 
