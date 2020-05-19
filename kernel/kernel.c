@@ -11,6 +11,14 @@ void init_tss();
 void init_tss_descriptor_in_gdt();
 void init_ldt_descriptors_in_dgt();
 void init_proc_table_from_task_table();
+
+void put_irq_handler(int irq, pf_irq_handler_t handler);
+void irq_handler(int irq);
+void clock_handler(int irq);
+
+void enable_irq(int irq);
+void disable_irq(int irq);
+
 void delay(int time);
 void restart();
 void test_a();
@@ -25,6 +33,7 @@ struct gate			idt[IDT_SIZE];
 struct tss          tss;                        // only one tss in kernel, resides in mem, and it has a descriptor in gdt.
 struct proc*        p_proc_ready;               // points to next about to run process's pcb in proc_table
 struct proc         proc_table[MAX_TASKS_NUM];  // contains array of process control block: proc
+												// you can think each proc entry contains a private stack for process in kernel
 struct task         task_table[MAX_TASKS_NUM]={ // task_table includes sub data from proc_table
 					{test_a, STACK_SIZE_TESTA, "TestA"},
 					{test_b, STACK_SIZE_TESTB, "TestB"},
@@ -34,7 +43,8 @@ struct task         task_table[MAX_TASKS_NUM]={ // task_table includes sub data 
 // task stack is a mem area divided into MAX_TASK_NUM small areas
 // each small area used as stack for a process/task
 char                task_stack[STACK_SIZE_TOTAL];
-int k_reenter = -1;
+pf_irq_handler_t    irq_table[IRQ_NUM];
+int k_reenter = 0;
 
 void kinit(){
     clear_screen();
@@ -51,7 +61,11 @@ void kinit(){
 
 void kmain(){ // entrance of process
 	kprint("\n -------- kmain begin --------- \n");	
-	//k_reenter = -1;	
+	k_reenter = 0;	
+
+	put_irq_handler(CLOCK_IRQ, clock_handler);
+	enable_irq(CLOCK_IRQ);			
+
 	restart();
 	while(1){}
 }
@@ -295,6 +309,10 @@ void init_idt_descriptor(unsigned char vector, uint8_t desc_type, pf_int_handler
 void init_idt(){
     init_8259a();
 
+	int i;
+	for(i = 0; i < IRQ_NUM; i++)
+		irq_table[i] = irq_handler;
+
     // init interrupt gates (descriptors)
 	init_idt_descriptor(INT_VECTOR_DIVIDE,	    DA_386IGate, divide_error,		    PRIVILEGE_KRNL);
 	init_idt_descriptor(INT_VECTOR_DEBUG,		    DA_386IGate, single_step_exception,	PRIVILEGE_KRNL);
@@ -329,6 +347,11 @@ void init_idt(){
 	init_idt_descriptor(INT_VECTOR_IRQ8 + 5,  	DA_386IGate, irq13,			    PRIVILEGE_KRNL);
 	init_idt_descriptor(INT_VECTOR_IRQ8 + 6,  	DA_386IGate, irq14,			    PRIVILEGE_KRNL);
 	init_idt_descriptor(INT_VECTOR_IRQ8 + 7,  	DA_386IGate, irq15,			    PRIVILEGE_KRNL);
+}
+
+void put_irq_handler(int irq, pf_irq_handler_t handler){
+	disable_irq(irq);
+	irq_table[irq] = handler;
 }
 
 void exception_handler(int vec_no, int err_code, int eip, int cs, int eflags){   
@@ -379,6 +402,12 @@ void irq_handler(int irq){
 
 void clock_handler(int irq){
 	kprint("#");
+
+	if(k_reenter != 0){
+		kprint("!");
+		return;
+	}
+
 	// round robin process scheduler.
 	p_proc_ready++;
 	if(p_proc_ready >= proc_table + MAX_TASKS_NUM)

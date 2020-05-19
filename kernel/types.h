@@ -21,5 +21,6 @@ typedef int32_t          off_t;
 
 typedef unsigned short io_port_t;
 typedef void (*pf_int_handler_t)();
+typedef void (*pf_irq_handler_t)(int irq);
 typedef void (*pf_task_t)();
 #endif
