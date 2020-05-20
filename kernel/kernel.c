@@ -1,5 +1,6 @@
 #include "kernel.h"
 #include "klib.h"
+#include "syscall.h"
 
 // function declaration
 void init_descriptor(struct descriptor* p_desc, uint32_t base, uint32_t limit, uint16_t attribute);
@@ -18,6 +19,9 @@ void clock_handler(int irq);
 
 void enable_irq(int irq);
 void disable_irq(int irq);
+
+void syscall();     // from syscall.inc
+void get_ticks();   // from syscall.inc
 
 void delay(int time);
 void restart();
@@ -39,6 +43,8 @@ struct task         task_table[MAX_TASKS_NUM]={ // task_table includes sub data 
 					{test_b, STACK_SIZE_TESTB, "TestB"},
 					{test_c, STACK_SIZE_TESTC, "TestC"}
 					};
+
+syscall_t           syscall_table[NUM_SYS_CALL] = {sys_get_ticks};
 
 // task stack is a mem area divided into MAX_TASK_NUM small areas
 // each small area used as stack for a process/task
@@ -197,6 +203,7 @@ uint32_t seg_to_physical(uint16_t seg){
 void test_a(){
 	int i = 0;
 	while(1){
+		//get_ticks();
 		kprint("A");
 		print_int(i++);
 		kprint(".");
@@ -315,16 +322,16 @@ void init_idt(){
 
     // init interrupt gates (descriptors)
 	init_idt_descriptor(INT_VECTOR_DIVIDE,	    DA_386IGate, divide_error,		    PRIVILEGE_KRNL);
-	init_idt_descriptor(INT_VECTOR_DEBUG,		    DA_386IGate, single_step_exception,	PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_DEBUG,		DA_386IGate, single_step_exception,	PRIVILEGE_KRNL);
 	init_idt_descriptor(INT_VECTOR_NMI,		    DA_386IGate, nmi,			        PRIVILEGE_KRNL);
 	init_idt_descriptor(INT_VECTOR_BREAKPOINT,	DA_386IGate, breakpoint_exception,	PRIVILEGE_USER);
-	init_idt_descriptor(INT_VECTOR_OVERFLOW,	    DA_386IGate, overflow,			    PRIVILEGE_USER);
+	init_idt_descriptor(INT_VECTOR_OVERFLOW,	DA_386IGate, overflow,			    PRIVILEGE_USER);
 	init_idt_descriptor(INT_VECTOR_BOUNDS,	    DA_386IGate, bounds_check,		    PRIVILEGE_KRNL);
-	init_idt_descriptor(INT_VECTOR_INVAL_OP,	    DA_386IGate, inval_opcode,		    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_INVAL_OP,	DA_386IGate, inval_opcode,		    PRIVILEGE_KRNL);
 	init_idt_descriptor(INT_VECTOR_COPROC_NOT,	DA_386IGate, copr_not_available,	PRIVILEGE_KRNL);
-	init_idt_descriptor(INT_VECTOR_DOUBLE_FAULT,	DA_386IGate, double_fault,		    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_DOUBLE_FAULT,DA_386IGate, double_fault,		    PRIVILEGE_KRNL);
 	init_idt_descriptor(INT_VECTOR_COPROC_SEG,	DA_386IGate, copr_seg_overrun,		PRIVILEGE_KRNL);
-	init_idt_descriptor(INT_VECTOR_INVAL_TSS,	    DA_386IGate, inval_tss,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_INVAL_TSS,	DA_386IGate, inval_tss,			    PRIVILEGE_KRNL);
 	init_idt_descriptor(INT_VECTOR_SEG_NOT,	    DA_386IGate, segment_not_present,	PRIVILEGE_KRNL);
 	init_idt_descriptor(INT_VECTOR_STACK_FAULT,	DA_386IGate, stack_exception,		PRIVILEGE_KRNL);
 	init_idt_descriptor(INT_VECTOR_PROTECTION,	DA_386IGate, general_protection,	PRIVILEGE_KRNL);
@@ -335,18 +342,20 @@ void init_idt(){
 	init_idt_descriptor(INT_VECTOR_IRQ0 + 1,  	DA_386IGate, irq01,			    PRIVILEGE_KRNL);
 	init_idt_descriptor(INT_VECTOR_IRQ0 + 2,  	DA_386IGate, irq02,			    PRIVILEGE_KRNL);
 	init_idt_descriptor(INT_VECTOR_IRQ0 + 3,  	DA_386IGate, irq03,			    PRIVILEGE_KRNL);
-	init_idt_descriptor(INT_VECTOR_IRQ0 + 4,	    DA_386IGate, irq04,			    PRIVILEGE_KRNL);
-	init_idt_descriptor(INT_VECTOR_IRQ0 + 5,	    DA_386IGate, irq05,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 4,	DA_386IGate, irq04,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 5,	DA_386IGate, irq05,			    PRIVILEGE_KRNL);
 	init_idt_descriptor(INT_VECTOR_IRQ0 + 6,  	DA_386IGate, irq06,			    PRIVILEGE_KRNL);
 	init_idt_descriptor(INT_VECTOR_IRQ0 + 7,  	DA_386IGate, irq07,			    PRIVILEGE_KRNL);
 	init_idt_descriptor(INT_VECTOR_IRQ8 + 0,  	DA_386IGate, irq08,			    PRIVILEGE_KRNL);
-	init_idt_descriptor(INT_VECTOR_IRQ8 + 1,	    DA_386IGate, irq09,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 1,	DA_386IGate, irq09,			    PRIVILEGE_KRNL);
 	init_idt_descriptor(INT_VECTOR_IRQ8 + 2,  	DA_386IGate, irq10,			    PRIVILEGE_KRNL);
 	init_idt_descriptor(INT_VECTOR_IRQ8 + 3,  	DA_386IGate, irq11,			    PRIVILEGE_KRNL);
-	init_idt_descriptor(INT_VECTOR_IRQ8 + 4,	    DA_386IGate, irq12,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 4,	DA_386IGate, irq12,			    PRIVILEGE_KRNL);
 	init_idt_descriptor(INT_VECTOR_IRQ8 + 5,  	DA_386IGate, irq13,			    PRIVILEGE_KRNL);
 	init_idt_descriptor(INT_VECTOR_IRQ8 + 6,  	DA_386IGate, irq14,			    PRIVILEGE_KRNL);
 	init_idt_descriptor(INT_VECTOR_IRQ8 + 7,  	DA_386IGate, irq15,			    PRIVILEGE_KRNL);
+
+	init_idt_descriptor(INT_VECTOR_SYS_CALL,    DA_386CGate, syscall,           PRIVILEGE_USER);
 }
 
 void put_irq_handler(int irq, pf_irq_handler_t handler){
@@ -412,4 +421,11 @@ void clock_handler(int irq){
 	p_proc_ready++;
 	if(p_proc_ready >= proc_table + MAX_TASKS_NUM)
 		p_proc_ready = proc_table;
+}
+
+
+// TODO: move to system calls seperate file
+int sys_get_ticks(){
+	kprint("+");
+	return 0;
 }

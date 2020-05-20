@@ -23,4 +23,5 @@ typedef unsigned short io_port_t;
 typedef void (*pf_int_handler_t)();
 typedef void (*pf_irq_handler_t)(int irq);
 typedef void (*pf_task_t)();
+typedef void* syscall_t;
 #endif
