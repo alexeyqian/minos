@@ -17,6 +17,8 @@ int memcmp(const char*, const char*, int);
 void memcpy(char* dst, const char* src, int size);
 void strcpy(char* dst, const char* src);
 
+void delay(int time);
+
 // ==================  screen.h ================== 
 #define VIDEO_ADDRESS 0xb8000
 #define MAX_ROWS 25

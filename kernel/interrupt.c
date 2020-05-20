@@ -1,0 +1,161 @@
+#include "interrupt.h"
+#include "klib.h"
+#include "const.h"
+#include "func_def.h"
+            
+extern struct descriptor   gdt[GDT_SIZE];   
+extern struct gate			idt[IDT_SIZE];
+extern struct tss          tss;                        
+extern struct proc*        p_proc_ready;               
+extern struct proc         proc_table[MAX_TASKS_NUM];  												
+extern struct task         task_table[MAX_TASKS_NUM];
+extern syscall_t           syscall_table[NUM_SYS_CALL];
+extern char                task_stack[STACK_SIZE_TOTAL];
+extern pf_irq_handler_t    irq_table[IRQ_NUM];
+extern int k_reenter;
+
+// setup chip 8259A which is a bridge between interrupting devices and CPU
+// ICW: Initialization Command Word
+// there are 4 types of ICW, from ICW1 - ICW4, each has specific format
+// The write operation must be ordered correctly
+// In real mode, BIOS map IRQ0-IRQ7 TO 0X8 - 0XF, but in proteced mode these are occupied,
+// so we need to remap them to 0x20 and 0x28
+void init_8259a(){
+    out_byte(INT_M_CTL,	0x11);			         // Master, ICW1.
+	out_byte(INT_S_CTL,	0x11);			         // Slave , ICW1.
+	out_byte(INT_M_CTLMASK,	INT_VECTOR_IRQ0);	 // Master, ICW2. IRQ0 -> 0x20.
+	out_byte(INT_S_CTLMASK,	INT_VECTOR_IRQ8);	 // Slave , ICW2. IRQ8 -> 0x28
+	out_byte(INT_M_CTLMASK,	0x4);			     // Master, ICW3. IR2 -> Slave 
+	out_byte(INT_S_CTLMASK,	0x2);			     // Slave , ICW3. Slave -> Master IR2.
+	out_byte(INT_M_CTLMASK,	0x1);			     // Master, ICW4.
+	out_byte(INT_S_CTLMASK,	0x1);		         // Slave , ICW4.
+
+	out_byte(INT_M_CTLMASK,	0xFE);	             // Master, OCW1. 
+	out_byte(INT_S_CTLMASK,	0xFF);	             // Slave , OCW1. 
+}
+
+void init_idt_descriptor(unsigned char vector, uint8_t desc_type, pf_int_handler_t handler, unsigned char privilege){
+    struct gate* p_gate	= &idt[vector];
+	uint32_t	 base	= (uint32_t)handler;
+	p_gate->offset_low	= base & 0xFFFF;
+	p_gate->selector	= SELECTOR_KERNEL_CODE;
+	p_gate->dcount		= 0;
+	p_gate->attr		= desc_type | (privilege << 5);
+	p_gate->offset_high	= (base >> 16) & 0xFFFF;
+}
+
+void init_idt(){
+    init_8259a();
+
+	int i;
+	for(i = 0; i < IRQ_NUM; i++)
+		irq_table[i] = irq_handler;
+
+    // init interrupt gates (descriptors)
+	init_idt_descriptor(INT_VECTOR_DIVIDE,	    DA_386IGate, divide_error,		    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_DEBUG,		DA_386IGate, single_step_exception,	PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_NMI,		    DA_386IGate, nmi,			        PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_BREAKPOINT,	DA_386IGate, breakpoint_exception,	PRIVILEGE_USER);
+	init_idt_descriptor(INT_VECTOR_OVERFLOW,	DA_386IGate, overflow,			    PRIVILEGE_USER);
+	init_idt_descriptor(INT_VECTOR_BOUNDS,	    DA_386IGate, bounds_check,		    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_INVAL_OP,	DA_386IGate, inval_opcode,		    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_COPROC_NOT,	DA_386IGate, copr_not_available,	PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_DOUBLE_FAULT,DA_386IGate, double_fault,		    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_COPROC_SEG,	DA_386IGate, copr_seg_overrun,		PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_INVAL_TSS,	DA_386IGate, inval_tss,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_SEG_NOT,	    DA_386IGate, segment_not_present,	PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_STACK_FAULT,	DA_386IGate, stack_exception,		PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_PROTECTION,	DA_386IGate, general_protection,	PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_PAGE_FAULT,	DA_386IGate, page_fault,		    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_COPROC_ERR,	DA_386IGate, copr_error,		    PRIVILEGE_KRNL);
+
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 0,   	DA_386IGate, irq00,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 1,  	DA_386IGate, irq01,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 2,  	DA_386IGate, irq02,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 3,  	DA_386IGate, irq03,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 4,	DA_386IGate, irq04,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 5,	DA_386IGate, irq05,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 6,  	DA_386IGate, irq06,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 7,  	DA_386IGate, irq07,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 0,  	DA_386IGate, irq08,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 1,	DA_386IGate, irq09,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 2,  	DA_386IGate, irq10,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 3,  	DA_386IGate, irq11,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 4,	DA_386IGate, irq12,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 5,  	DA_386IGate, irq13,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 6,  	DA_386IGate, irq14,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 7,  	DA_386IGate, irq15,			    PRIVILEGE_KRNL);
+
+	init_idt_descriptor(INT_VECTOR_SYS_CALL,    DA_386CGate, syscall_handler,   PRIVILEGE_USER);
+}
+
+void put_irq_handler(int irq, pf_irq_handler_t handler){
+	disable_irq(irq);
+	irq_table[irq] = handler;
+}
+
+void exception_handler(int vec_no, int err_code, int eip, int cs, int eflags){   
+    char err_description[][64] = {	
+        "#DE Divide Error",
+        "#DB RESERVED",
+        "—  NMI Interrupt",
+        "#BP Breakpoint",
+        "#OF Overflow",
+        "#BR BOUND Range Exceeded",
+        "#UD Invalid Opcode (Undefined Opcode)",
+        "#NM Device Not Available (No Math Coprocessor)",
+        "#DF Double Fault",
+        "    Coprocessor Segment Overrun (reserved)",
+        "#TS Invalid TSS",
+        "#NP Segment Not Present",
+        "#SS Stack-Segment Fault",
+        "#GP General Protection",
+        "#PF Page Fault",
+        "—  (Intel reserved. Do not use.)",
+        "#MF x87 FPU Floating-Point Error (Math Fault)",
+        "#AC Alignment Check",
+        "#MC Machine Check",
+        "#XF SIMD Floating-Point Exception"
+    };
+
+    kprint("Exception handler:");
+    kprint(err_description[vec_no]);
+    kprint("\n");
+    kprint("EFLAGS: ");
+    print_int_as_hex(eflags);
+    kprint(" CS: ");
+    print_int_as_hex(cs);
+    kprint(" EIP: ");
+    print_int_as_hex(eip);
+
+    if(err_code != 0xffffffff){
+        kprint("Error Code: ");
+        print_int_as_hex(err_code);
+    }    
+}
+
+void irq_handler(int irq){
+    kprint("IRQ handler: ");
+	print_int_as_hex(irq);
+	kprint("\n");
+}
+
+void clock_handler(int irq){
+	kprint("#");
+
+	if(k_reenter != 0){
+		kprint("!");
+		return;
+	}
+
+	// round robin process scheduler.
+	p_proc_ready++;
+	if(p_proc_ready >= proc_table + MAX_TASKS_NUM)
+		p_proc_ready = proc_table;
+}
+
+// system calls
+int sys_get_ticks_impl(){
+	kprint("+");
+	return 0;
+}

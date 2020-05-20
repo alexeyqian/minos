@@ -1,12 +1,7 @@
-NUM_GET_TICKS equ 0
 INT_VECTOR_SYS_CALL equ 0x90
+IDX_GET_TICKS       equ 0
 
-get_ticks:
-    mov eax, NUM_GET_TICKS
-    int INT_VECTOR_SYS_CALL
-    ret
-
-syscall:
+syscall_handler:
     call save
     sti
 
@@ -14,4 +9,9 @@ syscall:
     mov [esi + EAXREG - P_STACKBASE], eax ; save return value to position of eax in proc->regs
 
     cli
+    ret
+
+get_ticks:
+    mov eax, IDX_GET_TICKS
+    int INT_VECTOR_SYS_CALL
     ret

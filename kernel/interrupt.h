@@ -1,6 +1,8 @@
 #ifndef _MINOS_INTERRUPT_H_
 #define _MINOS_INTERRUPT_H_
 
+#include "types.h"
+
 // exceptions 
 #define	INT_VECTOR_DIVIDE		    0x0
 #define	INT_VECTOR_DEBUG		    0x1
@@ -43,4 +45,57 @@
 #define	INT_VECTOR_IRQ8			    0x28
 
 #define	INT_VECTOR_SYS_CALL		0x90
+
+// imported functions from kernel_entry.asm
+// exception handlers
+void	divide_error();
+void	single_step_exception();
+void	nmi();
+void	breakpoint_exception();
+void	overflow();
+void	bounds_check();
+void	inval_opcode();
+void	copr_not_available();
+void	double_fault();
+void	copr_seg_overrun();
+void	inval_tss();
+void	segment_not_present();
+void	stack_exception();
+void	general_protection();
+void	page_fault();
+void	copr_error();
+
+// interrupt handlers
+void	irq00(); 
+void	irq01();
+void	irq02();
+void	irq03();
+void	irq04();
+void	irq05();
+void	irq06();
+void	irq07();
+void	irq08();
+void	irq09();
+void	irq10();
+void	irq11();
+void	irq12();
+void	irq13();
+void	irq14();
+void	irq15();
+
+void enable_irq(int irq);
+void disable_irq(int irq);
+
+// idt
+void init_idt_descriptor(unsigned char vector, uint8_t desc_type, pf_int_handler_t handler, unsigned char privilege);
+void init_idt();
+
+void put_irq_handler(int irq, pf_irq_handler_t handler);
+void irq_handler(int irq);
+void clock_handler(int irq);
+
+// system calls
+void syscall_handler();     // from syscall.inc
+void get_ticks();           // from syscall.inc
+int sys_get_ticks_impl();
 #endif

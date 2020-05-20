@@ -1,6 +1,20 @@
 #ifndef _MINOS_GDT_H_
 #define _MINOS_GDT_H_
 
+#define	PRIVILEGE_KRNL	0
+#define	PRIVILEGE_TASK	1
+#define	PRIVILEGE_USER	3
+
+#define RPL_KRNL SA_RPL0
+#define RPL_TASK SA_RPL1
+#define RPL_USER SA_RPL3    
+
+#define MAX_TASKS_NUM 3  
+#define STACK_SIZE_TESTA 0x8000
+#define STACK_SIZE_TESTB 0x8000
+#define STACK_SIZE_TESTC 0x8000
+#define STACK_SIZE_TOTAL STACK_SIZE_TESTA+STACK_SIZE_TESTB+STACK_SIZE_TESTC
+
 #define GDT_SIZE 128
 #define IDT_SIZE 256
 // GDT segments index
@@ -59,4 +73,5 @@
 #define	DA_386IGate		0x8E	/* 386 中断门类型值			*/
 #define	DA_386TGate		0x8F	/* 386 陷阱门类型值			*/
 
+#define NUM_SYS_CALL    1
 #endif
