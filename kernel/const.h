@@ -74,4 +74,11 @@
 #define	DA_386TGate		0x8F	/* 386 陷阱门类型值			*/
 
 #define SYS_CALL_COUNT    1
+
+#define TIMER0          0x40
+#define TIMER_MODE      0x43
+#define RATE_GENERATOR  0x34
+#define TIMER_FREQ      1193182L
+#define HZ              100
+
 #endif

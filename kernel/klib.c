@@ -1,4 +1,6 @@
 #include "klib.h"
+#include "const.h"
+#include "asm_util.h"
 
 uint8_t in_byte(io_port_t port){
     uint8_t result;
@@ -80,18 +82,18 @@ void clear_screen(){
     
     set_cursor(get_screen_offset(0, 0));
 }
-// TODO: scroll is not working yet
+
 int scroll(int cursor_offset){
     // if the cursor is within the scree, return it unmodified
     if(cursor_offset < MAX_ROWS * MAX_COLS * 2)
         return cursor_offset;
 
     // shuffle the rows back one.
-    int i = 0;
+    int i;
     for(i = 1; i < MAX_ROWS; i++)
         memcpy(
-			(char*)(get_screen_offset(i, 0)   + VIDEO_ADDRESS),
             (char*)(get_screen_offset(i-1, 0) + VIDEO_ADDRESS),
+			(char*)(get_screen_offset(i, 0)   + VIDEO_ADDRESS),            
             MAX_COLS*2);
 
     // Black the last line by setting all bytes to 0
@@ -248,4 +250,9 @@ void delay(int time){
 	for(i = 0; i < time; i++)
 		for(j = 0; j < 1000; j++)
 			for(k = 0; k < 1000; k ++){}
+}
+
+void milli_delay(int milli_sec){
+    int t = get_ticks();
+    while(((get_ticks() - t) * 1000 / HZ) < milli_sec) {}
 }

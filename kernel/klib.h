@@ -45,4 +45,6 @@ void kprint(char* str);
 void print_int(int num);
 void print_int_as_hex(int num);
 
+void milli_delay(int milli_sec);
+
 #endif

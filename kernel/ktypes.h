@@ -115,6 +115,8 @@ typedef struct proc{
                                         // descriptor 1 for code, descriptor 2 for data
     uint32_t            pid;
     char                p_name[16];               // process name
+	int                 ticks;
+	int                 priority;
 }proc_s;
 
 // The paging has made LDT almost obsolete, and there is no longer need for multiple LDT descriptors.

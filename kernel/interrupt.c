@@ -2,7 +2,7 @@
 #include "asm_util.h"
 #include "klib.h"
 #include "const.h"
-#include "func_def.h"
+#include "ktypes.h"
 	  
 // exceptions 
 #define	INT_VECTOR_DIVIDE		    0x0
