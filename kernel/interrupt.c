@@ -151,7 +151,7 @@ void init_idt(){
 	init_idt_descriptor(INT_VECTOR_IRQ8 + 6,  	DA_386IGate, irq14,			    PRIVILEGE_KRNL);
 	init_idt_descriptor(INT_VECTOR_IRQ8 + 7,  	DA_386IGate, irq15,			    PRIVILEGE_KRNL);
 
-	init_idt_descriptor(INT_VECTOR_SYSCALL,     DA_386CGate, syscall,           PRIVILEGE_USER);
+	init_idt_descriptor(INT_VECTOR_SYSCALL,     DA_386IGate, syscall,           PRIVILEGE_USER);
 		
 }
 

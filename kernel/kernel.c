@@ -32,9 +32,17 @@ int k_reenter;
 int ticks;
 
 void replace_gdt();
+void init_tss();
 void init_descriptor(struct descriptor* p_desc, uint32_t base, uint32_t limit, uint16_t attribute);
+void init_ldt_descriptors_in_dgt();
+void init_proc_table_from_task_table();
+
 void put_irq_handler(int irq, pf_irq_handler_t handler);
 void clock_handler(int irq);
+uint32_t seg_to_physical(uint16_t seg);
+
+void delay(int time);
+void restart();
 
 void kinit(){
     //clear_screen();
@@ -194,7 +202,7 @@ void put_irq_handler(int irq, pf_irq_handler_t handler){
 }
 
 void clock_handler(int irq){
-	kprint("#");
+	kprint("#-#");
 	ticks++;
 	if(k_reenter != 0){
 		kprint("!");
@@ -205,6 +213,8 @@ void clock_handler(int irq){
 	p_proc_ready++;
 	if(p_proc_ready >= proc_table + MAX_TASKS_NUM)
 		p_proc_ready = proc_table;
+
+	kprint("==");
 }
 
 void irq_handler(int irq){

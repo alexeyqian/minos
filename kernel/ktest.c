@@ -16,8 +16,7 @@ void test_a(){
 
 void test_b(){
 	int i = 0x1000;
-	while(1){
-		//print_int(get_ticks());
+	while(1){		
 		kprint("B");
 		print_int(i++);
 		kprint(".");
@@ -31,6 +30,7 @@ void test_c(){
 		kprint("C");
 		print_int(i++);
 		kprint(".");
+		print_int(get_ticks());
 		delay(1);
 	}
 }
