@@ -297,7 +297,7 @@ save:
 	mov ds, dx
 	mov es, dx
 
-	mov eax, esp ; start address of struct proc, avoid to use eax,
+	mov esi, esp ; start address of struct proc, avoid to use eax,
 				 ; since i might be used as parameter for syscall
 
 	inc dword [k_reenter]
@@ -307,32 +307,30 @@ save:
 	mov esp, kernel_stack_top ; switch to kernel stack
 	
 	push restart             ; push a return address for not_reenter
-	jmp [eax + RETADDR - P_STACKBASE]
+	jmp [esi + RETADDR - P_STACKBASE]
 .reenter:
 	push restart_reenter    ; push a return address for reenter
-	jmp [eax + RETADDR - P_STACKBASE]	
+	jmp [esi + RETADDR - P_STACKBASE]	
 	; DO NOT USE RET HERE
 
 ; ========================= restart =========================
 restart:
 	mov esp, [p_proc_ready] ; leave kernel stack, using next process's struct proc as stack	
 	lldt [esp + P_LDT_SEL]  ; load process LDT, prepare for next process
-
-	;====================================================================================
-	; TSS3_S_ESP0 is always match proc->regs:high addr, which is correct location for esp
-	;====================================================================================
+	
 	lea eax, [esp + P_STACKTOP]       ; setup tss.esp0 for p_proc_ready.
 	mov dword [tss + TSS3_S_SP0], eax ; TSS3_S_SP0 now is pointing to p_ready_proc->regs high addr
-									  ; at the beginning of next interrupt, esp will be copied from tss:esp0 is automatically done by CPU,
+									  ; at the beginning of next interrupt, 
+									  ; esp will be copied from tss:esp0 is automatically done by CPU,
 									  ; not controlled by programmer.
 
-restart_reenter:                 ; if it's reenter
+restart_reenter:                      ; if it's reenter
 	dec dword [k_reenter]
 	pop gs                            ; restore all registers form p_proc_ready pointed struct proc.
 	pop fs
 	pop es
 	pop ds
 	popad
-	add esp, 4 ;  remove reserved 4 bytes space
+	add esp, 4                        ;  remove reserved 4 bytes space
 
-	iretd ; all registers prepared, return and run the process pointed by p_proc_ready
+	iretd                             ; all registers prepared, return and run the process pointed by p_proc_ready

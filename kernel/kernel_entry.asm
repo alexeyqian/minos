@@ -8,12 +8,14 @@
 
 ; esp, and GDT will also be moved from loader to kernel for easy control
 
+[bits 32]
+
 %include "ke_constants.inc"
 %include "ke_imports.inc"
 
-[bits 32]
 [section .data]
 msg_clock_int db "^", 0
+msg_test db ">>> code arrive here!", 0
 
 [section .bss]
 stack_space resb 2*1024 ; reserved 2K for kernle stack
@@ -23,12 +25,13 @@ kernel_stack_top:
 %include "ke_exports.inc"
 
 _start:  
+	mov ebp, kernel_stack_top
 	mov esp, kernel_stack_top ; move esp from loader to kernel
 
-	sgdt [gdt_ptr]            ; for moving gdt
+	;sgdt [gdt_ptr]            ; for moving gdt
 	call kinit                ; move gdt and init idt, tss, proc_table inside
-	lgdt [gdt_ptr]            ; reload gdt with at new mem location.
-	lidt [idt_ptr]
+	;lgdt [gdt_ptr]            ; reload gdt with at new mem location.
+	;lidt [idt_ptr]
 
 	jmp KERNEL_SELECTOR:_main
 
@@ -38,6 +41,36 @@ _main:
 	ltr ax                    ; which points to a tss descriptor in gdt
 
 	jmp kmain
+
+global store_gdt
+store_gdt:
+	push ebp
+	mov ebp, esp
+
+	sgdt [gdt_ptr] 
+
+	pop ebp
+	ret
+
+global load_gdt
+load_gdt:
+	push ebp
+	mov ebp, esp
+
+	lgdt [gdt_ptr]   
+
+	pop ebp
+	ret
+
+global load_idt
+load_idt:
+	push ebp
+	mov ebp, esp
+
+	lidt [idt_ptr]
+
+	pop ebp
+	ret
 
 %include "ke_interrupts.inc"
 %include "ke_syscalls.inc"

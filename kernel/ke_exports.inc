@@ -4,5 +4,5 @@ global restart
 global disable_irq
 global enable_irq
 
-global syscall_handler
+global syscall
 global get_ticks

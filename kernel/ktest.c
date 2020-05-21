@@ -1,10 +1,12 @@
 #include "ktest.h"
+#include "asm_util.h"
 #include "klib.h"
+#include "interrupt.h"
 
 void test_a(){
 	int i = 0;
 	while(1){
-		//get_ticks();
+		
 		kprint("A");
 		print_int(i++);
 		kprint(".");
@@ -15,6 +17,7 @@ void test_a(){
 void test_b(){
 	int i = 0x1000;
 	while(1){
+		//print_int(get_ticks());
 		kprint("B");
 		print_int(i++);
 		kprint(".");

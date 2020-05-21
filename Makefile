@@ -4,7 +4,10 @@ OBJ=$(C_SOURCES:.c=.o)
 #$(info $$C_SOURCES is [${C_SOURCES}])
 #$(info $$OBJ is [${OBJ}])
 
-all: os.img
+all: clean os.img
+
+#run: all
+#
 
 os.img: boot/boot.bin boot/loader.bin kernel/kernel.bin
 	dd if=/dev/zero of=os.img bs=512 count=2880

@@ -73,5 +73,5 @@
 #define	DA_386IGate		0x8E	/* 386 中断门类型值			*/
 #define	DA_386TGate		0x8F	/* 386 陷阱门类型值			*/
 
-#define NUM_SYS_CALL    1
+#define SYS_CALL_COUNT    1
 #endif

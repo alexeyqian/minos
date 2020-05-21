@@ -2,6 +2,7 @@
 #define _MINOS_KTYPES_H
 
 #include "types.h"
+#include "const.h"
 
 // MACRO: linear address to physical address
 #define virtual_to_physical(seg_base, virtual) (uint32_t)(((uint32_t)seg_base) + (uint32_t)(virtual))
