@@ -9,11 +9,12 @@
 #define RPL_TASK SA_RPL1
 #define RPL_USER SA_RPL3    
 
-#define MAX_TASKS_NUM 3  
+#define MAX_TASKS_NUM 4  
+#define STACK_SIZE_TTY   0x8000
 #define STACK_SIZE_TESTA 0x8000
 #define STACK_SIZE_TESTB 0x8000
 #define STACK_SIZE_TESTC 0x8000
-#define STACK_SIZE_TOTAL STACK_SIZE_TESTA+STACK_SIZE_TESTB+STACK_SIZE_TESTC
+#define STACK_SIZE_TOTAL STACK_SIZE_TTY+STACK_SIZE_TESTA+STACK_SIZE_TESTB+STACK_SIZE_TESTC
 
 #define GDT_SIZE 128
 #define IDT_SIZE 256
@@ -80,5 +81,19 @@
 #define RATE_GENERATOR  0x34
 #define TIMER_FREQ      1193182L
 #define HZ              100
+
+#define IRQ_NUM        16
+
+// hardware interrupts
+#define	CLOCK_IRQ	    0
+#define	KEYBOARD_IRQ	1 // TODO: move to keyboard.h
+#define	CASCADE_IRQ   	2	/* cascade enable for 2nd AT controller */
+#define	ETHER_IRQ	    3	/* default ethernet interrupt vector */
+#define	SECONDARY_IRQ	3	/* RS232 interrupt vector for port 2 */
+#define	RS232_IRQ	    4	/* RS232 interrupt vector for port 1 */
+#define	XT_WINI_IRQ	    5	/* xt winchester */
+#define	FLOPPY_IRQ   	6	/* floppy disk */
+#define	PRINTER_IRQ	    7
+#define	AT_WINI_IRQ	   14	/* at winchester */
 
 #endif

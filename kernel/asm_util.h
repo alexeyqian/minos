@@ -8,6 +8,8 @@ extern void load_idt();
 
 extern void enable_irq(int irq);
 extern void disable_irq(int irq);
+extern void disable_int();
+extern void enable_int();
 
 extern void syscall();             
 extern int  get_ticks();          

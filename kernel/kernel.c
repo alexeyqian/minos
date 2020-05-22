@@ -4,8 +4,12 @@
 #include "const.h"
 #include "ktypes.h"
 #include "interrupt.h"
+#include "keyboard.h"
 #include "func_def.h"
 #include "ktest.h"
+#include "shared.h"
+
+void task_tty();
 
 // global vars
 uint8_t			    gdt_ptr[6];	               
@@ -17,9 +21,10 @@ struct proc*        p_proc_ready;               // points to next about to run p
 struct proc         proc_table[MAX_TASKS_NUM];  // contains array of process control block: proc
 												// you can think each proc entry contains a private stack for process in kernel
 struct task         task_table[MAX_TASKS_NUM]={ // task_table includes sub data from proc_table
-					{test_a, STACK_SIZE_TESTA, "TestA"},
-					{test_b, STACK_SIZE_TESTB, "TestB"},
-					{test_c, STACK_SIZE_TESTC, "TestC"}
+					{task_tty, STACK_SIZE_TTY,   "tty"  },
+					{test_a,   STACK_SIZE_TESTA, "TestA"},
+					{test_b,   STACK_SIZE_TESTB, "TestB"},
+					{test_c,   STACK_SIZE_TESTC, "TestC"}
 					};
 
 int get_ticks_impl();
@@ -38,10 +43,10 @@ void init_descriptor(struct descriptor* p_desc, uint32_t base, uint32_t limit, u
 void init_ldt_descriptors_in_dgt();
 void init_proc_table_from_task_table();
 
-void put_irq_handler(int irq, pf_irq_handler_t handler);
+
 void clock_handler(int irq);
 uint32_t seg_to_physical(uint16_t seg);
-void init_timer();
+void init_clock();
 
 void delay(int time);
 void restart();
@@ -70,10 +75,8 @@ void kmain(){ // entrance of process
 	for(i = 0; i < IRQ_NUM; i++)
 		irq_table[i] = irq_handler;
 
-	init_timer();
-
-	put_irq_handler(CLOCK_IRQ, clock_handler);
-	enable_irq(CLOCK_IRQ);			
+	init_clock();
+	init_keyboard();	
 
 	restart();
 	while(1){}
@@ -225,14 +228,15 @@ void schedule(){
 	}
 }
 
+// TODO: move to clock module
 void clock_handler(int irq){
-	kprint("[");
+	//kprint("[");
 
 	ticks++;
 	p_proc_ready->ticks--;
 
 	if(k_reenter != 0){
-		kprint("!");
+		//kprint("!");
 		return;
 	}
 
@@ -240,7 +244,7 @@ void clock_handler(int irq){
 
 	schedule();
 
-	kprint("]");
+	//kprint("]");
 }
 
 /* round robin version of scheduler
@@ -267,10 +271,19 @@ void irq_handler(int irq){
 	kprint("\n");
 }
 
-void init_timer(){ // init 8253 PIT
+// TODO: move to clock module
+void init_clock(){ // init 8253 PIT
 	out_byte(TIMER_MODE, RATE_GENERATOR);
 	out_byte(TIMER0, (uint8_t) (TIMER_FREQ/HZ) );
 	out_byte(TIMER0, (uint8_t) ((TIMER_FREQ/HZ) >> 8));
+
+	put_irq_handler(CLOCK_IRQ, clock_handler);
+	enable_irq(CLOCK_IRQ);	
+}
+
+void task_tty(){
+	while(1) 
+		keyboard_read();
 }
 
 // system call implementations

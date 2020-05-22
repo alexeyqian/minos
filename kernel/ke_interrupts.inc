@@ -275,6 +275,15 @@ enable_8:
         popf
         ret
 
+global disable_int
+disable_int:
+	cli
+	ret
+
+global enable_int
+enable_int:
+	sti
+	ret
 
 ; ========================= save   =========================
 ; jump from ring1/3(user space) into ring0 kernel space.

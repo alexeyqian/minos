@@ -7,7 +7,7 @@ void test_a(){
 	int i = 0;
 	while(1){		
 		//print_int(get_ticks());
-		kprint("A");
+		//kprint("A");
 		//print_int(i++);
 		//kprint("}");
 		milli_delay(200);
@@ -17,7 +17,7 @@ void test_a(){
 void test_b(){
 	int i = 0x1000;
 	while(1){		
-		kprint("B");
+		//kprint("B");
 		//print_int(i++);
 		//kprint("}");		
 		milli_delay(200);
@@ -27,7 +27,7 @@ void test_b(){
 void test_c(){
 	int i = 0x2000;
 	while(1){
-		kprint("");
+		//kprint("");
 		//print_int(i++);
 		//kprint("}");
 		milli_delay(200);

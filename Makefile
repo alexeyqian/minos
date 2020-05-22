@@ -24,13 +24,14 @@ boot/boot.bin: boot/boot.asm
 boot/loader.bin: boot/loader.asm
 	nasm $< -f bin -I 'boot/' -o $@
 
-kernel/kernel.bin: kernel/kernel_entry.asm kernel/klib.c kernel/interrupt.c kernel/ktest.c  kernel/kernel.c
+kernel/kernel.bin: kernel/kernel_entry.asm kernel/klib.c kernel/keyboard.c kernel/interrupt.c kernel/ktest.c  kernel/kernel.c
 	nasm kernel/kernel_entry.asm -f elf32 -I 'kernel/' -o kernel/kernel_entry.o	
 	gcc -c -m32 -fno-builtin -o kernel/klib.o kernel/klib.c
 	gcc -c -m32 -fno-builtin -o kernel/interrupt.o kernel/interrupt.c
+	gcc -c -m32 -fno-builtin -o kernel/keyboard.o kernel/keyboard.c
 	gcc -c -m32 -fno-builtin -o kernel/ktest.o kernel/ktest.c
 	gcc -c -m32 -fno-builtin -o kernel/kernel.o kernel/kernel.c
-	ld -m elf_i386 -s -Ttext 0x30400 -o $@ kernel/kernel_entry.o kernel/klib.o kernel/interrupt.o kernel/ktest.o kernel/kernel.o
+	ld -m elf_i386 -s -Ttext 0x30400 -o $@ kernel/kernel_entry.o kernel/klib.o kernel/interrupt.o kernel/keyboard.o kernel/ktest.o kernel/kernel.o
 
 #kernel/kernel.bin: kernel/kernel_entry.o kernel/kernel.o ${OBJ}
 #	ld -m elf_i386 -Ttext 0x1000 --oformat binary -o $@  $^ 
