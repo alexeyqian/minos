@@ -26,6 +26,7 @@ struct task         task_table[MAX_TASKS_NUM]={ // task_table includes sub data 
 					{test_c,   STACK_SIZE_TESTC, "TestC"}
 					};
 
+int disp_pos;
 TTY tty_table[NR_CONSOLES];
 CONSOLE console_table[NR_CONSOLES];
 int nr_current_console;
