@@ -8,8 +8,7 @@
 #include "func_def.h"
 #include "ktest.h"
 #include "shared.h"
-
-void task_tty();
+#include "tty.h"
 
 // global vars
 uint8_t			    gdt_ptr[6];	               
@@ -26,6 +25,10 @@ struct task         task_table[MAX_TASKS_NUM]={ // task_table includes sub data 
 					{test_b,   STACK_SIZE_TESTB, "TestB"},
 					{test_c,   STACK_SIZE_TESTC, "TestC"}
 					};
+
+TTY tty_table[NR_CONSOLES];
+CONSOLE console_table[NR_CONSOLES];
+int nr_current_console;
 
 int get_ticks_impl();
 syscall_t           syscall_table[SYS_CALL_COUNT] = {get_ticks_impl};
@@ -76,7 +79,6 @@ void kmain(){ // entrance of process
 		irq_table[i] = irq_handler;
 
 	init_clock();
-	init_keyboard();	
 
 	restart();
 	while(1){}
@@ -279,11 +281,6 @@ void init_clock(){ // init 8253 PIT
 
 	put_irq_handler(CLOCK_IRQ, clock_handler);
 	enable_irq(CLOCK_IRQ);	
-}
-
-void task_tty(){
-	while(1) 
-		keyboard_read();
 }
 
 // system call implementations

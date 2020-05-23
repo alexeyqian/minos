@@ -7,6 +7,9 @@
 #include "shared.h"
 #include "keyboard.h"
 
+// static is for compiler only, will generate same asm code with or without it.
+// statix will cause the symble not be included in export symbol table,
+// which in turn will reduce linkage time, since less symbols in the table to process.
 static KB_INPUT kb_in;
 static bool_t code_with_e0;
 static bool_t shift_l; 
@@ -17,7 +20,8 @@ static bool_t ctrl_l;
 static bool_t ctrl_r;
 static int 	  column = 0; // keyrow[column]: a value in keymap
 
-void keyboard_handler(int irq);
+// static for function means private to this module.
+static void keyboard_handler(int irq);
 void init_keyboard(){
 	kb_in.count = 0;
 	kb_in.p_head = kb_in.p_tail = kb_in.buf;
@@ -26,7 +30,7 @@ void init_keyboard(){
 }
 
 // write to buffer
-void keyboard_write(){
+static void keyboard_write(){
 	//kprint("code arrive keyboard_handler!");
 	uint8_t scan_code = in_byte(KB_DATA);
 	//print_int(scan_code);
@@ -69,14 +73,7 @@ uint8_t get_byte_from_kb_buf()	/* 从键盘缓冲区中读取下一个字节 */
 	return scan_code;
 }
 
-// TODO: move to tty.c
-void in_process(uint32_t key){
-	char output[2] = {'\0', '\0'};
-	if(!(key & FLAG_EXT)){ // is it's printable key
-		output[0] = key & 0xff;
-		kprint(output);
-	}
-}
+extern void in_process(uint32_t key);
 
 // read from buffer
 // it might run multiple times to get a complete scan code.
@@ -134,50 +131,50 @@ void keyboard_read()
 				code_with_e0 = TRUE;
 			}
 		}
+		
 		if ((key != PAUSEBREAK) && (key != PRINTSCREEN)) {
 			/* 首先判断Make Code 还是 Break Code */
-			make = (scan_code & FLAG_BREAK ? FALSE : TRUE);
-			
+			make = (scan_code & FLAG_BREAK ? FALSE : TRUE);			
 			/* 先定位到 keymap 中的行 */
 			keyrow = &keymap[(scan_code & 0x7F) * MAP_COLS];
 
 			column = 0;
-
+			
 			if (shift_l || shift_r) {
+				//kprint("yes shift");
 				column = 1;
-			}
+			}else kprint("no shift");
 
 			if (code_with_e0) {
 				column = 2;
 			}
 
-			key = keyrow[column];
-
+			key = keyrow[column];			
 			switch(key) {
-			case SHIFT_L:
-				shift_l	= make;
-				break;
-			case SHIFT_R:
-				shift_r	= make;
-				break;
-			case CTRL_L:
-				ctrl_l	= make;
-				break;
-			case CTRL_R:
-				ctrl_r	= make;
-				break;
-			case ALT_L:
-				alt_l	= make;
-				break;
-			case ALT_R:
-				alt_l	= make;
-				break;
-			default:
-				break;
+				case SHIFT_L:
+					shift_l	= make;
+					break;
+				case SHIFT_R:
+					shift_r	= make;
+					break;
+				case CTRL_L:
+					ctrl_l	= make;
+					break;
+				case CTRL_R:
+					ctrl_r	= make;
+					break;
+				case ALT_L:
+					alt_l	= make;
+					break;
+				case ALT_R:
+					alt_l	= make;
+					break;
+				default:
+					break;
 			}
 		}
 
-		if(make){ /* 忽略 Break Code */
+		if(make){ // ignore Break Code	
 			key |= shift_l	? FLAG_SHIFT_L	: 0;
 			key |= shift_r	? FLAG_SHIFT_R	: 0;
 			key |= ctrl_l	? FLAG_CTRL_L	: 0;
