@@ -17,14 +17,17 @@ uint8_t			    idt_ptr[6];
 struct gate			idt[IDT_SIZE];
 struct tss          tss;                        // only one tss in kernel, resides in mem, and it has a descriptor in gdt.
 struct proc*        p_proc_ready;               // points to next about to run process's pcb in proc_table
-struct proc         proc_table[TASKS_NUM];  // contains array of process control block: proc
-												// you can think each proc entry contains a private stack for process in kernel
-struct task         task_table[TASKS_NUM]={ // task_table includes sub data from proc_table
-					{task_tty, STACK_SIZE_TTY,   "tty"  },
-					{test_a,   STACK_SIZE_TESTA, "TestA"},
-					{test_b,   STACK_SIZE_TESTB, "TestB"},
-					{test_c,   STACK_SIZE_TESTC, "TestC"}
+struct proc         proc_table[TASKS_NUM + PROCS_NUM];  // contains array of process control block: proc
+struct task         task_table[TASKS_NUM]={ 
+						{task_tty, STACK_SIZE_TTY,   "tty"  }				
 					};
+
+// TODO: in future, os should dynamically create user process table
+struct task         user_proc_table[PROCS_NUM]={ 					
+						{test_a,   STACK_SIZE_TESTA, "TestA"},
+						{test_b,   STACK_SIZE_TESTB, "TestB"},
+						{test_c,   STACK_SIZE_TESTC, "TestC"}
+					};	
 
 int disp_pos;
 TTY tty_table[NR_CONSOLES];
@@ -45,7 +48,7 @@ void replace_gdt();
 void init_tss();
 void init_descriptor(struct descriptor* p_desc, uint32_t base, uint32_t limit, uint16_t attribute);
 void init_ldt_descriptors_in_dgt();
-void init_proc_table_from_task_table();
+void init_proc_table();
 
 
 void clock_handler(int irq);
@@ -72,7 +75,7 @@ void irq_handler(int irq);
 void kmain(){ // entrance of process
 	kprint("\n -------- kmain begin --------- \n");	
 	// load_tss(); // run in entry.asm 
-	init_proc_table_from_task_table();	
+	init_proc_table();	
 
 	init_clock();
 
@@ -111,7 +114,7 @@ void init_ldt_descriptors_in_dgt(){
 	int i;
 	struct proc* p_proc = proc_table;
 	uint16_t selector_ldt = INDEX_LDT_FIRST << 3; 
-	for(i = 0; i < TASKS_NUM; i++){
+	for(i = 0; i < TASKS_NUM + PROCS_NUM; i++){
 		// Fill LDT descriptor in GDT
 		init_descriptor((struct descriptor*)&gdt[selector_ldt >> 3],
 				virtual_to_physical(seg_to_physical(SELECTOR_KERNEL_DATA), proc_table[i].ldts),
@@ -122,7 +125,11 @@ void init_ldt_descriptors_in_dgt(){
 	}
 }
 
-void init_proc_table_from_task_table(){
+void init_proc_table(){
+	uint8_t privilege;
+	uint8_t rpl;
+	int eflags;
+
 	struct proc* p_proc = proc_table;
 	struct task* p_task = task_table;
 	//TODO:  p_task_stack rename to process_inner_stack??
@@ -132,7 +139,20 @@ void init_proc_table_from_task_table(){
 	// initialize proc_table according to task_table
 	// each process has a ldt selector points to a ldt descriptor in GDT.
 	int i;
-	for(i = 0; i < TASKS_NUM; i++){
+	for(i = 0; i < TASKS_NUM + PROCS_NUM; i++){
+		
+		if(i < TASKS_NUM){ // tasks
+			p_task = task_table + i;
+			privilege = PRIVILEGE_TASK;
+			rpl = RPL_TASK;
+			eflags = 0x1202; // IF=1, IOPL=1, bit2 = 1
+		}else{ // user processes
+			p_task = user_proc_table + (i - TASKS_NUM);
+			privilege = PRIVILEGE_USER;
+			rpl = RPL_USER;
+			eflags = 0x202; // IF=1, bit2 = 1
+		}
+
 		strcpy(p_proc->p_name, p_task->name);
 		p_proc->pid = 1;
 
@@ -145,28 +165,28 @@ void init_proc_table_from_task_table(){
 			(char*)&gdt[SELECTOR_KERNEL_CODE >> 3], 
 			sizeof(struct descriptor));	
 		// change the DPL
-		p_proc->ldts[0].attr1 = DA_C | PRIVILEGE_TASK << 5;	
+		p_proc->ldts[0].attr1 = DA_C | privilege << 5;	
 	
 		memcpy(
 			(char*)&p_proc->ldts[1], 
 			(char*)&gdt[SELECTOR_KERNEL_DATA >> 3], 
 			sizeof(struct descriptor));
 		// change the DPL
-		p_proc->ldts[1].attr1 = DA_DRW | PRIVILEGE_TASK << 5;	
+		p_proc->ldts[1].attr1 = DA_DRW | privilege << 5;	
 
 		// init registers
 		// cs points to first LDT descriptor
 		// ds, es, fs, ss point to sencod LDT descriptor
 		// gs points to video descroptor in GDT
-		p_proc->regs.cs		= ((8 * 0) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | RPL_TASK;
-		p_proc->regs.ds		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | RPL_TASK;
-		p_proc->regs.es		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | RPL_TASK;
-		p_proc->regs.fs		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | RPL_TASK;
-		p_proc->regs.ss		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | RPL_TASK;
-		p_proc->regs.gs		= (SELECTOR_KERNEL_VIDEO & SA_RPL_MASK) | RPL_TASK;
+		p_proc->regs.cs		= ((8 * 0) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | rpl;
+		p_proc->regs.ds		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | rpl;
+		p_proc->regs.es		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | rpl;
+		p_proc->regs.fs		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | rpl;
+		p_proc->regs.ss		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | rpl;
+		p_proc->regs.gs		= (SELECTOR_KERNEL_VIDEO & SA_RPL_MASK) | rpl;
 		p_proc->regs.eip	= (uint32_t)p_task->initial_eip;
 		p_proc->regs.esp	= (uint32_t) p_task_stack; // points to seperate stack for process/task 
-		p_proc->regs.eflags	= 0x1202;	// IF=1, IOPL=1, bit 2 is always 1.
+		p_proc->regs.eflags	= eflags;
 	
 		p_task_stack -= p_task->stack_size;
 		p_proc++;
@@ -177,9 +197,10 @@ void init_proc_table_from_task_table(){
 	ticks = 0;
 	p_proc_ready = proc_table; 
 
-	proc_table[0].ticks = proc_table[0].priority = 150;	
-	proc_table[1].ticks = proc_table[1].priority = 50;	
-	proc_table[2].ticks = proc_table[2].priority = 30;	
+	proc_table[0].ticks = proc_table[0].priority = 15;	
+	proc_table[1].ticks = proc_table[1].priority = 5;	
+	proc_table[2].ticks = proc_table[2].priority = 5;	
+	proc_table[3].ticks = proc_table[3].priority = 5;	
 }
 
 // from segment to physical address
@@ -214,14 +235,14 @@ void schedule(){
 	struct proc* p;
 	int greatest_ticks = 0;
 	while(!greatest_ticks){
-		for( p = proc_table; p < proc_table + TASKS_NUM; p++)
+		for( p = proc_table; p < proc_table + TASKS_NUM + PROCS_NUM; p++)
 			if(p->ticks > greatest_ticks){
 				greatest_ticks = p->ticks;
 				p_proc_ready = p;
 			}
 
 		if(!greatest_ticks)
-			for(p = proc_table; p < proc_table + TASKS_NUM; p++)
+			for(p = proc_table; p < proc_table + TASKS_NUM + PROCS_NUM; p++)
 				p->ticks = p->priority;
 	}
 }

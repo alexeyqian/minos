@@ -9,7 +9,8 @@
 #define RPL_TASK SA_RPL1
 #define RPL_USER SA_RPL3    
 
-#define TASKS_NUM 4  
+#define TASKS_NUM 1
+#define PROCS_NUM 3 
 #define STACK_SIZE_TTY   0x8000
 #define STACK_SIZE_TESTA 0x8000
 #define STACK_SIZE_TESTB 0x8000
