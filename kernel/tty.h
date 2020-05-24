@@ -33,6 +33,6 @@ typedef struct s_console
 }CONSOLE;
 
 void task_tty();
-void append_key_to_tty_buf_or_process_it(TTY* p_tty, uint32_t key);
+void hand_over_key_to_tty(TTY* p_tty, uint32_t key);
 
 #endif

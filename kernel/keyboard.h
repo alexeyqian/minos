@@ -117,6 +117,6 @@ typedef struct s_kb {
 }KB_INPUT;
 
 void init_keyboard();
-void keyboard_read();
+void kb_read();
 
 #endif 

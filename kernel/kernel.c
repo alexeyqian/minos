@@ -17,9 +17,9 @@ uint8_t			    idt_ptr[6];
 struct gate			idt[IDT_SIZE];
 struct tss          tss;                        // only one tss in kernel, resides in mem, and it has a descriptor in gdt.
 struct proc*        p_proc_ready;               // points to next about to run process's pcb in proc_table
-struct proc         proc_table[MAX_TASKS_NUM];  // contains array of process control block: proc
+struct proc         proc_table[TASKS_NUM];  // contains array of process control block: proc
 												// you can think each proc entry contains a private stack for process in kernel
-struct task         task_table[MAX_TASKS_NUM]={ // task_table includes sub data from proc_table
+struct task         task_table[TASKS_NUM]={ // task_table includes sub data from proc_table
 					{task_tty, STACK_SIZE_TTY,   "tty"  },
 					{test_a,   STACK_SIZE_TESTA, "TestA"},
 					{test_b,   STACK_SIZE_TESTB, "TestB"},
@@ -29,7 +29,7 @@ struct task         task_table[MAX_TASKS_NUM]={ // task_table includes sub data 
 int disp_pos;
 TTY tty_table[NR_CONSOLES];
 CONSOLE console_table[NR_CONSOLES];
-int nr_current_console;
+int current_console_idx;
 
 int get_ticks_impl();
 syscall_t           syscall_table[SYS_CALL_COUNT] = {get_ticks_impl};
@@ -111,7 +111,7 @@ void init_ldt_descriptors_in_dgt(){
 	int i;
 	struct proc* p_proc = proc_table;
 	uint16_t selector_ldt = INDEX_LDT_FIRST << 3; 
-	for(i = 0; i < MAX_TASKS_NUM; i++){
+	for(i = 0; i < TASKS_NUM; i++){
 		// Fill LDT descriptor in GDT
 		init_descriptor((struct descriptor*)&gdt[selector_ldt >> 3],
 				virtual_to_physical(seg_to_physical(SELECTOR_KERNEL_DATA), proc_table[i].ldts),
@@ -132,7 +132,7 @@ void init_proc_table_from_task_table(){
 	// initialize proc_table according to task_table
 	// each process has a ldt selector points to a ldt descriptor in GDT.
 	int i;
-	for(i = 0; i < MAX_TASKS_NUM; i++){
+	for(i = 0; i < TASKS_NUM; i++){
 		strcpy(p_proc->p_name, p_task->name);
 		p_proc->pid = 1;
 
@@ -214,14 +214,14 @@ void schedule(){
 	struct proc* p;
 	int greatest_ticks = 0;
 	while(!greatest_ticks){
-		for( p = proc_table; p < proc_table + MAX_TASKS_NUM; p++)
+		for( p = proc_table; p < proc_table + TASKS_NUM; p++)
 			if(p->ticks > greatest_ticks){
 				greatest_ticks = p->ticks;
 				p_proc_ready = p;
 			}
 
 		if(!greatest_ticks)
-			for(p = proc_table; p < proc_table + MAX_TASKS_NUM; p++)
+			for(p = proc_table; p < proc_table + TASKS_NUM; p++)
 				p->ticks = p->priority;
 	}
 }
@@ -257,7 +257,7 @@ void clock_handler(int irq){
 
 	// round robin process scheduler.
 	p_proc_ready++;
-	if(p_proc_ready >= proc_table + MAX_TASKS_NUM)
+	if(p_proc_ready >= proc_table + TASKS_NUM)
 		p_proc_ready = proc_table;
 
 	kprint("]");

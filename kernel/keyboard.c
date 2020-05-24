@@ -133,7 +133,7 @@ static uint32_t process_make_code(uint32_t key){
 // since some scan code contains more than one bytes
 // make  code | 0x80 = break code
 // break code & 0x7f = make  code
-void keyboard_read(TTY* p_tty) 
+void kb_read(TTY* p_tty) 
 {
 	uint8_t	    scan_code;
 	bool_t	    is_make_code;	               // true for make code, false for break code
@@ -257,7 +257,7 @@ void keyboard_read(TTY* p_tty)
 	// in our system ascii special   keys are defined as 9 bits value
 	// using 32 bits to combine make code and status, such as shift/ctrl/alt
 	uint32_t combinded_key = process_make_code(key);
-	append_key_to_tty_buf_or_process_it(p_tty, combinded_key);
+	hand_over_key_to_tty(p_tty, combinded_key);
 }
 
 /*
