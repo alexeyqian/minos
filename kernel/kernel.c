@@ -34,8 +34,9 @@ TTY tty_table[NR_CONSOLES];
 CONSOLE console_table[NR_CONSOLES];
 int current_console_idx;
 
+int write_impl(char* buf, int len, struct proc* p_proc);
 int get_ticks_impl();
-syscall_t           syscall_table[SYS_CALL_COUNT] = {get_ticks_impl};
+syscall_t           syscall_table[SYSCALLS_NUM] = {get_ticks_impl, write_impl};
 
 // task stack is a mem area divided into MAX_TASK_NUM small areas
 // each small area used as stack for a process/task
@@ -188,6 +189,7 @@ void init_proc_table(){
 		p_proc->regs.esp	= (uint32_t) p_task_stack; // points to seperate stack for process/task 
 		p_proc->regs.eflags	= eflags;
 	
+		p_proc->tty_idx = 0;
 		p_task_stack -= p_task->stack_size;
 		p_proc++;
 		p_task++;
@@ -201,6 +203,10 @@ void init_proc_table(){
 	proc_table[1].ticks = proc_table[1].priority = 5;	
 	proc_table[2].ticks = proc_table[2].priority = 5;	
 	proc_table[3].ticks = proc_table[3].priority = 5;	
+
+	proc_table[1].tty_idx = 0;
+	proc_table[2].tty_idx = 1;
+	proc_table[3].tty_idx = 1;
 }
 
 // from segment to physical address
@@ -303,4 +309,18 @@ void init_clock(){ // init 8253 PIT
 // system call implementations
 int get_ticks_impl(){
 	return ticks;	
+}
+
+void write_to_tty(TTY* p_tty, char* buf, int len){
+	char* p = buf;
+	int i = len;
+	while(i){
+		tty_output_char(p_tty->p_console, *p++);
+		i--;
+	}
+}
+
+int write_impl(char* buf, int len, struct proc* p_proc){
+	write_to_tty(&tty_table[p_proc->tty_idx], buf, len);
+	return 0;
 }

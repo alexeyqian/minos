@@ -75,7 +75,7 @@
 #define	DA_386IGate		0x8E	/* 386 中断门类型值			*/
 #define	DA_386TGate		0x8F	/* 386 陷阱门类型值			*/
 
-#define SYS_CALL_COUNT    1
+#define SYSCALLS_NUM  2
 
 #define TIMER0          0x40
 #define TIMER_MODE      0x43
@@ -83,7 +83,7 @@
 #define TIMER_FREQ      1193182L
 #define HZ              100
 
-#define IRQ_NUM        16
+#define IRQ_NUM         16
 
 // hardware interrupts
 #define	CLOCK_IRQ	    0

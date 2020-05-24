@@ -12,6 +12,7 @@ extern void disable_int();
 extern void enable_int();
 
 extern void syscall();             
-extern int  get_ticks();          
+extern int  get_ticks();    
+extern void write(char* buf, int len);      
 
 #endif

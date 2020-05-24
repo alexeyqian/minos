@@ -6,3 +6,4 @@ global enable_irq
 
 global syscall
 global get_ticks
+global write

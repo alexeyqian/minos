@@ -117,6 +117,7 @@ typedef struct proc{
     char                p_name[16];               // process name
 	int                 ticks;
 	int                 priority;
+	int 				tty_idx;
 }proc_s;
 
 // The paging has made LDT almost obsolete, and there is no longer need for multiple LDT descriptors.
