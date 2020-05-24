@@ -104,7 +104,11 @@
 #define PAD_MID		PAD_5	    		/* Middle key	*/
 #define PAD_DEL		PAD_DOT		    	/* Del		*/
 
-/* Keyboard structure, 1 per console. */
+#define	LED_CODE	0xED
+#define	KB_ACK		0xFA
+
+// keyboard buffer, buffering scan code from 8042 keyboard controller
+// TODO: rename to kbbuf_s
 typedef struct s_kb {
 	char*	p_head;		         /* 指向缓冲区中下一个空闲位置 */	 
 	char*	p_tail;			    /* 指向键盘任务应处理的字节 */

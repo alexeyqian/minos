@@ -4,10 +4,18 @@
 #include "const.h"
 #include "types.h"
 
-#define TTY_IN_BYTES   256 // tty input queue size
-#define DEFAULT_CHAR_COLOR	0x07	/* 0000 0111 黑底白字 */
+#define TTY_IN_BYTES         256    // tty input queue size
+#define DEFAULT_CHAR_COLOR	 0x07	/* 0000 0111 黑底白字 */
+
+#define SCROLL_SCREEN_UP	 1	    /* scroll forward */
+#define SCROLL_SCREEN_DOWN	-1	    /* scroll backward */
+
+#define SCREEN_SIZE		    (80 * 25)
+#define SCREEN_WIDTH		80
 
 typedef struct s_tty{
+    // TODO: wrap fields into p_tty_buf
+    // so it looks like tty_buff_s* p_tty_buff
     uint32_t  in_buf[TTY_IN_BYTES];
     int       inbuf_count;            // how many keys are in buffer
     uint32_t* p_inbuf_head;           // point to next available space
@@ -25,5 +33,6 @@ typedef struct s_console
 }CONSOLE;
 
 void task_tty();
+void append_key_to_tty_buf_or_process_it(TTY* p_tty, uint32_t key);
 
 #endif

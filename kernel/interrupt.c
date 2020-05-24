@@ -38,6 +38,8 @@
 extern struct descriptor    gdt[];   
 extern struct gate			idt[];
 extern uint8_t			    idt_ptr[];	 
+extern pf_irq_handler_t     irq_table[];
+extern void irq_handler(int irq);
 
 // imported from asm
 // exception handlers
@@ -95,6 +97,11 @@ void init_8259a(){
 
 	out_byte(INT_M_CTLMASK,	0xFE);	             // Master, OCW1. 
 	out_byte(INT_S_CTLMASK,	0xFF);	             // Slave , OCW1. 
+
+	int i;
+	for(i = 0; i < IRQ_NUM; i++)
+		irq_table[i] = irq_handler;
+
 }
 
 void init_idt_descriptor(unsigned char vector, uint8_t desc_type, pf_int_handler_t handler, unsigned char privilege){

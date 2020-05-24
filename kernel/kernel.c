@@ -74,11 +74,6 @@ void kmain(){ // entrance of process
 	// load_tss(); // run in entry.asm 
 	init_proc_table_from_task_table();	
 
-	// TODO: move to some where??
-	int i;
-	for(i = 0; i < IRQ_NUM; i++)
-		irq_table[i] = irq_handler;
-
 	init_clock();
 
 	restart();
