@@ -1,5 +1,7 @@
-#ifndef _MINOS_GDT_H_
-#define _MINOS_GDT_H_
+#ifndef _MINOS_CONST_H_
+#define _MINOS_CONST_H_
+
+#include "../include/minos/type.h"
 
 #define	PRIVILEGE_KRNL	0
 #define	PRIVILEGE_TASK	1
@@ -131,5 +133,11 @@
 #define V_MEM_SIZE			       0x8000	/* 32K: B8000H -> BFFFFH */
 
 #define NR_CONSOLES 3
+
+/* Sizes of memory tables. The boot monitor distinguishes three memory areas, 
+ * namely low mem below 1M, 1M-16M, and mem after 16M. More chunks are needed
+ * for MINOS.
+ */
+#define NR_MEMS            8	
 
 #endif

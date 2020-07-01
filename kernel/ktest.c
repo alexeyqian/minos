@@ -9,7 +9,7 @@ void test_a(){
 		//kprint("A");
 		//print_int(i++);
 		//kprint("}");
-		printf("<Ticks: %x>", get_ticks());
+		//printf("<Ticks: %x>", get_ticks());
 		milli_delay(200);
 	}
 }
@@ -20,7 +20,7 @@ void test_b(){
 		//kprint("B");
 		//print_int(i++);
 		//kprint("}");		
-		printf("B");
+		//printf("B");
 		milli_delay(200);
 	}
 }
@@ -31,7 +31,7 @@ void test_c(){
 		//kprint("");
 		//print_int(i++);
 		//kprint("}");
-		printf("C");
+		//printf("C");
 		milli_delay(200);
 	}
 }

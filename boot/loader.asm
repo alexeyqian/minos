@@ -192,6 +192,7 @@ start:
 %include "rm_lib.inc"
 %include "rm_read_sectors.inc"
 %include "rm_get_fat_entry.inc"
+%include "boot_info.inc"
 
 ; [section .data]
 [bits 16]
@@ -205,8 +206,34 @@ sector_num:             dw 0
 kernel_size:            dd 0
 root_dir_sectors_for_loop: dw ROOT_DIR_SECTORS
 
+boot_info:
+istruc multiboot_info
+	at multiboot_info.flags,			dd 0
+	at multiboot_info.memoryLo,			dd 0
+	at multiboot_info.memoryHi,			dd 0
+	at multiboot_info.bootDevice,		dd 0
+	at multiboot_info.cmdLine,			dd 0
+	at multiboot_info.mods_count,		dd 0
+	at multiboot_info.mods_addr,		dd 0
+	at multiboot_info.syms0,			dd 0
+	at multiboot_info.syms1,			dd 0
+	at multiboot_info.syms2,			dd 0
+	at multiboot_info.mmap_length,		dd 0
+	at multiboot_info.mmap_addr,		dd 0
+	at multiboot_info.drives_length,	dd 0
+	at multiboot_info.drives_addr,		dd 0
+	at multiboot_info.config_table,		dd 0
+	at multiboot_info.bootloader_name,	dd 0
+	at multiboot_info.apm_table,		dd 0
+	at multiboot_info.vbe_control_info,	dd 0
+	at multiboot_info.vbe_mode_info,	dw 0
+	at multiboot_info.vbe_interface_seg,dw 0
+	at multiboot_info.vbe_interface_off,dw 0
+	at multiboot_info.vbe_interface_len,dw 0
+iend
+
 ;=========================================
-; all below code running in protected mode
+; bits 32 all below code running in protected mode
 ;=========================================
 ;[section .text]
 [bits 32]

@@ -1,11 +1,20 @@
-#ifndef _MINOS_KTYPES_H
-#define _MINOS_KTYPES_H
+#ifndef _MINOS_KTYPES_H_
+#define _MINOS_KTYPES_H_
 
 #include "types.h"
 #include "const.h"
+#include "../include/minos/type.h"
 
 // MACRO: linear address to physical address
 #define virtual_to_physical(seg_base, virtual) (uint32_t)(((uint32_t)seg_base) + (uint32_t)(virtual))
+
+typedef int proc_nr_t; // process table entry number
+typedef short sys_id_t // system process index
+
+struct memory{
+	phys_clicks base;
+	phys_clicks size;
+};
 
 typedef struct descriptor{
     uint16_t limit_low;
