@@ -1,3 +1,6 @@
+%ifndef _RM_READ_SECTORS_INC_
+%define _RM_READ_SECTORS_INC_
+
 ; from sector index in ax, read cl sectors into es:bx
 rm_read_sectors:
     push bp
@@ -31,3 +34,5 @@ rm_read_sectors:
     mov sp, bp
     pop bp
     ret
+
+%endif

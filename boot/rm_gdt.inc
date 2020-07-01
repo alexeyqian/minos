@@ -1,3 +1,6 @@
+%ifndef _RM_GDT_INC_
+%define _RM_GDT_INC_
+
 gdt_start:
 ;                     base-----limit----attr
 gdt_null:  Descriptor 0,       0,       0 ;  LABEL_GDT
@@ -13,3 +16,5 @@ gdt_ptr:
 code_selector  equ gdt_code  - gdt_start 
 data_selector  equ gdt_data  - gdt_start
 video_selector equ gdt_video - gdt_start + SA_RPL3
+
+%endif

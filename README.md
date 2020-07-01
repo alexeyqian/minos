@@ -4,10 +4,27 @@ Minimal OS Kernel, inspired by Yuan Yu (Tinix) and Andrew S. Tanenbaum (Minix3).
 The best way to study OS is to make a simple one by yourself.
 
 # Boot Loader
-## Boot
+It's a two stage boot loader, also follow multiboot specification.
+## First Stage: Boot
 It's the boot sector on block on floppy disk/hard disk, which is the first block contains 512 bytes.
 It includes the 0xaa55 at locataion 0x510 and 0x511, the magic number which makes BIOS think it's bootable.
-It also includes some functions for furthur booting and loading.
+This first 512 bytes on disk, only includes code/functions to load 'loader.bin' from disk to memory, 
+and transfer control to loader.bin.
+boot.asm is compiled to 'bin' format, which is flat binary without any format/metadata.
+it read some disk sectors, and parsing fat12 disk format to load add data sector in floppy disk for file loader.bin
+
+## Second Stage: Load
+loader.asm, compiled to bin format.
+Loaded by boot at address: 0x90100, and start to prepare everything for kernel, then transfer control to kernel entry point.
+the address range: 0x90000 - 0x90099 (0x100, 256bytes) is used as loader's stack space.
+so in total: loader is using: loader.bin (start from 0x90100 + size) + loader stack space (256 bytes)
+It prepares:
+- get memory size
+- get memory map
+- fill kernel info structure
+- load file kernel.bin into memory.
+- entery protected mode
+- transfer control to kernel
 
 ### main purpose: loading loader.bin to memory
 

@@ -1,3 +1,6 @@
+%ifndef _RM_GET_FAT_ENTRY_INC_
+%define _RM_GET_FAT_ENTRY_INC_
+
 ; get fat entry
 ; find index of sector(ax) in fat
 ; BASE_ADDR is in bx
@@ -43,3 +46,4 @@ rm_get_fat_entry:
 	pop es
 	ret
 
+%endif

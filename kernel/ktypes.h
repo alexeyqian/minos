@@ -9,7 +9,7 @@
 #define virtual_to_physical(seg_base, virtual) (uint32_t)(((uint32_t)seg_base) + (uint32_t)(virtual))
 
 typedef int proc_nr_t; // process table entry number
-typedef short sys_id_t // system process index
+typedef short sys_id_t; // system process index
 
 struct memory{
 	phys_clicks base;

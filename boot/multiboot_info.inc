@@ -1,7 +1,7 @@
 %ifndef _MULTIBOOTINFO_INC_
 %define _MULTIBOOTINFO_INC_
 
-struc boot_info
+struc multiboot_info
 	.flags				resd	1
 	.memoryLo			resd	1
 	.memoryHi			resd	1

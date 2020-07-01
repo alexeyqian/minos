@@ -1,3 +1,4 @@
+; not used, will be removed later
 ; real mode, check memory range map
 [bits 16]
 rm_check_mem_map:
