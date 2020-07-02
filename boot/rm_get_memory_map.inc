@@ -29,7 +29,9 @@ rm_get_memory_map:
 
 ; data section
 ; ================ begin of variables for check and display memory range =====================
-rm_mem_size_str: db 'mem size:', 0
+rm_mem_size_str:    db 'mem size:', 0
+rm_mem_table_title: db  'addr_low addr_high length_low length_high type', 0
+
 rm_mem_size:           dd 0
 rm_mem_range_count:    dd 0
 rm_mem_range_struct: 
@@ -39,9 +41,10 @@ rm_mem_range_struct:
 	rm_mr_length_high:    dd 0
 	rm_mr_type:           dd 0
 rm_mem_range_buf: times 512 db 0 ; buffer to store address range structures array
-rm_mem_table_title: db  'addr_low addr_high length_low length_high type', 0
 
 pm_mem_size_str equ LOADER_PHYSICAL_ADDR + rm_mem_size_str
+pm_mem_table_title  equ	LOADER_PHYSICAL_ADDR + rm_mem_table_title
+
 pm_mem_size equ LOADER_PHYSICAL_ADDR + rm_mem_size
 pm_mem_range_count equ LOADER_PHYSICAL_ADDR + rm_mem_range_count
 pm_mem_range_struct equ LOADER_PHYSICAL_ADDR + rm_mem_range_struct
@@ -51,7 +54,7 @@ pm_mem_range_struct equ LOADER_PHYSICAL_ADDR + rm_mem_range_struct
 	pm_mr_length_high equ LOADER_PHYSICAL_ADDR + rm_mr_length_high
 	pm_mr_type equ LOADER_PHYSICAL_ADDR + rm_mr_type
 pm_mem_range_buf equ LOADER_PHYSICAL_ADDR + rm_mem_range_buf
-pm_mem_table_title  equ	LOADER_PHYSICAL_ADDR + rm_mem_table_title
+
 ; ============= end of variables for check and display memory range =====================
 
 %endif

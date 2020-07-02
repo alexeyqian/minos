@@ -1,41 +1,15 @@
-%ifndef _STDIO_INC_
-%define _STDIO_INC_
-
-;************************************************;
-;   16 bits functions
-;************************************************;
-
-bits 16
-
-; puts16()
-; print a null terminated string
-; ds:si: 0 terminated string
-
-puts16:
-    pusha
-.loop:
-    lodsb     ; load next byte from string from ds:si to al
-    or al, al ; does al = 0?
-    jz .done  ; null terminator found, bail out
-    mov ah, 0eh
-    int 10h
-    jmp .loop
-.done:
-    popa
-    ret
+%ifndef _STDIO32_INC_
+%define _STDIO32_INC_
 
 ;************************************************;
 ;   32 bits functions
 ;************************************************;
-
 bits 32
-%define VIDMEM 0xb8000
-%define COLS   80
-%DEFINE LINES  25
-%define CHAR_ATTRB 14
 
-_curx db 0 ; current x, y location
-_cury db 0
+%define VIDEO_MEM 0xb8000
+%define COLS   80
+%define ROWS  25
+%define CHAR_ATTR 14
 
 ;************************************************;
 ;putch32()
@@ -44,7 +18,7 @@ _cury db 0
 
 putch32:
     pusha
-	mov	edi, VIDMEM
+	mov	edi, VIDEO_MEM
 	xor	eax, eax		    ; clear eax
 
 	; y * screen width
@@ -91,7 +65,7 @@ putch32:
 ; print a null terminated string
 ; ebx: address of string to print
 puts32:
- pusha
+    pusha
 	push	ebx			; copy the string address
 	pop	edi
 
@@ -110,7 +84,7 @@ puts32:
 	;  update hardware cursor
 	mov	bh, byte [_cury]	; get current position
 	mov	bl, byte [_curx]
-	call	movcur			; update cursor
+	call	_movecur			; update cursor
 
 	popa			
 	ret
@@ -122,9 +96,9 @@ puts32:
 clr32:
     pusha
     cld               ; clear direction flag, set DF=0
-    mov edi, VIDMEM
+    mov edi, VIDEO_MEM
     mov cx, 2000
-    mov ah, CHAR_ATTRB
+    mov ah, CHAR_ATTR
     mov al, ' '
     rep stosw         ; store ax at address es:di, rep cx times
     mov byte [_curx], 0
@@ -143,10 +117,10 @@ gotoxy:
     ret
     
 ;************************************************;
-; movecur()
+; _movecur()
 ; update hardware cursor
 ; bl = x pos, bh = y pos
-movecur:
+_movecur:
     pusha
 
     ; get current position
@@ -180,5 +154,9 @@ movecur:
 
     popa
     ret
+
+; data
+_curx db 0 ; current x, y location
+_cury db 0
 
 %endif

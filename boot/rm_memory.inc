@@ -87,7 +87,4 @@ bios_get_memory_map:
     popad
     ret
 
-
-
-
 %endif

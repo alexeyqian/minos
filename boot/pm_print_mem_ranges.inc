@@ -1,4 +1,3 @@
-;[section .text]
 [bits 32]
 
 pm_print_mem_ranges:

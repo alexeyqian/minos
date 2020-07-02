@@ -3,8 +3,8 @@
 
 struc multiboot_info
 	.flags				resd	1
-	.memoryLo			resd	1
-	.memoryHi			resd	1
+	.memory_size_low			resd	1
+	.memory_size_high		resd	1
 	.bootDevice			resd	1
 	.cmdLine			resd	1
 	.mods_count			resd	1
