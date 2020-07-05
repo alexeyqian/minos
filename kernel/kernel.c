@@ -9,6 +9,7 @@
 #include "ktest.h"
 #include "shared.h"
 #include "tty.h"
+#include "phys_mem.h"
 
 // global vars
 uint8_t			    gdt_ptr[6];	               
@@ -45,6 +46,7 @@ pf_irq_handler_t    irq_table[IRQ_NUM];
 int k_reenter;
 int ticks;
 
+void init_phys_mem();
 void replace_gdt();
 void init_tss();
 void init_descriptor(struct descriptor* p_desc, uint32_t base, uint32_t limit, uint16_t attribute);
@@ -62,6 +64,8 @@ void restart();
 void kinit(){
     //clear_screen();
     kprint("\n----- kinit begin -----\n");
+
+	init_phys_mem();
 	replace_gdt();  
 	init_idt();
 	init_tss();	
@@ -70,6 +74,71 @@ void kinit(){
 	load_gdt(); // load new kernel gdt
 	load_idt();		
 	kprint("\n----- kinit end -----\n");
+}
+
+void init_phys_mem(){
+	// TODO: get boot info
+	//boot_info* binfo_ptr = (boot_info*)(LOADER_PHYSICAL_BASE + ??)
+
+	// memory size
+	// TODO: replace hardcodes
+	//uint32_t mem_size = binfo_ptr->mem_size;
+	uint32_t mem_size = 0x00A00000; // 10M, need 320 bytes for mem map
+	//uint32_t kenel_size = binfo_ptr->kernel_size; 
+	// place the memory map of physical memory manager at end of kernel
+	//pmmgr_init(mem_size, KERNEL_BASE + kernel_size);
+	uint32_t mem_map_ptr = 0x500;
+	pmmgr_init(mem_size, mem_map_ptr);
+	//kprint("\n physical memory manager initilized with %i\n", mem_size);
+	// TODO: replace hard code
+	//mem_region* regions = (memory_region*)0x1000; // get region map from loader
+	
+	struct mem_region r1;
+	r1.start_low = 0x00100000; // start from 1M
+	r1.start_high = 0x0;
+	r1.size_low = 0x00900000;  // size 9M
+	r1.size_high = 0x0;
+	r1.type = 1;
+	
+	struct mem_region regions[MEM_REGION_COUNT];
+	regions[0] = r1;
+	/*
+	char* mem_types_str[] = {
+		{"available"},
+		{"reserved"},
+		{"acpi reclaim"},
+		{"acpi nvs memory"}
+	};*/
+
+	for(int i = 0; i < MEM_REGION_COUNT; i++){
+		if(regions[i].type > 4) regions[i].type = 1; // sanity check		
+		if(i > 0 && regions[i].start_low == 0) break; // no more entries
+
+		// print region ...
+		// print region %i: start: length: type:
+		if(regions[i].type == 1)
+			pmmgr_init_region(regions[i].start_low, regions[i].size_low);			
+	}
+
+	// mark boot region, loader region, kernel.bin region, and kernel region as used.
+	// pmmgr_uninit_region(-x10000, kernel_size*512);
+	// TODO: replace hard code.
+	pmmgr_uninit_region(0x0, 0x100000); // reserver lower 1M
+
+	// print i% regions initialized: %i max blocks, %i used blocks
+
+	// TODO: test code
+	uint32_t* p1 = (uint32_t*) pmmgr_alloc_block();
+	kprint("\np1 allocated at: ");
+	print_int_as_hex((int)p1);
+	
+	uint32_t* p2 = (uint32_t*)pmmgr_alloc_block();
+	kprint("\np2 allocated at: ");
+	print_int_as_hex((int)p2);	
+
+	pmmgr_free_block(p1);
+	pmmgr_free_block(p2);
+
 }
 
 void irq_handler(int irq);

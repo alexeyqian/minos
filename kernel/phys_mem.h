@@ -3,39 +3,36 @@
 
 #include "ktypes.h" // should be stdint.h
 
+#define MEM_REGION_COUNT 1 // TODO: update to 15
+
 typedef uint32_t physical_addr;
 
-void pmmngr_init (size_t, physical_addr);
+struct mem_region{
+	uint32_t start_low;
+	uint32_t start_high;
+	uint32_t size_low;
+	uint32_t size_high;
+	uint32_t type;
+	//uint32_t acpi_3_0; // TODO
+};
 
+void pmmgr_init(size_t, physical_addr);
 //! enables a physical memory region for use
-void	pmmngr_init_region (physical_addr, size_t);
-
+void pmmgr_init_region(physical_addr, size_t);
 //! disables a physical memory region as in use (unuseable)
-void	pmmngr_uninit_region (physical_addr base, size_t);
-
-void*	pmmngr_alloc_block ();
-
-void	pmmngr_free_block (void*);
-
-void*	pmmngr_alloc_blocks (size_t);
-
-void	pmmngr_free_blocks (void*, size_t);
-
-size_t pmmng_memory_size ();
-
-uint32_t pmmngr_used_block_count ();
-
-uint32_t pmmngr_free_block_count ();
-
-uint32_t pmmngr_max_block_count ();
-
-uint32_t pmmngr_block_size ();
+void pmmgr_uninit_region (physical_addr base, size_t);
+void* pmmgr_alloc_block ();
+void pmmgr_free_block (void*);
+void* pmmgr_alloc_blocks (size_t);
+void pmmgr_free_blocks (void*, size_t);
+size_t pmmgr_memory_size ();
+uint32_t pmmgr_used_block_count ();
+uint32_t pmmgr_free_block_count ();
+uint32_t pmmgr_max_block_count ();
+uint32_t pmmgr_block_size ();
 
 //extern	void	pmmngr_paging_enable (bool);
-
 //extern	bool	pmmngr_is_paging ();
-
 //extern	void	pmmngr_load_PDBR (physical_addr);
-
 //extern	physical_addr pmmngr_get_PDBR ();
 #endif

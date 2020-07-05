@@ -195,7 +195,7 @@ char* itoa(int num, char* str, int base){
     return str;
 }
 
-char *itox( int num, char* str) {
+char* itox( int num, char* str) {
     char *	p = str;
 	char	ch;
 	int	i;
@@ -239,6 +239,7 @@ void print_int(int num){
     kprint(str);
 }
 
+// TODO: print uint32 as hex
 void print_int_as_hex(int num){
     //char str[digit_count(num) + 1];
 	char str[16];

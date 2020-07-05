@@ -31,8 +31,9 @@ kernel/kernel.bin: kernel/kernel_entry.asm kernel/klib.c kernel/interrupt.c kern
 	gcc -c -m32 -fno-builtin -o kernel/keyboard.o kernel/keyboard.c
 	gcc -c -m32 -fno-builtin -o kernel/tty.o kernel/tty.c
 	gcc -c -m32 -fno-builtin -o kernel/ktest.o kernel/ktest.c
+	gcc -c -m32 -fno-builtin -o kernel/phys_mem.o kernel/phys_mem.c
 	gcc -c -m32 -fno-builtin -o kernel/kernel.o kernel/kernel.c
-	ld -m elf_i386 -s -Ttext 0x30400 -o $@ kernel/kernel_entry.o kernel/klib.o kernel/interrupt.o kernel/keyboard.o kernel/tty.o kernel/ktest.o kernel/kernel.o
+	ld -m elf_i386 -s -Ttext 0x30400 -o $@ kernel/kernel_entry.o kernel/klib.o kernel/interrupt.o kernel/keyboard.o kernel/tty.o kernel/ktest.o kernel/phys_mem.o kernel/kernel.o
 
 #kernel/kernel.bin: kernel/kernel_entry.o kernel/kernel.o ${OBJ}
 #	ld -m elf_i386 -Ttext 0x1000 --oformat binary -o $@  $^ 

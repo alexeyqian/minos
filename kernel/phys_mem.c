@@ -19,7 +19,7 @@ void _pmmgr_map_unset(int bit){
     _pmmgr_mem_map[bit/32] &= ~(1 << (bit % 32));
 }
 
-bool _pmmgr_map_test(int bit){
+int _pmmgr_map_test(int bit){
     return _pmmgr_mem_map[bit/32] & (1 << (bit %32));
 }
 
@@ -71,8 +71,8 @@ void pmmgr_init(size_t mem_size, physical_addr bitmap){
     _pmmgr_max_blocks = mem_size * 1024 / PMMGR_BLOCK_SIZE;
     _pmmgr_used_blocks = _pmmgr_max_blocks;
 
-    // by default, all memory are in use
-    memset(_pmmgr_mem_map, 0xf, _pmmgr_max_blocks / PMMGR_BLOCKS_PER_BYTE);
+    //TODO: by default, all memory are in use
+    //memset(_pmmgr_mem_map, 0xf, _pmmgr_max_blocks / PMMGR_BLOCKS_PER_BYTE);
 }
 
 void pmmgr_init_region(physical_addr base, size_t size){
@@ -96,7 +96,7 @@ void pmmgr_uninit_region(physical_addr base, size_t size){
 }
 
 void* pmmgr_alloc_block(){
-    if(_pmmgr_free_block_count() <= 0) return 0;
+    if(pmmgr_free_block_count() <= 0) return 0;
     int frame = _pmmgr_first_free();
     if(frame == -1) return 0;
 
@@ -116,7 +116,7 @@ void pmmgr_free_block(void* p){
 
 void* pmmgr_alloc_blocks(size_t size){
     if(size == 0) return 0;
-    if(_pmmgr_free_block_count() <= size) return 0;
+    if(pmmgr_free_block_count() <= size) return 0;
 
     int frame = _pmmgr_first_free_s(size);
     if(frame == -1) return 0;
