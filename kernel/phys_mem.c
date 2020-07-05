@@ -109,7 +109,7 @@ void* pmmgr_alloc_block(){
 
 void pmmgr_free_block(void* p){
     physical_addr addr = (physical_addr)p;
-    int frame = addr / PMMGR_BLOCK_SIZE; // TODO: ??
+    int frame = addr / PMMGR_BLOCK_SIZE; 
     _pmmgr_map_unset(frame);
     _pmmgr_used_blocks--;
 }
