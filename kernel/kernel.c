@@ -1,5 +1,5 @@
 #include "kernel.h"
-#include "asm_util.h"
+#include "ke_asm_utils.h"
 #include "klib.h"
 #include "const.h"
 #include "ktypes.h"

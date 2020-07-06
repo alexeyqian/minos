@@ -1,7 +1,7 @@
 #include "klib.h"
 #include "const.h"
 #include "types.h"
-#include "asm_util.h"
+#include "ke_asm_utils.h"
 
 uint8_t in_byte(io_port_t port){
     uint8_t result;

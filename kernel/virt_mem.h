@@ -96,4 +96,9 @@ void vmmgr_pdirectory_clear (pdirectory* dir);
 //! get directory entry from directory table
 pd_entry* vmmgr_pdirectory_lookup_entry (pdirectory* p, virtual_addr addr);
 
+void vmmgr_set_paging(bool_t);
+bool_t vmmgr_is_paging ();
+void vmmgr_load_pdbr(physical_addr);
+physical_addr vmmgr_get_pdbr();
+
 #endif

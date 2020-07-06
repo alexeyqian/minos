@@ -157,8 +157,3 @@ uint32_t pmmgr_free_block_count(){
 uint32_t pmmgr_block_size(){
     return PMMGR_BLOCK_SIZE;
 }
-
-// bool pmmgr_is_page_eanbled()
-// enable_paging
-// load_pdbr()
-// get_pdbr()

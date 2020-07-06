@@ -22,8 +22,8 @@ stack_space resb 2*1024 ; reserved 2K for kernle stack
 kernel_stack_top: 
 
 [section .text]
-%include "ke_exports.inc"
 
+global _start
 _start:  
 	mov ebp, kernel_stack_top
 	mov esp, kernel_stack_top ; move esp from loader to kernel
@@ -42,35 +42,6 @@ _main:
 
 	jmp kmain
 
-global store_gdt
-store_gdt:
-	push ebp
-	mov ebp, esp
-
-	sgdt [gdt_ptr] 
-
-	pop ebp
-	ret
-
-global load_gdt
-load_gdt:
-	push ebp
-	mov ebp, esp
-
-	lgdt [gdt_ptr]   
-
-	pop ebp
-	ret
-
-global load_idt
-load_idt:
-	push ebp
-	mov ebp, esp
-
-	lidt [idt_ptr]
-
-	pop ebp
-	ret
-
+%include "ke_asm_utils.inc"
 %include "ke_interrupts.inc"
 %include "ke_syscalls.inc"

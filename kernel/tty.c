@@ -1,6 +1,6 @@
 #include "const.h"
 #include "types.h"
-#include "asm_util.h"
+#include "ke_asm_utils.h"
 #include "klib.h"
 #include "keyboard.h"
 #include "tty.h"

@@ -1,5 +1,9 @@
 ; exception and interrupt handlers ==============
 
+global disable_irq
+global enable_irq
+global restart
+
 ; exception handlers
 global	divide_error
 global	single_step_exception
@@ -274,16 +278,6 @@ enable_8:
         out	INT_S_CTLMASK, al	; clear bit at slave 8259
         popf
         ret
-
-global disable_int
-disable_int:
-	cli
-	ret
-
-global enable_int
-enable_int:
-	sti
-	ret
 
 ; ========================= save   =========================
 ; jump from ring1/3(user space) into ring0 kernel space.

@@ -4,6 +4,7 @@ IDX_WRITE           equ 1
 
 [bits 32]
 [section .text]
+global syscall
 syscall: 
     call save
     push dword [p_proc_ready] ; bus proc addr as 1st parameter
@@ -18,11 +19,13 @@ syscall:
     cli
     ret
 
+global get_ticks
 get_ticks: 
     mov eax, IDX_GET_TICKS
     int INT_VECTOR_SYSCALL   
     ret
 
+global write
 write:
     mov eax, IDX_WRITE
     mov ebx, [esp + 4]

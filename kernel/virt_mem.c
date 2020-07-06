@@ -1,4 +1,5 @@
 #include "virt_mem.h"
+#include "ke_asm_utils.h"
 
 // ============= PTE =================
 inline void pt_entry_add_attrib (pt_entry* e, uint32_t attrib) {
@@ -91,25 +92,10 @@ inline pd_entry* vmmgr_pdirectory_lookup_entry (pdirectory* p, virtual_addr addr
 }
 
 inline bool_t vmmgr_switch_pdirectory (pdirectory* dir) {
-
-	if (!dir)
-		return false;
-
+	if (!dir) return false;
 	_cur_directory = dir;
-	pmmngr_load_PDBR (_cur_pdbr);
+	pmmgr_load_pdbr (_cur_pdbr);
 	return true;
-}
-
-// TODO: move to util.asm
-void vmmgr_flush_tlb_entry (virtual_addr addr) {
-
-#ifdef _MSC_VER
-	_asm {
-		cli
-		invlpg	addr
-		sti
-	}
-#endif
 }
 
 pdirectory* vmmgr_get_directory () {
@@ -233,4 +219,30 @@ void vmmgr_init () {
     // remember that as soon as paging is enabled, all address become virtual
     pmmngr_paging_enable (true);
     // all addresses are virtual after this line.
+}
+
+// =========== functions using asm ================
+void vmmgr_flush_tlb_entry (virtual_addr addr) {
+    flush_tlb_entry(addr);
+}
+
+void vmmgr_enable_paging(){
+    enable_paging();
+}
+
+void vmmgr_disable_paging(){
+    disable_paging();
+}
+
+bool vmmgr_is_paging () {
+	uint32_t res= get_cr0();
+	return (res & 0x80000000) ? false : true;
+}
+
+void vmmgr_load_pdbr (physical_addr addr) {
+    load_pdbr(addr);
+}
+
+physical_addr vmmgr_get_pdbr() {
+    return get_pdbr();
 }

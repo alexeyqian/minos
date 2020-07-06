@@ -3,6 +3,8 @@
 
 #define TRUE  1
 #define FALSE 0
+#define true TRUE
+#define false FALSE
 
 typedef int              bool_t;
 typedef char             int8_t;

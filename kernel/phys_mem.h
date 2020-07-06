@@ -31,8 +31,4 @@ uint32_t pmmgr_free_block_count ();
 uint32_t pmmgr_max_block_count ();
 uint32_t pmmgr_block_size ();
 
-//extern	void	pmmngr_paging_enable (bool);
-//extern	bool	pmmngr_is_paging ();
-//extern	void	pmmngr_load_PDBR (physical_addr);
-//extern	physical_addr pmmngr_get_PDBR ();
 #endif
