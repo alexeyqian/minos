@@ -2,7 +2,6 @@
 [section .text]
 ; all below functions can only called by c language, follow c language calling convension
 ; caller clean stack
-
 ; TODO: in future, it might be good idea to just use inline asm in C.
 
 global disable_int
@@ -63,6 +62,6 @@ get_pdbr: ;uint32_t get_pdbr();
 	ret
 
 global get_cr0
-get_cr0: ;uint32_t vmmgr_is_paging();
+get_cr0: ;uint32_t get_cr0();
 	mov	eax, cr0
     ret

@@ -26,7 +26,6 @@ P_LDT		equ	P_LDT_SEL	+ 4 ; proc->ldt
 
 TSS3_S_SP0	equ	4
 
-
 ; have to match kernel.h 
 SELECTOR_CODE		 equ 0x08		; Defined in loader
 SELECTOR_TSS		 equ 0x20		; TSS. jump from outer to inner, the values of SS and ESP will be restored from it.

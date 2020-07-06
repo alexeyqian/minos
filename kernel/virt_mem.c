@@ -1,5 +1,6 @@
 #include "virt_mem.h"
 #include "ke_asm_utils.h"
+#include "klib.h"
 
 // ============= PTE =================
 inline void pt_entry_add_attrib (pt_entry* e, uint32_t attrib) {
@@ -73,38 +74,38 @@ inline void pd_entry_enable_global (pd_entry e) {
 #define PAGE_SIZE 4096
 
 //! current directory table
-pdirectory*		_cur_directory=0;
+struct pdirectory* _cur_directory=0;
 //! current page directory base register
 physical_addr	_cur_pdbr=0;
 
-inline pt_entry* vmmgr_ptable_lookup_entry (ptable* p,virtual_addr addr) {
+inline pt_entry* vmmgr_ptable_lookup_entry (struct ptable* p,virtual_addr addr) {
 
 	if (p)
 		return &p->m_entries[ PAGE_TABLE_INDEX (addr) ];
 	return 0;
 }
 
-inline pd_entry* vmmgr_pdirectory_lookup_entry (pdirectory* p, virtual_addr addr) {
+inline pd_entry* vmmgr_pdirectory_lookup_entry (struct pdirectory* p, virtual_addr addr) {
 
 	if (p)
 		return &p->m_entries[ PAGE_TABLE_INDEX (addr) ];
 	return 0;
 }
 
-inline bool_t vmmgr_switch_pdirectory (pdirectory* dir) {
+inline bool_t vmmgr_switch_pdirectory (struct pdirectory* dir) {
 	if (!dir) return false;
 	_cur_directory = dir;
-	pmmgr_load_pdbr (_cur_pdbr);
+	vmmgr_load_pdbr (_cur_pdbr);
 	return true;
 }
 
-pdirectory* vmmgr_get_directory () {
+struct pdirectory* vmmgr_get_directory () {
 	return _cur_directory;
 }
 
 bool_t vmmgr_alloc_page (pt_entry* e) {
 	//! allocate a free physical frame
-	void* p = pmmngr_alloc_block ();
+	void* p = pmmgr_alloc_block ();
 	if (!p)
 		return false;
 
@@ -120,7 +121,7 @@ void vmmgr_free_page (pt_entry* e) {
 
 	void* p = (void*)pt_entry_pfn (*e);
 	if (p)
-		pmmngr_free_block (p);
+		pmmgr_free_block (p);
 
 	pt_entry_del_attrib (e, I86_PTE_PRESENT);
 }
@@ -128,19 +129,19 @@ void vmmgr_free_page (pt_entry* e) {
 void vmmgr_map_page (void* phys, void* virt) {
 
    // get page directory
-   pdirectory* pageDirectory = vmmgr_get_directory ();
+   struct pdirectory* pageDirectory = vmmgr_get_directory ();
 
    // get page table
    pd_entry* e = &pageDirectory->m_entries[PAGE_DIRECTORY_INDEX ((uint32_t) virt) ];
    if ( (*e & I86_PTE_PRESENT) != I86_PTE_PRESENT) {
 
       // page table not present, allocate it
-      ptable* table = (ptable*) pmmngr_alloc_block ();
+      struct ptable* table = (struct ptable*) pmmgr_alloc_block ();
       if (!table)
          return;
 
       // clear page table
-      memset (table, 0, sizeof(ptable));
+      memset ((char*)table, 0, sizeof(struct ptable));
 
       //! create a new entry
       pd_entry* entry = &pageDirectory->m_entries[PAGE_DIRECTORY_INDEX((uint32_t)virt)];
@@ -152,7 +153,7 @@ void vmmgr_map_page (void* phys, void* virt) {
    }
 
    //! get table
-   ptable* table = (ptable*) PAGE_GET_PHYSICAL_ADDRESS ( e );
+   struct ptable* table = (struct ptable*) PAGE_GET_PHYSICAL_ADDRESS ( e );
    //! get page
    pt_entry* page = &table->m_entries [ PAGE_TABLE_INDEX ( (uint32_t) virt) ];
 
@@ -163,19 +164,19 @@ void vmmgr_map_page (void* phys, void* virt) {
 
 void vmmgr_init () {
     // allocate default directory table
-    pdirectory* dir = (pdirectory*)pmmgr_alloc_block(); //pmmgr_alloc_blocks(3); // TODO: ?? WHY 3?
+    struct pdirectory* dir = (struct pdirectory*)pmmgr_alloc_block(); //pmmgr_alloc_blocks(3); // TODO: ?? WHY 3?
     if (!dir) return;
-    memset (dir, 0, sizeof (pdirectory)); 
+    memset ((char*)dir, 0, sizeof (struct pdirectory)); 
 
     // allocate first page table, 4m from 0
-    ptable* table0 = (ptable*) pmmngr_alloc_block ();
+    struct ptable* table0 = (struct ptable*) pmmgr_alloc_block ();
     if (!table0) return;
-    memset (table0, 0, sizeof (ptable));
+    memset ((char*)table0, 0, sizeof (struct ptable));
 
     // allocate 3g page table, 4m from 3g
-    ptable* table3g = (ptable*) pmmngr_alloc_block ();
+    struct ptable* table3g = (struct ptable*) pmmgr_alloc_block ();
     if (!table3g) return;
-    memset (table3g, 0, sizeof (ptable));
+    memset ((char*)table3g, 0, sizeof (struct ptable));
 
     //! 1st 4mb are idenitity mapped
     for (int i=0, frame=0x0, virt=0x00000000; i<1024; i++, frame+=4096, virt+=4096) {
@@ -207,17 +208,15 @@ void vmmgr_init () {
     pd_entry* entry3g = &dir->m_entries [PAGE_DIRECTORY_INDEX (0xc0000000) ];
     pd_entry_add_attrib (entry3g, I86_PDE_PRESENT);
     pd_entry_add_attrib (entry3g, I86_PDE_WRITABLE);
-    pd_entry_set_frame  (entry3g, (physical_addr)table);
+    pd_entry_set_frame  (entry3g, (physical_addr)table3g);
     
     // store current PDBR
     _cur_pdbr = (physical_addr) &dir->m_entries;
         
     // switch to our page directory
-    vmmgr_switch_pdirectory (dir);
-
-    // enable paging
+    vmmgr_switch_pdirectory (dir);    
     // remember that as soon as paging is enabled, all address become virtual
-    pmmngr_paging_enable (true);
+    vmmgr_enable_paging ();
     // all addresses are virtual after this line.
 }
 
@@ -234,7 +233,7 @@ void vmmgr_disable_paging(){
     disable_paging();
 }
 
-bool vmmgr_is_paging () {
+bool_t vmmgr_is_paging () {
 	uint32_t res= get_cr0();
 	return (res & 0x80000000) ? false : true;
 }

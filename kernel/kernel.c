@@ -10,6 +10,7 @@
 #include "shared.h"
 #include "tty.h"
 #include "phys_mem.h"
+#include "virt_mem.h"
 
 // global vars
 uint8_t			    gdt_ptr[6];	               
@@ -47,12 +48,12 @@ int k_reenter;
 int ticks;
 
 void init_phys_mem();
+void init_virt_mem();
 void replace_gdt();
 void init_tss();
 void init_descriptor(struct descriptor* p_desc, uint32_t base, uint32_t limit, uint16_t attribute);
 void init_ldt_descriptors_in_dgt();
 void init_proc_table();
-
 
 void clock_handler(int irq);
 uint32_t seg_to_physical(uint16_t seg);
@@ -62,10 +63,13 @@ void delay(int time);
 void restart();
 
 void kinit(){
-    //clear_screen();
     kprint("\n----- kinit begin -----\n");
+	//init_phys_mem();	
+	while(1){}; // testing
+	
+	/*	
+	//init_virt_mem();
 
-	init_phys_mem();
 	replace_gdt();  
 	init_idt();
 	init_tss();	
@@ -74,6 +78,7 @@ void kinit(){
 	load_gdt(); // load new kernel gdt
 	load_idt();		
 	kprint("\n----- kinit end -----\n");
+	*/
 }
 
 void init_phys_mem(){
@@ -141,14 +146,18 @@ void init_phys_mem(){
 
 }
 
+void init_virt_mem(){
+	kprint("\n ----------- start virtual mem initing and paging.");
+	vmmgr_init();
+	kprint("\n ----------- virtual mem inited and paging enabled.");
+}
+
 void irq_handler(int irq);
 void kmain(){ // entrance of process
 	kprint("\n -------- kmain begin --------- \n");	
 	// load_tss(); // run in entry.asm 
 	init_proc_table();	
-
 	init_clock();
-
 	restart();
 	while(1){}
 }

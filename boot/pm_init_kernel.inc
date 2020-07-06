@@ -1,4 +1,5 @@
-pm_init_kernel:
+[bits 32]
+pm_parse_elf_kernel_bin:
 ; loop through all program headers, for putting segments into memory
     push ebp
     mov ebp, esp

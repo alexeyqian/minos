@@ -24,8 +24,8 @@ typedef uint32_t pt_entry;
 void pt_entry_add_attrib(pt_entry* e, uint32_t aatrib);
 void pt_entry_del_attrib(pt_entry* e, uint32_t attrib);
 void pt_entry_set_frame(pt_entry*, physical_addr);
-void pt_entry_is_present(pt_entry e);
-void pt_entry_is_writable(pt_entry e);
+bool_t pt_entry_is_present(pt_entry e);
+bool_t pt_entry_is_writable(pt_entry e);
 physical_addr pt_entry_pfn(pt_entry e);
 
 // ================ PDE =============
@@ -78,25 +78,26 @@ void vmmgr_init ();
 void vmmgr_map_page (void* phys, void* virt);
 bool_t vmmgr_alloc_page (pt_entry*);
 void vmmgr_free_page (pt_entry* e);
-bool_t vmmgr_switch_pdirectory (pdirectory*);
+bool_t vmmgr_switch_pdirectory (struct pdirectory*);
 //get current page directory
-pdirectory* vmmgr_get_directory ();
+struct pdirectory* vmmgr_get_directory ();
 // flushes a cached translation lookaside buffer (TLB) entry
- void vmmgr_flush_tlb_entry (virtual_addr addr);
+void vmmgr_flush_tlb_entry (virtual_addr addr);
 // clears a page table
- void vmmgr_ptable_clear (ptable* p);
+void vmmgr_ptable_clear (struct ptable* p);
 //! convert virtual address to page table index
- uint32_t vmmgr_ptable_virt_to_index (virtual_addr addr);
+uint32_t vmmgr_ptable_virt_to_index (virtual_addr addr);
 //! get page entry from page table
- pt_entry* vmmgr_ptable_lookup_entry (ptable* p,virtual_addr addr);
+pt_entry* vmmgr_ptable_lookup_entry (struct ptable* p,virtual_addr addr);
 //! convert virtual address to page directory index
- uint32_t vmmgr_pdirectory_virt_to_index (virtual_addr addr);
+uint32_t vmmgr_pdirectory_virt_to_index (virtual_addr addr);
 //! clears a page directory table
-void vmmgr_pdirectory_clear (pdirectory* dir);
+void vmmgr_pdirectory_clear (struct pdirectory* dir);
 //! get directory entry from directory table
-pd_entry* vmmgr_pdirectory_lookup_entry (pdirectory* p, virtual_addr addr);
+pd_entry* vmmgr_pdirectory_lookup_entry (struct pdirectory* p, virtual_addr addr);
 
-void vmmgr_set_paging(bool_t);
+void vmmgr_enable_paging();
+void vmmgr_disable_paging();
 bool_t vmmgr_is_paging ();
 void vmmgr_load_pdbr(physical_addr);
 physical_addr vmmgr_get_pdbr();

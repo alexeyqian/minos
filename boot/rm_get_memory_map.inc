@@ -42,18 +42,18 @@ rm_mem_range_struct:
 	rm_mr_type:           dd 0
 rm_mem_range_buf: times 512 db 0 ; buffer to store address range structures array
 
-pm_mem_size_str equ LOADER_PHYSICAL_ADDR + rm_mem_size_str
-pm_mem_table_title  equ	LOADER_PHYSICAL_ADDR + rm_mem_table_title
+pm_mem_size_str equ LOADER_WITH_STACK_PHYSICAL_ADDR + rm_mem_size_str
+pm_mem_table_title  equ	LOADER_WITH_STACK_PHYSICAL_ADDR + rm_mem_table_title
 
-pm_mem_size equ LOADER_PHYSICAL_ADDR + rm_mem_size
-pm_mem_range_count equ LOADER_PHYSICAL_ADDR + rm_mem_range_count
-pm_mem_range_struct equ LOADER_PHYSICAL_ADDR + rm_mem_range_struct
-	pm_mr_base_addr_low equ LOADER_PHYSICAL_ADDR + rm_mr_base_addr_low
-	pm_mr_base_addr_high equ LOADER_PHYSICAL_ADDR + rm_mr_base_addr_high
-	pm_mr_length_low equ LOADER_PHYSICAL_ADDR + rm_mr_length_low
-	pm_mr_length_high equ LOADER_PHYSICAL_ADDR + rm_mr_length_high
-	pm_mr_type equ LOADER_PHYSICAL_ADDR + rm_mr_type
-pm_mem_range_buf equ LOADER_PHYSICAL_ADDR + rm_mem_range_buf
+pm_mem_size equ LOADER_WITH_STACK_PHYSICAL_ADDR + rm_mem_size
+pm_mem_range_count equ LOADER_WITH_STACK_PHYSICAL_ADDR + rm_mem_range_count
+pm_mem_range_struct equ LOADER_WITH_STACK_PHYSICAL_ADDR + rm_mem_range_struct
+	pm_mr_base_addr_low equ LOADER_WITH_STACK_PHYSICAL_ADDR + rm_mr_base_addr_low
+	pm_mr_base_addr_high equ LOADER_WITH_STACK_PHYSICAL_ADDR + rm_mr_base_addr_high
+	pm_mr_length_low equ LOADER_WITH_STACK_PHYSICAL_ADDR + rm_mr_length_low
+	pm_mr_length_high equ LOADER_WITH_STACK_PHYSICAL_ADDR + rm_mr_length_high
+	pm_mr_type equ LOADER_WITH_STACK_PHYSICAL_ADDR + rm_mr_type
+pm_mem_range_buf equ LOADER_WITH_STACK_PHYSICAL_ADDR + rm_mem_range_buf
 
 ; ============= end of variables for check and display memory range =====================
 

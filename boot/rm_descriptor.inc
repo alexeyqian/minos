@@ -1,5 +1,5 @@
-%ifndef _PM_INC
-%define _PM_INC
+%ifndef _RM_DESCRIPTOR_INC_
+%define _RM_DESCRIPTOR_INC_
 
 ; 描述符图示
 

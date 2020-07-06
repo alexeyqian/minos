@@ -1,6 +1,4 @@
-;[section .text]
 [bits 32]
-
 VIDEO_MEMORY equ 0xb8000
 WHITE_ON_BLACK equ 0x0f
 
@@ -78,7 +76,6 @@ pm_print_int_as_hex:
     mov esp, ebp
     pop ebp
 	ret
-
 
 ; print string in protected mode
 pm_print_str:
@@ -179,8 +176,7 @@ pm_mem_copy:
     pop ebp
     ret
 
-; [section .data]
-; [bits 32]
+[bits 32]
 ; start print on screen position: row 6, col 0
 ; this variable will be updated along the printing.
 pm_position_on_screen: dd (80 * 6 + 0) * 2 

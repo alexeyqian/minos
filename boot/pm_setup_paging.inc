@@ -1,3 +1,4 @@
+; NOT USED ANY MORE
 pm_setup_paging:
     push ebp
     mov ebp, esp    

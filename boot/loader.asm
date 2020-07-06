@@ -12,9 +12,11 @@
 %include "constants.inc"
 
 LOADER_STACK_BASE equ 0x100
-KERNEL_BASE equ 0x8000
+
+KERNEL_BASE equ 0x8000 ;  TODO: rename to KERNEL_BIN_BASE, KERNEL_BIN_OFFSET, ...
 KERNEL_OFFSET equ 0
 KERNEL_PHYSICAL_BASE equ KERNEL_BASE * 0x10
+; TODO: rename to KERNEL_RUNTIME_PHYS_ENTRY_POINT
 KERNEL_PHYSICAL_ENTRY_POINT equ 0x30400 ; must match -Ttext in makefile
 
 PAGE_DIR_BASE   equ 0x100000 ; 1M
@@ -22,23 +24,26 @@ PAGE_TABLE_BASE equ 0x101000 ; 1M + 4K
 
 ; ================== entry point =================
 jmp short start       ; fixed position, start execute from first line of this bin file after loading by boot.
+%include "fixed_bios_parameter_block.inc" ; contains data used to read kernel.bin from FAT12 floppy to memory
 start:
     mov ax, cs
     mov ds, ax
     mov es, ax
     mov ss, ax
-    mov sp, LOADER_STACK_BASE  ; stack from 0x9000:0x100 to 0x9000:0x0 (0x100 256 bytes)
+	mov bp, LOADER_STACK_BASE
+    mov sp, LOADER_STACK_BASE  ; stack from 0x90100 to 0x90000 (0x100 256 bytes)
        
     mov bx, msg_in_loader
     call rm_print_str
 
-	call rm_get_memory_map
+	; ========== step 1: load kernel.bin file (ELF format) into memory [BIOS] ==========
 	call rm_load_kernel_bin
-
-    ; prepare for proteded mode
+	; ========== step 2: get memory map [BIOS] ==========
+	call rm_get_memory_map	
+	; ========== step 3: enter protect mode ==========
 	lgdt [gdt_ptr]
-	; enable A20
 	cli
+	; enable A20	
 	in al, 0x92 ; enable A20
 	or al, 0b00000010
 	out 0x92, al
@@ -46,13 +51,11 @@ start:
 	mov eax, cr0
 	or eax, 1
 	mov cr0, eax
-
 	; jump into protected mode 
-	jmp dword code_selector: (LOADER_PHYSICAL_ADDR + pm_start)
-    jmp $
+	jmp dword code_selector: (LOADER_WITH_STACK_PHYSICAL_ADDR + pm_start)
+    ;jmp $ ; should never run to here
 
-%include "pm.inc" ; constants and macros
-%include "fixed_bios_parameter_block.inc" ; data
+%include "rm_descriptor.inc" ; constants and macros
 %include "rm_gdt.inc" ; data
 %include "rm_get_memory_map.inc"
 %include "rm_load_kernel_bin.inc"
@@ -69,7 +72,7 @@ msg_no_kernel_found:    db 'kernel not found', 0
 msg_kernel_loaded:      db 'kernel loaded|', 0
 is_odd:                 db 0
 sector_num:             dw 0
-kernel_size:            dd 0
+kernel_size:            dd 0 ; TODO: need to access this data in PM mode
 root_dir_sectors_for_loop: dw ROOT_DIR_SECTORS
 
 ;=================================================
@@ -84,50 +87,43 @@ pm_start: ; entry point for protected mode
 	mov es, ax
 	mov fs, ax
 	mov ss, ax
-	mov ebp, pm_stack_top
+	mov ebp, pm_loader_stack_top 
 	mov esp, ebp
 
 	; TODO clear screen
-
+	
+	; TODO: ISSUE HERE
 	push pm_running_in_pm_str ; c caller convention, caller prepares parameters.
 	call pm_print_str	
 	add esp, 4 ; c caller convention, caller cleans parameters
 	call pm_print_nl
-
-	call pm_print_mem_ranges	
 	
-	call pm_setup_paging
+	call pm_print_mem_ranges
 	
-	push pm_paging_enabled_str
-	call pm_print_str	
-	add esp, 4
-	call pm_print_nl
-
-	call pm_init_kernel
-
+	; TODO: move paging setup to kernel c code.
+	call pm_setup_paging ; issue not here
+	
+	call pm_parse_elf_kernel_bin
+	jmp $
 	; LOADER'S JOB ENDS AFTER THIS JMP
 	; ================ enter kernel code ========================
 	jmp code_selector: KERNEL_PHYSICAL_ENTRY_POINT
 	;=============================================================
-	
-	;jmp $
 
 %include "pm_lib.inc"
 %include "pm_print_mem_ranges.inc"
 %include "pm_setup_paging.inc"
 %include "pm_init_kernel.inc"
 
-;[section .data]
+; data variables
 [bits 32]
 rm_new_line_str: db 0xa, 0
 rm_running_in_pm_str: db 'running in protected mode now.', 0
 
-pm_new_line_str equ LOADER_PHYSICAL_ADDR + rm_new_line_str
-pm_running_in_pm_str  equ	LOADER_PHYSICAL_ADDR + rm_running_in_pm_str
+pm_new_line_str equ LOADER_WITH_STACK_PHYSICAL_ADDR + rm_new_line_str
+pm_running_in_pm_str  equ	LOADER_WITH_STACK_PHYSICAL_ADDR + rm_running_in_pm_str
 
-rm_paging_enabled_str: db 'paging is enabled.', 0
-pm_paging_enabled_str  equ	LOADER_PHYSICAL_ADDR + rm_paging_enabled_str
-
-; 4K appended to the end of loader.bin to be used as stack.
-pm_stack_space: times 0x1000 db 0 
-pm_stack_top    equ   LOADER_PHYSICAL_ADDR + $
+; 1K appended to the end of loader.bin to be used as stack.
+align 32
+pm_loader_stack_space: times 1024 db 0 
+pm_loader_stack_top    equ   LOADER_WITH_STACK_PHYSICAL_ADDR + $ 
