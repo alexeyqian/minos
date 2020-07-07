@@ -1,7 +1,7 @@
 %ifndef _RM_LOAD_KERNEL_BIN_
 %define _RM_LOAD_KERNEL_BIN_
 
-rm_load_kernel_bin:
+loader_load_kernel_bin:
     pusha
     
 	; reset floppy
@@ -12,9 +12,9 @@ rm_load_kernel_bin:
 	; search and load kernel from floppy disk
     mov word [sector_num], ROOT_DIR_FIRST_SECTOR
 .search_kernel:
-	cmp word [root_dir_sectors_for_loop], 0 ; loop 14 times max
+	cmp word [root_dir_sectors], 0 ; loop 14 times max
 	jz .no_kernel_found
-	dec word [root_dir_sectors_for_loop]
+	dec word [root_dir_sectors]
 	
 	; setup es:bx
 	mov ax, KERNEL_BASE
@@ -62,13 +62,14 @@ rm_load_kernel_bin:
 	jmp .search_kernel
 
 .no_kernel_found:
-	mov bx, msg_no_kernel_found
-    call rm_print_str
+	mov ax, '2' ; kernel.bin not found
+    call loader_putax
 	jmp $
 .kernel_found:
-	mov bx, msg_kernel_found
-    call rm_print_str
+	mov ax, 'D' ; kernel.bin found
+    call loader_putax
 	
+.start_loading_kernel:
 	mov ax, ROOT_DIR_SECTORS
 	and di, 0xffe0 ; begining of current dir entry
 
@@ -88,7 +89,7 @@ rm_load_kernel_bin:
 	mov bx, KERNEL_OFFSET
 	mov ax, cx
 
-.begin_loading_file:
+.loop_loading_file:
 	; print one dot per sector
 	;push ax
 	;push bx
@@ -114,11 +115,8 @@ rm_load_kernel_bin:
 	add ax, dx
 	add ax, DELTA_SECTOR_NUM
 	add bx, [bpb_bytes_per_sector]
-	jmp .begin_loading_file
-.file_loaded:
-	mov bx, msg_kernel_loaded
-    call rm_print_str
-
+	jmp .loop_loading_file
+.file_loaded:	
     ; stop floppy motor
 	mov dx, 0x3f2
     mov al, 0

@@ -1,3 +1,5 @@
+; this file is used by boot.asm and loader.asm
+
 ; begin of standard fat boot sector ====================== 
 bs_oem_name:                 db 'ForrestY' ; must be 8 bytes;
 ; BIOS Parameter Block

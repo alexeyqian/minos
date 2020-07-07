@@ -2,6 +2,12 @@
 VIDEO_MEMORY equ 0xb8000
 WHITE_ON_BLACK equ 0x0f
 
+;========== function loader_putax: print char in ax at top left =======
+loader_putax_pm: 
+    mov ah, 0x0f ; white on black
+    mov [gs:0x0], ax
+    ret
+
 pm_print_al_as_hex:
     push ebp
     mov ebp, esp

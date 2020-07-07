@@ -1,5 +1,8 @@
 %ifndef _RM_GET_FAT_ENTRY_INC_
 %define _RM_GET_FAT_ENTRY_INC_
+; used by bool and loader
+
+FIRST_SECTOR_OF_FAT1  equ 1
 
 ; get fat entry
 ; find index of sector(ax) in fat
@@ -10,7 +13,7 @@ rm_get_fat_entry:
 	push bx
 	
 	push ax
-	mov ax, bx ; LOADER_SEG_BASE
+	mov ax, bx    ; LOADER_SEG_BASE
 	sub ax, 0x100 ; reserve 4K for fat behind LOADER_SEG_BASE
 	mov es, ax
 	pop ax
@@ -45,5 +48,9 @@ rm_get_fat_entry:
 	pop bx
 	pop es
 	ret
+
+; data only used by current function
+; TODO: move into stack, sp -2 to reserve space for it.
+is_odd: db 0 
 
 %endif

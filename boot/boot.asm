@@ -3,23 +3,21 @@
 
 BOOT_STACK_BASE equ 0x7c00
 
-; ============== begin of fix order ===============
-jmp short boot_start                        ; convention, first line of code is a jump
-nop                                         ; used as a place holder here
-%include "fixed_bios_parameter_block.inc"   ; standard bios parameters block (BPB), FAT12HEADER, for reading FAT12 floppy
-; ============== end of fix order =================
+jmp short boot_start ; convention, first line of code is a jump
+nop                  ; used as a place holder here
+%include "fat12_header.inc"   ; fixed position, standard bios parameters block
 
-boot_start:
+boot_start:   
     mov ax, cs
-    mov ds, ax
-    mov es, ax
-    mov ss, ax
+    mov ds, ax    
+    mov ss, ax   
+    mov es, ax 
     mov bp, BOOT_STACK_BASE
     mov sp, bp
 
-    jmp rm_load_loader
+    jmp boot_load_loader_bin
 
-%include "rm_load_loader.inc"     ; fixed location
+%include "boot_load_loader_bin.inc"
 
 times 510-($-$$) db 0
 dw 0xaa55

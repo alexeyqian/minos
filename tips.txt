@@ -1,2 +1,0 @@
-od -t x1 -A n boot/boot_sect.bin
-hp -C filename

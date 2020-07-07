@@ -2,12 +2,10 @@
 %define _RM_LOAD_LOADER_INC_
 
 %include "constants.inc"
-%include "rm_lib.inc"
-%include "rm_read_sectors.inc"
-%include "rm_get_fat_entry.inc"
 
 ; read loader.bin from floppy disk, fat12
-rm_load_loader:	
+boot_load_loader_bin:	
+
 	; reset floppy
 	xor ah, ah
 	xor dl, dl
@@ -17,9 +15,9 @@ rm_load_loader:
 	mov word [sector_num], ROOT_DIR_FIRST_SECTOR
 
 .search_loader:
-	cmp word [root_dir_sectors_for_loop], 0 ; loop 14 times max
+	cmp word [root_dir_sectors], 0 ; loop 14 times max
 	jz .no_loader_found
-	dec word [root_dir_sectors_for_loop]
+	dec word [root_dir_sectors]
 	
 	; setup es:bx
 	mov ax, LOADER_SEG_BASE
@@ -67,13 +65,14 @@ rm_load_loader:
 	jmp .search_loader
 
 .no_loader_found:
-	mov bx, msg_no_loader_found
-    call rm_print_str
+	mov ax, '1'  ; error loader.bin not found
+    call boot_putax
 	jmp $
 .loader_found:
-	mov bx, msg_loader_found
-    call rm_print_str
-	
+	mov ax, 'A' ; loader found
+    call boot_putax	
+
+.begin_load_loader_bin:
 	mov ax, ROOT_DIR_SECTORS
 	and di, 0xffe0 ; begining of current dir entry
 	add di, 0x1a ; di -> first sector
@@ -86,17 +85,8 @@ rm_load_loader:
 	mov bx, LOADER_OFFSET
 	mov ax, cx
 
-.begin_loading_file:
-	; print one dot per sector
-	;push ax
-	;push bx
-	;mov ah, 0xe
-	;mov al, '.'
-	;mov bl, 0xf
-	;int 0x10
-	;pop bx
-	;pop ax
-
+.loop_loading_file:
+	
 	mov cl, 1
 	call rm_read_sectors
 	pop ax ; read out the index of the sector in fat
@@ -112,11 +102,11 @@ rm_load_loader:
 	add ax, dx
 	add ax, DELTA_SECTOR_NUM
 	add bx, [bpb_bytes_per_sector]
-	jmp .begin_loading_file
+	jmp .loop_loading_file
+	
 .file_loaded:
-	mov bx, msg_loader_loaded
-    call rm_print_str
-
+	mov ax, 'B' ; loader.bin loaded into memory successfully
+    call boot_putax
     ; =========================================================
     ; from here, we jump to loader.bin 
     ; and execute the first instruction there.
@@ -126,13 +116,15 @@ rm_load_loader:
 
     ; =========================================================
 
-; global variables
-loader_file_name:       db 'LOADER  BIN', 0 ; 11 chars, 2 spaces, must be UPPER CASE!!
-msg_loader_found:       db 'loader found|', 0
-msg_no_loader_found:    db 'loader not found', 0
-msg_loader_loaded:      db 'loader loaded|', 0
-is_odd:                 db 0
-sector_num:             dw 0
-root_dir_sectors_for_loop: dw ROOT_DIR_SECTORS
+%include "boot_lib.inc"
+%include "rm_read_sectors.inc"
+%include "rm_get_fat_entry.inc"
+
+; data section
+loader_file_name:       db 'LOADER  BIN', 0    ; 11 chars, 2 spaces, must be UPPER CASE!!
+; TODO: use stack variable instead of global variable
+sector_num:             dw 0                   ; used to read data from disk
+; TODO replace with CONSTANTS
+root_dir_sectors:       dw ROOT_DIR_SECTORS    ; used to read data from disk
 
 %endif

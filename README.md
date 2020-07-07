@@ -15,16 +15,24 @@ The best way to study OS is to make a simple one by yourself.
 - regs
 - sregs
 - cregs
-
+# Other tips
+od -t x1 -A n boot/boot_sect.bin
+hp -C filename
 
 # Boot Loader
 It's a two stage boot loader, also follow multiboot specification.
-## Boot info and error messages
-- A
-- B
-- C
-- 1
-- 2
+## Boot and loder info and error messages
+The reason for just print a leter on top left of screen to show the steps instead of meaningful message is to save size,
+since we only have 512 bytes in boot.
+- A: loader.bin file found in boot
+- B: loader.bin is loaded into memory successfully in boot
+- C: start run in loader
+- D: kernel.bin found in loader.
+- E: kernel.bin is loaded in memory
+- F: got memory map
+- G: start running in protect mode
+- 1: loader.bin file is not found in boot.
+- 2: kenel.bin not found in loader
 - 3
 ## First Stage: Boot
 It's the boot sector on block on floppy disk/hard disk, which is the first block contains 512 bytes.

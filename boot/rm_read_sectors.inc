@@ -1,6 +1,8 @@
 %ifndef _RM_READ_SECTORS_INC_
 %define _RM_READ_SECTORS_INC_
 
+; used by boot and loader
+
 ; from sector index in ax, read cl sectors into es:bx
 rm_read_sectors:
     push bp
