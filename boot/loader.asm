@@ -18,6 +18,7 @@ KERNEL_OFFSET equ 0
 KERNEL_PHYSICAL_BASE equ KERNEL_BASE * 0x10
 ; TODO: rename to KERNEL_RUNTIME_PHYS_ENTRY_POINT
 KERNEL_PHYSICAL_ENTRY_POINT equ 0x30400 ; must match -Ttext in makefile
+; since ELF has 4K aligned for each segment, so the vaddr will be 0x30000
 
 PAGE_DIR_BASE   equ 0x100000 ; 1M
 PAGE_TABLE_BASE equ 0x101000 ; 1M + 4K
@@ -30,7 +31,7 @@ start:
     mov ds, ax
     mov es, ax
     mov ss, ax
-	mov bp, LOADER_STACK_BASE
+	mov bp, LOADER_STACK_BASE  ; data at ss:bp, ss:sp
     mov sp, LOADER_STACK_BASE  ; stack from 0x90100 to 0x90000 (0x100 256 bytes)
        
     mov bx, msg_in_loader
@@ -101,8 +102,13 @@ pm_start: ; entry point for protected mode
 	call pm_print_mem_ranges
 	
 	; TODO: move paging setup to kernel c code.
-	call pm_setup_paging ; issue not here
+	;call pm_setup_paging
 	
+	nop
+	nop
+	nop 
+
+	; TODO: this parse and load elf has to be done after paging enabled???
 	call pm_parse_elf_kernel_bin
 	jmp $
 	; LOADER'S JOB ENDS AFTER THIS JMP
@@ -112,7 +118,7 @@ pm_start: ; entry point for protected mode
 
 %include "pm_lib.inc"
 %include "pm_print_mem_ranges.inc"
-%include "pm_setup_paging.inc"
+;%include "pm_setup_paging.inc"
 %include "pm_init_kernel.inc"
 
 ; data variables

@@ -1,6 +1,8 @@
 #ifndef _MINOS_TYPES_H_
 #define _MINOS_TYPES_H_
 
+#define NULL	(void*)0
+
 #define TRUE  1
 #define FALSE 0
 #define true TRUE

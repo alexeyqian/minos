@@ -1,10 +1,31 @@
 # minos
-Minimal OS Kernel, inspired by Yuan Yu (Tinix) and Andrew S. Tanenbaum (Minix3).
+Minimal OS Kernel, inspired by:
+- Yuan Yu (Tinix)
+- Andrew S. Tanenbaum (Minix3)
+- http://www.brokenthorn.com/Resources/OSDevIndex.html
 
 The best way to study OS is to make a simple one by yourself.
 
+# Bochs debug commands
+- lb 0x090100
+- info break
+- info cpu
+- s <n>
+- c
+- regs
+- sregs
+- cregs
+
+
 # Boot Loader
 It's a two stage boot loader, also follow multiboot specification.
+## Boot info and error messages
+- A
+- B
+- C
+- 1
+- 2
+- 3
 ## First Stage: Boot
 It's the boot sector on block on floppy disk/hard disk, which is the first block contains 512 bytes.
 It includes the 0xaa55 at locataion 0x510 and 0x511, the magic number which makes BIOS think it's bootable.

@@ -150,9 +150,9 @@ pm_mem_copy:
     push edi
     push ecx
 
-    mov edi, [ebp + 8] ;dest
+    mov edi, [ebp + 8]  ; dest
     mov esi, [ebp + 12] ; src
-    mov ecx, [ebp + 16] ; counter
+    mov ecx, [ebp + 16] ; size
 
 .loop:
     cmp ecx, 0
@@ -165,6 +165,7 @@ pm_mem_copy:
 
     dec ecx
     jmp .loop
+    
 .done:
     mov eax, [ebp + 8] ; return value in first parameter
 

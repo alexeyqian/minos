@@ -22,7 +22,7 @@ _start:
 	call kinit                 ; move gdt and init idt, tss, proc_table inside
 	;lgdt [gdt_ptr]            ; reload gdt with at new mem location.
 	;lidt [idt_ptr]
-
+	
 	jmp KERNEL_SELECTOR:_main
 
 _main:	
@@ -39,6 +39,6 @@ _main:
 [section .data]
 msg_test db ">>> code arrive here!", 0
 
-[section .bss]
+;[section .bss] ; TODO: kernel should not use bss section, otherwise loader elf loader cannot handle it? (filesz != memsz)
 stack_space resb 2*1024 ; reserved 2K for kernle stack
 kernel_stack_top: 

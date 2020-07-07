@@ -1,28 +1,35 @@
 [bits 32]
+; loop through all program headers 
+; and putting kernel segments into memory
 pm_parse_elf_kernel_bin:
-; loop through all program headers, for putting segments into memory
     push ebp
-    mov ebp, esp
-   
+    mov ebp, esp       
+
     xor esi, esi
-    mov esi, [KERNEL_PHYSICAL_BASE + 0x1c] ; program header offset (header->e_phoff) to esi
-    add esi, KERNEL_PHYSICAL_BASE  ; esi = KERNEL_PHYSICAL_BASE + header->e_phoff
+    mov esi, [KERNEL_PHYSICAL_BASE + 0x1c]     ; program header offset (header->e_phoff) to esi
+    add esi, KERNEL_PHYSICAL_BASE              ; esi = KERNEL_PHYSICAL_BASE + header->e_phoff
 
     mov cx, word [KERNEL_PHYSICAL_BASE + 0x2c] ;  program header numbers (header->e_phnum) to ecx
     movzx ecx, cx    
 .loop:
     mov eax, [esi + 0]
     cmp eax, 0
-    jz .no_action
+    jz .no_action ; if the segment type is 0, then ignore it
 
-    ; prepare 3 parameters    
-    push dword [esi + 0x10] ; param 3: size, 0x10 is offset of field: p_filesz in program header entry
+    ;mov ax, data_selector ; setup es and ds for memcpy
+    ;mov ds, ax
+    ;mov es, ax   
     
-    mov eax, [esi + 0x4] ; 0x4 is offset of field: p_offset in PHE
+    ; TODO: ?? use filesz instead of memsz? might cause problems for .bss section.
+    ; KERNLE should not use bss section?
+    ; prepare 3 parameters    
+    push dword [esi + 0x10] ; param 3: [size], 0x10 is offset of field: p_filesz in program header entry
+    
+    mov eax, [esi + 0x4] ; 0x4 is [offset] of field: p_offset in PHE
     add eax, KERNEL_PHYSICAL_BASE
     push eax ; param 2: src
     
-    push dword [esi + 0x8] ; param 1: dest
+    push dword [esi + 0x8] ; 0x8 is [vaddr=0x30000], param 1: dest ; TODO: dest using vaddr, need paging enabled, not good
 
     call pm_mem_copy
     add esp, 12 ; clear 3 parameters
@@ -32,6 +39,7 @@ pm_parse_elf_kernel_bin:
     dec ecx
     jnz .loop
 
+.done:
     mov esp, ebp
     pop ebp
     ret
