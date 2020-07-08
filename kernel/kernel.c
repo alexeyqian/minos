@@ -64,8 +64,8 @@ void restart();
 void kmain();
 
 void kinit(){
-    kprint("\n----- kinit begin -----\n");
-	
+    kprint("\n>>> kinit begin ...");
+
 	replace_gdt();  
 	init_idt();
 	init_tss();	
@@ -75,7 +75,10 @@ void kinit(){
 	load_tss();
 
 	init_phys_mem();		
-	//init_virt_mem();
+	init_virt_mem();
+	init_proc_table();	
+	init_clock();
+
 	kmain();
 }
 
@@ -151,10 +154,9 @@ void init_virt_mem(){
 }
 
 void irq_handler(int irq);
-void kmain(){ // entrance of process
-	kprint("\n -------- kmain begin --------- \n");	
-	//init_proc_table();	
-	//init_clock();
+
+void kmain(){ 
+	kprint("\n>>> kmain begin ... \n");	
 	//restart();
 	while(1){}
 }
