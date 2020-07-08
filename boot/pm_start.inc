@@ -1,6 +1,6 @@
 ; enter 32 bits mode -------                
 [bits 32]
-KERNEL_OFFSET equ 0x1000
+KERNEL_BIN_OFFSET equ 0x1000
 PM_STACK_OFFSET equ 0xa000
 
 ; Initialise registers and the stack once in init_pm
@@ -20,7 +20,7 @@ begin_pm:
     mov ebx, MSG_PROT_MODE
     call print_string_pm
     
-    call KERNEL_OFFSET
+    call KERNEL_BIN_OFFSET
     ; should never return to here
     jmp $  
 

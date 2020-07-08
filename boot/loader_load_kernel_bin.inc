@@ -17,16 +17,16 @@ loader_load_kernel_bin:
 	dec word [root_dir_sectors]
 	
 	; setup es:bx
-	mov ax, KERNEL_BASE
+	mov ax, KERNEL_BIN_SEG_BASE
 	mov es, ax
-	mov bx, KERNEL_OFFSET ; es:bx = KERNEL_BASE:KERNEL_OFFSET
+	mov bx, KERNEL_BIN_OFFSET ; es:bx = KERNEL_BIN_SEG_BASE:KERNEL_BIN_OFFSET
 	
 	mov ax, [sector_num] ; ax is the sector_index
 	mov cl, 1
 	call rm_read_sectors
 
 	mov si, kernel_file_name ; ds:si='KERNEL  BIN' 11 chars, 2 spaces
-	mov di, KERNEL_OFFSET    ; es:di=KERNEL_BASE:KERNEL_OFFSET
+	mov di, KERNEL_BIN_OFFSET    ; es:di=KERNEL_BIN_SEG_BASE:KERNEL_BIN_OFFSET
 	cld
 
 	; 0x10 = 16 dir entris per sector
@@ -84,9 +84,9 @@ loader_load_kernel_bin:
 	push cx ; save index of sector in fat
 	add cx, ax
 	add cx, DELTA_SECTOR_NUM ; c1 =  first sector of file loader.bin
-	mov ax, KERNEL_BASE
+	mov ax, KERNEL_BIN_SEG_BASE
 	mov es, ax
-	mov bx, KERNEL_OFFSET
+	mov bx, KERNEL_BIN_OFFSET
 	mov ax, cx
 
 .loop_loading_file:
@@ -104,7 +104,7 @@ loader_load_kernel_bin:
 	call rm_read_sectors
 	pop ax ; read out the index of the sector in fat
     push bx
-    mov bx, KERNEL_BASE
+    mov bx, KERNEL_BIN_SEG_BASE
 	call rm_get_fat_entry
     pop bx
 	cmp ax, 0xfff

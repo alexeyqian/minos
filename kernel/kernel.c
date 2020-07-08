@@ -91,7 +91,7 @@ void init_phys_mem(){
 	uint32_t mem_size = 0x00A00000; // 10M, need 320 bytes for mem map
 	//uint32_t kenel_size = binfo_ptr->kernel_size; 
 	// place the memory map of physical memory manager at end of kernel
-	//pmmgr_init(mem_size, KERNEL_BASE + kernel_size);
+	//pmmgr_init(mem_size, KERNEL_BIN_SEG_BASE + kernel_size);
 	uint32_t mem_map_ptr = 0x500;
 	pmmgr_init(mem_size, mem_map_ptr);
 	//kprint("\n physical memory manager initilized with %i\n", mem_size);

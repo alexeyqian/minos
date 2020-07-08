@@ -4,16 +4,11 @@
 
 [bits 16]
 %include "constants.inc"
-
-KERNEL_BASE   equ 0x8000 ;  TODO: rename to KERNEL_BIN_BASE, KERNEL_BIN_OFFSET, ...
-KERNEL_OFFSET equ 0
-KERNEL_PHYSICAL_BASE equ KERNEL_BASE * 0x10
-; TODO: rename to KERNEL_RUNTIME_PHYS_ENTRY_POINT
-KERNEL_PHYSICAL_ENTRY_POINT equ 0x30400 ; must match -Ttext in makefile
+KERNEL_BIN_SEG_BASE   equ 0x8000 
+KERNEL_BIN_OFFSET     equ 0x0
+KERNEL_BIN_PHYS_ADDR equ KERNEL_BIN_SEG_BASE * 0x10
+KERNEL_PHYS_ENTRY_POINT equ 0x30400 ; must match -Ttext in makefile
 ; since ELF has 4K aligned for each segment, so the vaddr will be 0x30000
-
-PAGE_DIR_BASE   equ 0x100000 ; 1M
-PAGE_TABLE_BASE equ 0x101000 ; 1M + 4K
 
 ; ================== entry point =================
 jmp short start       ; fixed position, start execute from first line of this bin file after loading by boot.
@@ -96,7 +91,7 @@ pm_start: ; entry point for protected mode
 
 	; LOADER'S JOB ENDS AFTER THIS JMP
 	; ================ enter kernel code ========================
-	jmp code_selector: KERNEL_PHYSICAL_ENTRY_POINT
+	jmp code_selector: KERNEL_PHYS_ENTRY_POINT
 	;=============================================================
 
 %include "loader_lib_pm.inc"
@@ -105,6 +100,6 @@ pm_start: ; entry point for protected mode
 ; data variables
 ; 1K appended to the end of loader.bin to be used as stack.
 align 32
-loader_stack_space_pm: times 1024 db 0 
+loader_stack_space: times 1024 db 0 
 loader_stack_top_rm    equ   $ ; stack base in real mode
 loader_stack_top_pm    equ   LOADER_PHYS_ADDR + $ ; stack base in protected mode

@@ -6,10 +6,10 @@ loader_parse_elf_kernel_bin:
     mov ebp, esp       
 
     xor esi, esi
-    mov esi, [KERNEL_PHYSICAL_BASE + 0x1c]     ; program header offset (header->e_phoff) to esi
-    add esi, KERNEL_PHYSICAL_BASE              ; esi = KERNEL_PHYSICAL_BASE + header->e_phoff
+    mov esi, [KERNEL_BIN_PHYS_ADDR + 0x1c]     ; program header offset (header->e_phoff) to esi
+    add esi, KERNEL_BIN_PHYS_ADDR              ; esi = KERNEL_BIN_PHYS_ADDR + header->e_phoff
 
-    mov cx, word [KERNEL_PHYSICAL_BASE + 0x2c] ;  program header numbers (header->e_phnum) to ecx
+    mov cx, word [KERNEL_BIN_PHYS_ADDR + 0x2c] ;  program header numbers (header->e_phnum) to ecx
     movzx ecx, cx    
 .loop:
     mov eax, [esi + 0]
@@ -26,7 +26,7 @@ loader_parse_elf_kernel_bin:
     push dword [esi + 0x10] ; param 3: [size], 0x10 is offset of field: p_filesz in program header entry
     
     mov eax, [esi + 0x4] ; 0x4 is [offset] of field: p_offset in PHE
-    add eax, KERNEL_PHYSICAL_BASE
+    add eax, KERNEL_BIN_PHYS_ADDR
     push eax ; param 2: src
     
     push dword [esi + 0x8] ; 0x8 is [vaddr=0x30000], param 1: dest ; TODO: dest using vaddr, need paging enabled, not good

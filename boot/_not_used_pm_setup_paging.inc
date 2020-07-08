@@ -1,4 +1,9 @@
 ; NOT USED ANY MORE
+
+
+PAGE_DIR_BASE   equ 0x100000 ; 1M
+PAGE_TABLE_BASE equ 0x101000 ; 1M + 4K
+
 pm_setup_paging:
     push ebp
     mov ebp, esp    
