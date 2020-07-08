@@ -1,17 +1,9 @@
 ; loader: boot loader stage 2
-; loader.bin is loaded to 0x900100, 
-; and 0x90000 - 0x900100 is used as stack for loader.bin before entering protected mode.
-; after entering PM, the loader using it top 4K space as stack space for itself.
-; so means after entering PM, the ebp = esp = 0x90000 + size of loader.bin
-; then PM stack grow downward, max size 4K, beyond that will crash the system.
-; 4K is way large enough for loader.bin to use.
-; after entering kernel, we'll use another stack space.
+; loader.bin is loaded to 0x90000, 
+; loader stack is located at: end of loader.bin in memory + 1K
 
-;[org 0x100] 
 [bits 16]
 %include "constants.inc"
-
-;LOADER_STACK_BASE equ 0x100 ;  TODO: remove
 
 KERNEL_BASE   equ 0x8000 ;  TODO: rename to KERNEL_BIN_BASE, KERNEL_BIN_OFFSET, ...
 KERNEL_OFFSET equ 0
@@ -31,8 +23,6 @@ start:
     mov ds, ax
     mov es, ax
     mov ss, ax
-	;mov bp, LOADER_STACK_BASE  
-    ;mov sp, LOADER_STACK_BASE  
 	mov bp, loader_stack_top_rm  
     mov sp, loader_stack_top_rm  
        
@@ -105,13 +95,13 @@ pm_start: ; entry point for protected mode
 
 	;call pm_print_mem_ranges
 	
-	jmp $	
+	;jmp $	
 	; TODO: move paging setup to kernel c code.
-	;call pm_setup_paging
+	; call pm_setup_paging
 	 
 	; TODO: this parse and load elf has to be done after paging enabled???
-	call pm_parse_elf_kernel_bin
-	jmp $
+	call pm_parse_elf_kernel_bin	
+	;jmp $
 	; LOADER'S JOB ENDS AFTER THIS JMP
 	; ================ enter kernel code ========================
 	jmp code_selector: KERNEL_PHYSICAL_ENTRY_POINT

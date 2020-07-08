@@ -47,16 +47,15 @@ it read some disk sectors, and parsing fat12 disk format to load add data sector
 
 ## Second Stage: Load
 loader.asm, compiled to bin format.
-Loader.bin is Loaded by boot at address: 0x90100, entry point is at: 0x90100.
-the address range: 0x90099 down to 0x90000 (0x100, 256bytes) is reserved as loader's stack space.
-loader's ebp/esp points to 0x90099 and grow down to 0x90000.
+Loader.bin is Loaded by boot at address: 0x90000, entry point is at: 0x90000.
+loader statck is located at: enf of loader.bin in memory + 1K
 Start to prepare everything for kernel, then transfer control to kernel entry point.
 ### Stack Info
-- Real Mode: SS: 0x9000, BP and SP: 0x100, so stack at: 0x9000:0x100 (= 0x90100 physical address)
-- Protected Mode: SS: data_selector, EBP and ESP: end of loader.bin in memory + 1K reserved stack space (= 0x90100 + size of loader.bin + 1K)
+- Real Mode: SS: 0x9000, BP and SP: end of loader + 1K
+- Protected Mode: SS: data_selector, EBP and ESP: end of loader.bin in memory + 1K
 
+so in total: loader is using: size of loader.bin + 1K stack space in memory
 
-so in total: loader is using: loader.bin (start from 0x90100 + size) + loader stack space (256 bytes)
 It prepares:
 - get memory size
 - get memory map
@@ -64,10 +63,6 @@ It prepares:
 - load file kernel.bin into memory.
 - entery protected mode
 - transfer control to kernel
-
-2 stacks for loader:
-- first stack is 0x90100 - 0x9000 as stack in real mode
-- second stack is end_of_loader + 4K - end_of_loader in protected mode
 
 ### main purpose: loading loader.bin to memory
 
