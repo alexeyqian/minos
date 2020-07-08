@@ -1,7 +1,7 @@
 [bits 32]
 ; loop through all program headers 
 ; and putting kernel segments into memory
-pm_parse_elf_kernel_bin:
+loader_parse_elf_kernel_bin:
     push ebp
     mov ebp, esp       
 

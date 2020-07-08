@@ -91,31 +91,18 @@ pm_start: ; entry point for protected mode
 	mov esp, ebp
 
 	mov ax, 'G' ; start running in protect mode
-    call loader_putax_pm
+    call loader_putax_pm	
+	call loader_parse_elf_kernel_bin	
 
-	;call pm_print_mem_ranges
-	
-	;jmp $	
-	; TODO: move paging setup to kernel c code.
-	; call pm_setup_paging
-	 
-	; TODO: this parse and load elf has to be done after paging enabled???
-	call pm_parse_elf_kernel_bin	
-	;jmp $
 	; LOADER'S JOB ENDS AFTER THIS JMP
 	; ================ enter kernel code ========================
 	jmp code_selector: KERNEL_PHYSICAL_ENTRY_POINT
 	;=============================================================
 
 %include "loader_lib_pm.inc"
-;%include "pm_print_mem_ranges.inc"
-;%include "pm_setup_paging.inc"
-%include "pm_init_kernel.inc"
+%include "loader_parse_elf_kernel_bin.inc"
 
 ; data variables
-rm_new_line_str: db 0xa, 0
-pm_new_line_str equ LOADER_PHYS_ADDR + rm_new_line_str
-
 ; 1K appended to the end of loader.bin to be used as stack.
 align 32
 loader_stack_space_pm: times 1024 db 0 
