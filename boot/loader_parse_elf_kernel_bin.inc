@@ -15,10 +15,6 @@ loader_parse_elf_kernel_bin:
     mov eax, [esi + 0]
     cmp eax, 0
     jz .no_action ; if the segment type is 0, then ignore it
-
-    ;mov ax, data_selector ; setup es and ds for memcpy
-    ;mov ds, ax
-    ;mov es, ax   
     
     ; TODO: ?? use filesz instead of memsz? might cause problems for .bss section.
     ; KERNLE should not use bss section?

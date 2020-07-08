@@ -61,24 +61,22 @@ void init_clock();
 
 void delay(int time);
 void restart();
+void kmain();
 
 void kinit(){
     kprint("\n----- kinit begin -----\n");
-	//init_phys_mem();	
-	while(1){}; // testing
 	
-	/*	
-	//init_virt_mem();
-
 	replace_gdt();  
 	init_idt();
 	init_tss();	
 	init_ldt_descriptors_in_dgt();
-
 	load_gdt(); // load new kernel gdt
-	load_idt();		
-	kprint("\n----- kinit end -----\n");
-	*/
+	load_idt();
+	load_tss();
+
+	init_phys_mem();		
+	//init_virt_mem();
+	kmain();
 }
 
 void init_phys_mem(){
@@ -155,17 +153,16 @@ void init_virt_mem(){
 void irq_handler(int irq);
 void kmain(){ // entrance of process
 	kprint("\n -------- kmain begin --------- \n");	
-	// load_tss(); // run in entry.asm 
-	init_proc_table();	
-	init_clock();
-	restart();
+	//init_proc_table();	
+	//init_clock();
+	//restart();
 	while(1){}
 }
 
 void replace_gdt(){
-	store_gdt(); // store old gdt to gdt_ptr
+	store_gdt(); // store old gdt to [gdt_ptr]
 
-	// copy gdt from loader mem area to kernel mem area for kernel access
+	// copy old gdt from loader mem area to new kernel mem area for easy kernel access
     memcpy((char*)&gdt,                         // new gdt
         (char*)(*((uint32_t*)(&gdt_ptr[2]))),   // base  of old GDT
 		*((uint16_t*)(&gdt_ptr[0])) + 1	        // limit of old GDT

@@ -29,6 +29,17 @@ load_idt:
 	lidt [idt_ptr]
 	ret
 
+global load_tss
+load_tss:
+	push eax
+
+	xor eax, eax
+	mov ax, SELECTOR_TSS      ; load tss seletor
+	ltr ax                    ; which points to a tss descriptor in gdt
+	
+	pop eax
+	ret
+
 global flush_tlb_entry
 flush_tlb_entry: ; void flush_tlb(uint32_t addr)        
 	cli

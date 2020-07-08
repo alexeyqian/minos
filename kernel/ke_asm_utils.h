@@ -15,6 +15,7 @@ extern void enable_int();
 extern void store_gdt();
 extern void load_gdt();
 extern void load_idt();
+extern void load_tss();
 
 extern void enable_irq(int irq);
 extern void disable_irq(int irq);

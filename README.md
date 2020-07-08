@@ -89,7 +89,21 @@ It prepares:
 ### Transfer Control to Kernel
 
 # Kernel
+; kernel is first read to at address:0x8000 from disk by loader in real mode 
+; then it's been moved to address:0x30000 from 0x8000 to execute in protection mode.
+; the reason for read first then move, is because is easy to read from disk in real mode which has BIOS.
+; but the kernel is elf format, and cannot run directly as pure bin, since it has format data.
+; so it need to parse the elf file and load/move 'segments' into memory, so it can execute. 
+; in protected mode, read from disk is hard, but read from memory is easy.
+; so read the file data from disk to memory as buffer for disk data, then parse the data in memory and prepare for execution.
 
+For file: kernel.c written in c and compiled to elf format, which already include stack segments, so no need to manually assign stack ebp and esp.
+For file: kernel_entry.asm, also compiled to elf format, but it's using asm, so it still need to manually set stack ebp and esp.
+## the reason for entry point address: 30400
+In future, might need to find a better solution to remove this 400 thing, to make it simple.
+?? Since default is 0x8004800 which is above 128M, so need to low it to under 1M
+?? need reseserve some space (0x400) for elf header and program headers/section headers.
+?? above statements are my guess, might wrong, need to confirm in future.
 ## Kernel Initialize Process
 ### Switch from Loader's GDT to Kernel's GDT
 
