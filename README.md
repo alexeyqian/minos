@@ -41,6 +41,9 @@ This first 512 bytes on disk, only includes code/functions to load 'loader.bin' 
 and transfer control to loader.bin.
 boot.asm is compiled to 'bin' format, which is flat binary without any format/metadata.
 it read some disk sectors, and parsing fat12 disk format to load add data sector in floppy disk for file loader.bin
+### Stack info
+- SS: 0x0
+- BP and SP: 0x7c00
 
 ## Second Stage: Load
 loader.asm, compiled to bin format.
@@ -48,6 +51,10 @@ Loader.bin is Loaded by boot at address: 0x90100, entry point is at: 0x90100.
 the address range: 0x90099 down to 0x90000 (0x100, 256bytes) is reserved as loader's stack space.
 loader's ebp/esp points to 0x90099 and grow down to 0x90000.
 Start to prepare everything for kernel, then transfer control to kernel entry point.
+### Stack Info
+- Real Mode: SS: 0x9000, BP and SP: 0x100, so stack at: 0x9000:0x100 (= 0x90100 physical address)
+- Protected Mode: SS: data_selector, EBP and ESP: end of loader.bin in memory + 1K reserved stack space (= 0x90100 + size of loader.bin + 1K)
+
 
 so in total: loader is using: loader.bin (start from 0x90100 + size) + loader stack space (256 bytes)
 It prepares:

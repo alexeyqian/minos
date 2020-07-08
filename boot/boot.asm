@@ -8,7 +8,7 @@ nop                  ; used as a place holder here
 %include "fat12_header.inc"   ; fixed position, standard bios parameters block
 
 boot_start:   
-    mov ax, cs
+    mov ax, cs ; cs = 0x0, so stack is ss:bp = 0x:BOOT_STACK_BASE
     mov ds, ax    
     mov ss, ax   
     mov es, ax 

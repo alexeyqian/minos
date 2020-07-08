@@ -75,7 +75,7 @@ loader_load_kernel_bin:
 
     ; save kernel size
     push eax
-    mov eax, [es:di + 0x1c]
+    mov eax,  [es:di + 0x1c]
     mov dword [kernel_size], eax
     pop eax
 
@@ -124,5 +124,11 @@ loader_load_kernel_bin:
 	
     popa
     ret
+	
+; data section
+kernel_size:      dd 0 
+kernel_file_name: db 'KERNEL  BIN', 0  ; 11 chars, 2 spaces, must be UPPER CASE!!
+sector_num:       dw 0                  ; used to read data from disk
+root_dir_sectors: dw ROOT_DIR_SECTORS ; used to read data from disk
 
 %endif

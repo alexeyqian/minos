@@ -7,13 +7,13 @@
 ; 4K is way large enough for loader.bin to use.
 ; after entering kernel, we'll use another stack space.
 
-[org 0x100] 
+;[org 0x100] 
 [bits 16]
 %include "constants.inc"
 
-LOADER_STACK_BASE equ 0x100 ;  TODO: move loader stack base to 0x7c00
+;LOADER_STACK_BASE equ 0x100 ;  TODO: remove
 
-KERNEL_BASE equ 0x8000 ;  TODO: rename to KERNEL_BIN_BASE, KERNEL_BIN_OFFSET, ...
+KERNEL_BASE   equ 0x8000 ;  TODO: rename to KERNEL_BIN_BASE, KERNEL_BIN_OFFSET, ...
 KERNEL_OFFSET equ 0
 KERNEL_PHYSICAL_BASE equ KERNEL_BASE * 0x10
 ; TODO: rename to KERNEL_RUNTIME_PHYS_ENTRY_POINT
@@ -31,8 +31,10 @@ start:
     mov ds, ax
     mov es, ax
     mov ss, ax
-	mov bp, LOADER_STACK_BASE  ; data at ss:bp, ss:sp
-    mov sp, LOADER_STACK_BASE  ; stack from 0x90100 to 0x90000 (0x100 256 bytes)
+	;mov bp, LOADER_STACK_BASE  
+    ;mov sp, LOADER_STACK_BASE  
+	mov bp, loader_stack_top_rm  
+    mov sp, loader_stack_top_rm  
        
     mov ax, 'C' ; start running in loader
 	call loader_putax
@@ -42,37 +44,31 @@ start:
 	mov ax, 'E' ; kernel.bin loaded
     call loader_putax	
 	; ========== step 2: get memory map [BIOS] ==========
-	call rm_get_memory_map	
-	mov ax, 'F' ; got memory map
+	;call rm_get_memory_map	
+	;mov ax, 'F' ; got memory map
     call loader_putax
 	; ========== step 3: enter protect mode ==========
 	lgdt [gdt_ptr]
 	cli
-	; enable A20	
-	in al, 0x92 ; enable A20
+	
+	in al, 0x92         ; enable A20
 	or al, 0b00000010
 	out 0x92, al
-	; enable protected mode
-	mov eax, cr0
+
+	mov eax, cr0 	    ; enable protected mode
 	or eax, 1
 	mov cr0, eax
-	; jump into protected mode 
-	jmp dword code_selector: (LOADER_WITH_STACK_PHYSICAL_ADDR + pm_start)
-    ;jmp $ ; should never run to here
+	; enter protected mode 
+	jmp dword code_selector: (LOADER_PHYS_ADDR + pm_start)
 
 %include "rm_read_sectors.inc"
 %include "rm_get_fat_entry.inc"
 %include "loader_lib.inc"
 %include "loader_load_kernel_bin.inc"
 %include "loader_descriptor.inc" ; constants and macros
-%include "loader_get_memory_map.inc"
+;%include "loader_get_memory_map.inc"
 
 ; data section
-kernel_file_name:       db 'KERNEL  BIN', 0 ; 11 chars, 2 spaces, must be UPPER CASE!!
-sector_num:             dw 0 ; used to read data from disk
-root_dir_sectors: dw ROOT_DIR_SECTORS  ; used to read data from disk
-kernel_size:            dd 0 ; TODO: need to access this data in PM mode
-
 gdt_start:
 ;                     base-----limit----attr
 gdt_null:  Descriptor 0,       0,       0                        
@@ -83,7 +79,7 @@ gdt_end:
 
 gdt_ptr:
 	dw gdt_end - gdt_start - 1            ; gdt length
-	dd LOADER_WITH_STACK_PHYSICAL_ADDR + gdt_start ; gdt base address
+	dd LOADER_PHYS_ADDR + gdt_start ; gdt base address
 
 code_selector  equ gdt_code  - gdt_start 
 data_selector  equ gdt_data  - gdt_start
@@ -101,23 +97,18 @@ pm_start: ; entry point for protected mode
 	mov es, ax
 	mov fs, ax
 	mov ss, ax
-	mov ebp, pm_loader_stack_top 
+	mov ebp, loader_stack_top_pm
 	mov esp, ebp
 
 	mov ax, 'G' ; start running in protect mode
     call loader_putax_pm
-		
-	call pm_print_mem_ranges
+
+	;call pm_print_mem_ranges
 	
 	jmp $	
-
 	; TODO: move paging setup to kernel c code.
 	;call pm_setup_paging
-	
-	nop
-	nop
-	nop 
-
+	 
 	; TODO: this parse and load elf has to be done after paging enabled???
 	call pm_parse_elf_kernel_bin
 	jmp $
@@ -127,15 +118,16 @@ pm_start: ; entry point for protected mode
 	;=============================================================
 
 %include "loader_lib_pm.inc"
-%include "pm_print_mem_ranges.inc"
+;%include "pm_print_mem_ranges.inc"
 ;%include "pm_setup_paging.inc"
 %include "pm_init_kernel.inc"
 
 ; data variables
 rm_new_line_str: db 0xa, 0
-pm_new_line_str equ LOADER_WITH_STACK_PHYSICAL_ADDR + rm_new_line_str
+pm_new_line_str equ LOADER_PHYS_ADDR + rm_new_line_str
 
 ; 1K appended to the end of loader.bin to be used as stack.
 align 32
-pm_loader_stack_space: times 1024 db 0 
-pm_loader_stack_top    equ   LOADER_WITH_STACK_PHYSICAL_ADDR + $ 
+loader_stack_space_pm: times 1024 db 0 
+loader_stack_top_rm    equ   $ ; stack base in real mode
+loader_stack_top_pm    equ   LOADER_PHYS_ADDR + $ ; stack base in protected mode

@@ -105,6 +105,7 @@ boot_load_loader_bin:
 	jmp .loop_loading_file
 	
 .file_loaded:
+
 	mov ax, 'B' ; loader.bin loaded into memory successfully
     call boot_putax
     ; =========================================================
@@ -122,9 +123,7 @@ boot_load_loader_bin:
 
 ; data section
 loader_file_name:       db 'LOADER  BIN', 0    ; 11 chars, 2 spaces, must be UPPER CASE!!
-; TODO: use stack variable instead of global variable
 sector_num:             dw 0                   ; used to read data from disk
-; TODO replace with CONSTANTS
 root_dir_sectors:       dw ROOT_DIR_SECTORS    ; used to read data from disk
 
 %endif
