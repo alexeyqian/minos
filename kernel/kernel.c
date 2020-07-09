@@ -12,6 +12,9 @@
 #include "phys_mem.h"
 #include "virt_mem.h"
 
+// linear address to physical address
+#define before_paging_segbase_plus_offset(seg_base, offset) (uint32_t)(((uint32_t)seg_base) + (uint32_t)(offset))
+
 // global vars
 uint8_t			    gdt_ptr[6];	               
 struct descriptor   gdt[GDT_SIZE];
@@ -49,15 +52,15 @@ int ticks;
 
 void init_phys_mem();
 void init_virt_mem();
-void replace_gdt();
+void init_new_gdt();
 void init_tss();
 void init_descriptor(struct descriptor* p_desc, uint32_t base, uint32_t limit, uint16_t attribute);
 void init_ldt_descriptors_in_dgt();
 void init_proc_table();
 
 void clock_handler(int irq);
-uint32_t seg_to_physical(uint16_t seg);
-void init_clock();
+uint32_t before_paging_selector_to_segbase(uint16_t seg);
+void enable_clock_irq();
 
 void delay(int time);
 void restart();
@@ -66,20 +69,26 @@ void kmain();
 void kinit(){
     kprint("\n>>> kinit begin ...");
 
-	replace_gdt();  
+	init_new_gdt();  
 	init_idt();
 	init_tss();	
-	init_ldt_descriptors_in_dgt();
+	init_proc_table();	 // must happens before enabled paging in init_virt_mem
+	init_ldt_descriptors_in_dgt(); // must happens after init_proc_table
 	load_gdt(); // load new kernel gdt
 	load_idt();
 	load_tss();
 
 	init_phys_mem();		
 	init_virt_mem();
-	init_proc_table();	
-	init_clock();
-
 	kmain();
+}
+
+
+void kmain(){ 
+	kprint("\n>>> kmain begin ... \n");	
+	enable_clock_irq(); 
+	restart(); // pretenting a schedule happend to start a process.
+	while(1){}
 }
 
 void init_phys_mem(){
@@ -147,21 +156,14 @@ void init_phys_mem(){
 
 }
 
-void init_virt_mem(){
-	kprint("\n ----------- start virtual mem initing and paging.");
+void init_virt_mem(){	
 	vmmgr_init();
-	kprint("\n ----------- virtual mem inited and paging enabled.");
+	kprint("\n>>> virtual memory initialized and paging enabled.");
 }
 
 void irq_handler(int irq);
 
-void kmain(){ 
-	kprint("\n>>> kmain begin ... \n");	
-	//restart();
-	while(1){}
-}
-
-void replace_gdt(){
+void init_new_gdt(){
 	store_gdt(); // store old gdt to [gdt_ptr]
 
 	// copy old gdt from loader mem area to new kernel mem area for easy kernel access
@@ -180,8 +182,11 @@ void replace_gdt(){
 void init_tss(){
 	memset((char*)&tss, 0, sizeof(tss));
 	tss.ss0 = SELECTOR_KERNEL_DATA;
+	// setup single tss descriptor in gdt
 	init_descriptor((struct descriptor*)&gdt[INDEX_TSS],
-			virtual_to_physical(seg_to_physical(SELECTOR_KERNEL_DATA), &tss),
+			before_paging_segbase_plus_offset(
+				before_paging_selector_to_segbase(SELECTOR_KERNEL_DATA), &tss
+			),
 			sizeof(tss) - 1,
 			DA_386TSS);	
 	tss.iobase	= sizeof(tss);	// NO IOPL map
@@ -195,9 +200,11 @@ void init_ldt_descriptors_in_dgt(){
 	for(i = 0; i < TASKS_NUM + PROCS_NUM; i++){
 		// Fill LDT descriptor in GDT
 		init_descriptor((struct descriptor*)&gdt[selector_ldt >> 3],
-				virtual_to_physical(seg_to_physical(SELECTOR_KERNEL_DATA), proc_table[i].ldts),
+				before_paging_segbase_plus_offset(
+					before_paging_selector_to_segbase(SELECTOR_KERNEL_DATA), proc_table[i].ldts
+				),
 				LDT_SIZE * sizeof(struct descriptor) - 1,
-				DA_LDT);
+				DA_LDT); // TODO: ?? problem here, virtual to physical not working/changed after enable paging in init_virt_mem
 		p_proc++;
 		selector_ldt += 1 << 3;
 	}
@@ -242,27 +249,27 @@ void init_proc_table(){
 			(char*)&p_proc->ldts[0], 
 			(char*)&gdt[SELECTOR_KERNEL_CODE >> 3], 
 			sizeof(struct descriptor));	
-		// change the DPL
+		// change the DPL to lower privillege
 		p_proc->ldts[0].attr1 = DA_C | privilege << 5;	
 	
 		memcpy(
 			(char*)&p_proc->ldts[1], 
 			(char*)&gdt[SELECTOR_KERNEL_DATA >> 3], 
 			sizeof(struct descriptor));
-		// change the DPL
+		// change the DPL to lower privillege
 		p_proc->ldts[1].attr1 = DA_DRW | privilege << 5;	
 
 		// init registers
-		// cs points to first LDT descriptor
-		// ds, es, fs, ss point to sencod LDT descriptor
-		// gs points to video descroptor in GDT
+		// cs points to first LDT descriptor: code descriptor
+		// ds, es, fs, ss point to sencod LDT descriptor: data descriptor
+		// gs still points to video descroptor in GDT, but with updated lower privillege level
 		p_proc->regs.cs		= ((8 * 0) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | rpl;
 		p_proc->regs.ds		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | rpl;
 		p_proc->regs.es		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | rpl;
 		p_proc->regs.fs		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | rpl;
 		p_proc->regs.ss		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | rpl;
 		p_proc->regs.gs		= (SELECTOR_KERNEL_VIDEO & SA_RPL_MASK) | rpl;
-		p_proc->regs.eip	= (uint32_t)p_task->initial_eip;
+		p_proc->regs.eip	= (uint32_t)p_task->initial_eip; // entry point for procress/task
 		p_proc->regs.esp	= (uint32_t) p_task_stack; // points to seperate stack for process/task 
 		p_proc->regs.eflags	= eflags;
 	
@@ -286,8 +293,8 @@ void init_proc_table(){
 	proc_table[3].tty_idx = 1;
 }
 
-// from segment to physical address
-uint32_t seg_to_physical(uint16_t seg){
+// TODO: selector_to_segment_addr
+uint32_t before_paging_selector_to_segbase(uint16_t seg){
 	struct descriptor* p_dest = &gdt[seg >> 3];
 	return (p_dest->base_high << 24) | (p_dest->base_mid << 16) | (p_dest->base_low);
 }
@@ -374,7 +381,7 @@ void irq_handler(int irq){
 }
 
 // TODO: move to clock module
-void init_clock(){ // init 8253 PIT
+void enable_clock_irq(){ // init 8253 PIT
 	out_byte(TIMER_MODE, RATE_GENERATOR);
 	out_byte(TIMER0, (uint8_t) (TIMER_FREQ/HZ) );
 	out_byte(TIMER0, (uint8_t) ((TIMER_FREQ/HZ) >> 8));

@@ -5,8 +5,6 @@
 #include "const.h"
 #include "../include/minos/type.h"
 
-// MACRO: linear address to physical address
-#define virtual_to_physical(seg_base, virtual) (uint32_t)(((uint32_t)seg_base) + (uint32_t)(virtual))
 
 typedef int proc_nr_t; // process table entry number
 typedef short sys_id_t; // system process index
@@ -116,6 +114,7 @@ typedef struct stack_frame{ // proc_ptr points to here
 // ldt is part of process
 // ldt_sel points to the LDT descriptor in GDT, 
 // which in turn points to the ldts in struct proc
+// this struct is called  PCB in OS books
 typedef struct proc{
     struct stack_frame  regs;           // process registers saved in stack frame
     uint16_t            ldt_sel;        // selector in gdt giving the ldt base and limit

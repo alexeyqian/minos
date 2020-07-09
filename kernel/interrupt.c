@@ -141,25 +141,24 @@ void init_idt(){
 	init_idt_descriptor(INT_VECTOR_PAGE_FAULT,	DA_386IGate, page_fault,		    PRIVILEGE_KRNL);
 	init_idt_descriptor(INT_VECTOR_COPROC_ERR,	DA_386IGate, copr_error,		    PRIVILEGE_KRNL);
 
-	init_idt_descriptor(INT_VECTOR_IRQ0 + 0,   	DA_386IGate, irq00,			    PRIVILEGE_KRNL);
-	init_idt_descriptor(INT_VECTOR_IRQ0 + 1,  	DA_386IGate, irq01,			    PRIVILEGE_KRNL);
-	init_idt_descriptor(INT_VECTOR_IRQ0 + 2,  	DA_386IGate, irq02,			    PRIVILEGE_KRNL);
-	init_idt_descriptor(INT_VECTOR_IRQ0 + 3,  	DA_386IGate, irq03,			    PRIVILEGE_KRNL);
-	init_idt_descriptor(INT_VECTOR_IRQ0 + 4,	DA_386IGate, irq04,			    PRIVILEGE_KRNL);
-	init_idt_descriptor(INT_VECTOR_IRQ0 + 5,	DA_386IGate, irq05,			    PRIVILEGE_KRNL);
-	init_idt_descriptor(INT_VECTOR_IRQ0 + 6,  	DA_386IGate, irq06,			    PRIVILEGE_KRNL);
-	init_idt_descriptor(INT_VECTOR_IRQ0 + 7,  	DA_386IGate, irq07,			    PRIVILEGE_KRNL);
-	init_idt_descriptor(INT_VECTOR_IRQ8 + 0,  	DA_386IGate, irq08,			    PRIVILEGE_KRNL);
-	init_idt_descriptor(INT_VECTOR_IRQ8 + 1,	DA_386IGate, irq09,			    PRIVILEGE_KRNL);
-	init_idt_descriptor(INT_VECTOR_IRQ8 + 2,  	DA_386IGate, irq10,			    PRIVILEGE_KRNL);
-	init_idt_descriptor(INT_VECTOR_IRQ8 + 3,  	DA_386IGate, irq11,			    PRIVILEGE_KRNL);
-	init_idt_descriptor(INT_VECTOR_IRQ8 + 4,	DA_386IGate, irq12,			    PRIVILEGE_KRNL);
-	init_idt_descriptor(INT_VECTOR_IRQ8 + 5,  	DA_386IGate, irq13,			    PRIVILEGE_KRNL);
-	init_idt_descriptor(INT_VECTOR_IRQ8 + 6,  	DA_386IGate, irq14,			    PRIVILEGE_KRNL);
-	init_idt_descriptor(INT_VECTOR_IRQ8 + 7,  	DA_386IGate, irq15,			    PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 0,   	DA_386IGate, irq00,			        PRIVILEGE_KRNL); // 0x20
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 1,  	DA_386IGate, irq01,			        PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 2,  	DA_386IGate, irq02,			        PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 3,  	DA_386IGate, irq03,			        PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 4,	DA_386IGate, irq04,			        PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 5,	DA_386IGate, irq05,			        PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 6,  	DA_386IGate, irq06,			        PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ0 + 7,  	DA_386IGate, irq07,			        PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 0,  	DA_386IGate, irq08,			        PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 1,	DA_386IGate, irq09,			        PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 2,  	DA_386IGate, irq10,			        PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 3,  	DA_386IGate, irq11,			        PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 4,	DA_386IGate, irq12,			        PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 5,  	DA_386IGate, irq13,			        PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 6,  	DA_386IGate, irq14,			        PRIVILEGE_KRNL);
+	init_idt_descriptor(INT_VECTOR_IRQ8 + 7,  	DA_386IGate, irq15,			        PRIVILEGE_KRNL);
 
-	init_idt_descriptor(INT_VECTOR_SYSCALL,     DA_386IGate, syscall,           PRIVILEGE_USER);
-		
+	init_idt_descriptor(INT_VECTOR_SYSCALL,     DA_386IGate, syscall,               PRIVILEGE_USER);		
 }
 
 void exception_handler(int vec_no, int err_code, int eip, int cs, int eflags){   

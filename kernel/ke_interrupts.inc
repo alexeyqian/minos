@@ -317,6 +317,9 @@ save:
 	; DO NOT USE RET HERE
 
 ; ========================= restart =========================
+; restart suspended user process
+; start in kernel mode ring0, prepare registers for user process, and then use iretd to jump to ring 3 user process.
+; first copy values in PCB(stored in kernel) of ready process to registers, prepare registers before jump to user process
 restart:
 	mov esp, [p_proc_ready] ; leave kernel stack, using next process's struct proc as stack	
 	lldt [esp + P_LDT_SEL]  ; load process LDT, prepare for next process
@@ -334,6 +337,6 @@ restart_reenter:                      ; if it's reenter
 	pop es
 	pop ds
 	popad
-	add esp, 4                        ;  remove reserved 4 bytes space
+	add esp, 4                        ;  remove reserved 4 bytes space for retaddr
 
-	iretd                             ; all registers prepared, return and run the process pointed by p_proc_ready
+	iretd                             ; all registers prepared, return and run the ring 3 user process pointed by p_proc_ready
