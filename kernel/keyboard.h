@@ -116,7 +116,7 @@ typedef struct s_kb {
 	char	buf[KB_IN_BYTES];	// buffer for keyboard scan codes
 }KB_INPUT;
 
-void init_keyboard();
+void enble_keyboard();
 void kb_read();
 
 #endif 

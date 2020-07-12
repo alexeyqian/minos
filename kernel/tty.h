@@ -24,7 +24,7 @@ typedef struct s_tty{
     struct s_console* p_console;
 } TTY;
 
-typedef struct s_console
+typedef struct s_console // CONSOLE is a video memory region
 {
 	unsigned int	current_start_addr;	/* 当前显示到了什么位置   */
 	unsigned int	original_addr;		/* 当前控制台对应显存位置 */
@@ -32,6 +32,7 @@ typedef struct s_console
 	unsigned int	cursor;			/* 当前光标位置 */
 }CONSOLE;
 
+void init_all_ttys();
 void task_tty();
 void hand_over_key_to_tty(TTY* p_tty, uint32_t key);
 void tty_output_char(CONSOLE* p_con, char ch);

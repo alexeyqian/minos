@@ -7,7 +7,7 @@ IDX_WRITE           equ 1
 global syscall
 syscall: 
     call save
-    push dword [p_proc_ready] ; bus proc addr as 1st parameter
+    push dword [p_proc_ready] ; push proc addr as 1st parameter
     sti             ; allow maskable interrupts
     push ecx        ; push 2nd param
     push ebx        ; push 3rd param

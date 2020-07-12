@@ -110,27 +110,28 @@ exception:
 %macro irq_master 1
 	call save            ; save all registers into proc table in kernel
 
-	in al, INT_M_CTLMASK ; disable current interrupt
+	in al, INT_M_CTLMASK ; disable interrupt of itself
 	or al, (1 << %1)
 	out INT_M_CTLMASK, al
 	
+	; 8259 and sti together can allow interrupt happen again.
 	mov al, EOI          ; reenable master 8259a
 	out INT_M_CTL, al
 	
-	sti                  ; enable interrupt, since CPU disabled interrupt automatcally durint interrupt.
+	sti                  ; enable interrupt, since CPU disabled interrupt automatcally during interrupt.
 	
 	push %1
-	call [irq_table + 4 * %1]
+	call [irq_table + 4 * %1] ;  call interrupt handler
 	pop ecx
 	
 	cli                  ; disable interrupt again
 
-	in al, INT_M_CTLMASK ; re-enable current interrupt
+	in al, INT_M_CTLMASK ; re-enable current interrupt after complete the process
 	and al, ~(1 << %1)
 	out INT_M_CTLMASK, al
 
-	ret                  ; if re_enter, jump to restart_reenter, 
-						 ; otherwise go to .restart
+	ret         ; return to restart or restart_reenter based on if previous pushed return address on stack.         
+						 
 %endmacro
 
 ALIGN	16
@@ -294,26 +295,37 @@ save:
 	push ds    ; the esp is copied from tss:esp0 matching current process's proc->regs high addr
 	push es
 	push fs
-	push gs    ; at this point, all current process's registers are saved in struct proc->regs
+	push gs    ; at this point, all current process's registers are saved in struct proc->regs(current process PCB in PCB table)
+
+	; IMPORTANT:
+	; from now until 'move esp, kernel_stack_top', we cannot use push/pop
+	; since current esp is pointing to proc_table, push/pop will corrupt the table.
+	; only ESI is used as storage for variable here.
+
+	mov esi, edx   ; save edx, since edx has been used somewhere else (cannot use stack here)
 
 	mov dx, ss
 	mov ds, dx
 	mov es, dx
+	mov fs, dx
 
-	mov esi, esp ; start address of struct proc, avoid to use eax,
-				 ; since i might be used as parameter for syscall
+	mov edx, esi  ; restore value of edx
 
-	inc dword [k_reenter]
+	mov esi, esp ; start address of struct proc,
+	             ; avoid to use eax, since it might be used as parameter for syscall
+
+	inc dword [k_reenter] 
 	cmp dword [k_reenter], 0
-	jne .reenter             ; if it's reenter, jmp to re_enter
+	jne .reenter                ; if it's reenter, jmp to re_enter
 	
-	mov esp, kernel_stack_top ; switch to kernel stack
+	mov esp, kernel_stack_top   ; switch to kernel stack to avoid messing up with PCB tables, 
+							    ; since before this line, esp is pointing to some where in PCB table.
 	
-	push restart             ; push a return address for not_reenter
-	jmp [esi + RETADDR - P_STACKBASE]
+	push restart                ; push a return address for not_reenter, after intr handler, return to this addr
+	jmp [esi + RETADDR - P_STACKBASE]   ; = return to next line of code calling save
 .reenter:
-	push restart_reenter    ; push a return address for reenter
-	jmp [esi + RETADDR - P_STACKBASE]	
+	push restart_reenter        ; push a return address for reenter, after intr handler, return to this addr
+	jmp [esi + RETADDR - P_STACKBASE]	; = return to next line of code calling save
 	; DO NOT USE RET HERE
 
 ; ========================= restart =========================
@@ -328,9 +340,11 @@ restart:
 	mov dword [tss + TSS3_S_SP0], eax ; TSS3_S_SP0 now is pointing to p_ready_proc->regs high addr
 									  ; at the beginning of next interrupt, 
 									  ; esp will be copied from tss:esp0 is automatically done by CPU,
-									  ; not controlled by programmer.
+									  ; not controlled by programmer. 
+									  ; by doing this the running user process always has the tss.esp0 point to it's PCB in kernel.
+									  ; TSS3_S_SP0 = 4, point to tss->esp0
 
-restart_reenter:                      ; if it's reenter
+restart_reenter:                      ; if it's reenter or end of interrupt procedure
 	dec dword [k_reenter]
 	pop gs                            ; restore all registers form p_proc_ready pointed struct proc.
 	pop fs

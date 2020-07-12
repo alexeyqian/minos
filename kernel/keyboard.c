@@ -11,7 +11,7 @@
 // static is for compiler only, will generate same asm code with or without it.
 // static will cause the symble not be included in export symbol table,
 // which in turn will reduce linkage time, since less symbols in the table to process.
-static KB_INPUT kb_in;
+PRIVATE KB_INPUT kb_in;
 static bool_t code_with_E0 = FALSE;
 static bool_t shift_l; 
 static bool_t shift_r;
@@ -24,15 +24,15 @@ static bool_t num_lock;
 static bool_t scroll_lock;
 static int 	  column = 0; // keyrow[column]: a value in keymap
 
-uint8_t retrive_scan_code_from_kb_buf();
+PRIVATE uint8_t retrive_scan_code_from_kb_buf();
 
-static void keyboard_handler(int irq);
-static void append_scan_code_to_kb_buf();
+PRIVATE void _keyboard_handler(int irq);
+PRIVATE void _append_scan_code_to_kb_buf();
 static void set_leds();
 static void kb_wait();
 static void kb_ack();
 
-void init_keyboard(){
+PUBLIC void enble_keyboard(){
 	kb_in.count = 0;
 	kb_in.p_head = kb_in.p_tail = kb_in.buf;
 
@@ -41,7 +41,7 @@ void init_keyboard(){
 	scroll_lock = 0;
 	set_leds();
 
-	put_irq_handler(KEYBOARD_IRQ, keyboard_handler);
+	put_irq_handler(KEYBOARD_IRQ, _keyboard_handler);
 	enable_irq(KEYBOARD_IRQ);
 }
 
@@ -267,11 +267,11 @@ void kb_read(TTY* p_tty)
 	// one for make code (press), one for break code (release).
 	// scan code has 2 types: make code and break code
 */
-void keyboard_handler(int irq){
-	append_scan_code_to_kb_buf();
+void _keyboard_handler(int irq){
+	_append_scan_code_to_kb_buf();
 }
 
-static void append_scan_code_to_kb_buf(){
+PRIVATE void _append_scan_code_to_kb_buf(){
 	uint8_t scan_code = in_byte(KB_DATA);
 	
 	if(kb_in.count < KB_IN_BYTES){
@@ -285,7 +285,7 @@ static void append_scan_code_to_kb_buf(){
 	}
 }
 
-uint8_t retrive_scan_code_from_kb_buf()	
+PRIVATE uint8_t retrive_scan_code_from_kb_buf()	
 {
 	uint8_t	scan_code;
 	while (kb_in.count <= 0) {} // waiting for at least one scan code

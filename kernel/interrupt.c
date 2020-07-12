@@ -95,13 +95,13 @@ void init_8259a(){
 	out_byte(INT_M_CTLMASK,	0x1);			     // Master, ICW4.
 	out_byte(INT_S_CTLMASK,	0x1);		         // Slave , ICW4.
 
+	// TODO? disable all irq interrupts, except clock ?? or FF
 	out_byte(INT_M_CTLMASK,	0xFE);	             // Master, OCW1. 
 	out_byte(INT_S_CTLMASK,	0xFF);	             // Slave , OCW1. 
 
 	int i;
 	for(i = 0; i < IRQ_NUM; i++)
 		irq_table[i] = irq_handler;
-
 }
 
 void init_idt_descriptor(unsigned char vector, uint8_t desc_type, pf_int_handler_t handler, unsigned char privilege){
@@ -115,13 +115,7 @@ void init_idt_descriptor(unsigned char vector, uint8_t desc_type, pf_int_handler
 }
 
 void init_idt(){
-	// init idt_ptr    
-	uint16_t* p_idt_limit = (uint16_t*)(&idt_ptr[0]);
-	uint32_t* p_idt_base  = (uint32_t*)(&idt_ptr[2]);
-	*p_idt_limit = IDT_SIZE * sizeof(struct gate) - 1;
-	*p_idt_base  = (uint32_t)&idt;
-
-    init_8259a();
+	init_8259a();
 	
     // init interrupt gates (descriptors)
 	init_idt_descriptor(INT_VECTOR_DIVIDE,	    DA_386IGate, divide_error,		    PRIVILEGE_KRNL);
@@ -158,7 +152,14 @@ void init_idt(){
 	init_idt_descriptor(INT_VECTOR_IRQ8 + 6,  	DA_386IGate, irq14,			        PRIVILEGE_KRNL);
 	init_idt_descriptor(INT_VECTOR_IRQ8 + 7,  	DA_386IGate, irq15,			        PRIVILEGE_KRNL);
 
-	init_idt_descriptor(INT_VECTOR_SYSCALL,     DA_386IGate, syscall,               PRIVILEGE_USER);		
+	init_idt_descriptor(INT_VECTOR_SYSCALL,     DA_386IGate, syscall,               PRIVILEGE_USER);	
+
+	uint16_t* p_idt_limit = (uint16_t*)(&idt_ptr[0]);
+	uint32_t* p_idt_base  = (uint32_t*)(&idt_ptr[2]);
+	*p_idt_limit = IDT_SIZE * sizeof(struct gate) - 1;
+	*p_idt_base  = (uint32_t)&idt;
+
+	load_idt();	
 }
 
 void exception_handler(int vec_no, int err_code, int eip, int cs, int eflags){   

@@ -5,14 +5,15 @@
 #include "keyboard.h"
 #include "tty.h"
 
-// tty = keyboard (kb buffer) + console (screen buffer)
-extern int     disp_pos;
+// tty = one shared keyboard (kb buffer) + multiple consoles (screen buffer)
 extern TTY     tty_table[];
 extern CONSOLE console_table[];
 extern int current_console_idx;
 
 #define TTY_FIRST (tty_table)
 #define TTY_END   (tty_table + NR_CONSOLES)
+
+int disp_pos;
 
 // ==== console ===========
 
@@ -23,7 +24,7 @@ void scroll_screen(CONSOLE* p_con, int direction);
 
 static void tty_set_video_start_addr(uint32_t addr);
 
-static void tty_set_cursor(unsigned int position)
+PRIVATE void tty_set_cursor(unsigned int position)
 {
 	disable_int();
 	out_byte(CRTC_ADDR_REG, CRTC_DATA_IDX_CURSOR_H);
@@ -44,7 +45,7 @@ void init_console(TTY* p_tty){
     p_tty->p_console->cursor = p_tty->p_console->original_addr;
     if(tty_idx == 0) {// first console use current position
         p_tty->p_console->cursor = disp_pos / 2;
-        disp_pos = 0; // TODO: ??
+        disp_pos = 0; // TODO: ?? only used for console 0
     }
     else
     {
@@ -131,13 +132,6 @@ void scroll_screen(CONSOLE* p_con, int direction){
 
 // ==== end of console
 
-// ===== tty =====
-static void init_tty(TTY* p_tty){
-    p_tty->inbuf_count = 0;
-    p_tty->p_inbuf_head = p_tty->p_inbuf_tail = p_tty->in_buf;
-    init_console(p_tty);
-}
-
 // keyboard interrupt handler put keys into keyboard buffer
 // tty_do_read read key from keyboard buffer and put it to tty buffer
 static void tty_do_read(TTY* p_tty){
@@ -162,23 +156,32 @@ static void tty_do_write(TTY* p_tty){
     }
 }
 
-void task_tty(){
-    TTY* p_tty;
+// ===== tty = keyboard + console(screen) =====
+static void init_tty(TTY* p_tty){
+    // inti tty buffer
+    p_tty->inbuf_count = 0;
+    p_tty->p_inbuf_head = p_tty->p_inbuf_tail = p_tty->in_buf;
+    
+    init_console(p_tty);
+}
 
-    init_keyboard();
-    for(p_tty = TTY_FIRST; p_tty < TTY_END; p_tty++)
+void init_all_ttys(){
+    enble_keyboard();   
+    current_console_idx = 0;  
+    for(TTY* p_tty = TTY_FIRST; p_tty < TTY_END; p_tty++)
         init_tty(p_tty);
+}
 
-    current_console_idx = 0;
+void task_tty(){       
     while(1){
-        for(p_tty = TTY_FIRST; p_tty < TTY_END; p_tty++){
+        for(TTY* p_tty = TTY_FIRST; p_tty < TTY_END; p_tty++){
             tty_do_read(p_tty);
             tty_do_write(p_tty);
         }
     }
 }
 
-void append_combined_key_to_tty_buf(TTY* p_tty, uint32_t key){
+void append_combined_key_to_tty_buf(TTY* p_tty, uint32_t key){ // TODO: nee disable_int ?
     if(p_tty->inbuf_count < TTY_IN_BYTES){
         *(p_tty->p_inbuf_head) = key;
         p_tty->p_inbuf_head++;

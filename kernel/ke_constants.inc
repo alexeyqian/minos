@@ -24,6 +24,7 @@ P_STACKTOP	equ	SSREG		+ 4 ; proc.regs stack top
 P_LDT_SEL	equ	P_STACKTOP      ; proc->ldt_sel
 P_LDT		equ	P_LDT_SEL	+ 4 ; proc->ldt
 
+; TODO: rename to TSS_SP0 ??
 TSS3_S_SP0	equ	4
 
 ; have to match kernel.h 

@@ -34,7 +34,6 @@ struct task         user_proc_table[PROCS_NUM]={
 						{test_c,   STACK_SIZE_TESTC, "TestC"}
 					};	
 
-int disp_pos;
 TTY tty_table[NR_CONSOLES];
 CONSOLE console_table[NR_CONSOLES];
 int current_console_idx;
@@ -59,7 +58,7 @@ void init_ldt_descriptors_in_dgt();
 void init_proc_table();
 
 void clock_handler(int irq);
-uint32_t before_paging_selector_to_segbase(uint16_t seg);
+uint32_t before_paging_selector_to_segbase(uint16_t selector);
 void enable_clock_irq();
 
 void delay(int time);
@@ -68,24 +67,24 @@ void kmain();
 
 void kinit(){
     kprint("\n>>> kinit begin ...");
-
+	
 	init_new_gdt();  
 	init_idt();
 	init_tss();	
-	init_proc_table();	 // must happens before enabled paging in init_virt_mem
-	init_ldt_descriptors_in_dgt(); // must happens after init_proc_table
-	load_gdt(); // load new kernel gdt
-	load_idt();
-	load_tss();
+	init_ldt_descriptors_in_dgt(); 
 
-	init_phys_mem();		
-	init_virt_mem();
+	init_proc_table();	 	
+
+	//init_phys_mem();	
+	//init_virt_mem();
+	 
 	kmain();
 }
 
 
 void kmain(){ 
 	kprint("\n>>> kmain begin ... \n");	
+	init_all_ttys();
 	enable_clock_irq(); 
 	restart(); // pretenting a schedule happend to start a process.
 	while(1){}
@@ -141,7 +140,7 @@ void init_phys_mem(){
 	pmmgr_uninit_region(0x0, 0x100000); // reserver lower 1M
 
 	// print i% regions initialized: %i max blocks, %i used blocks
-
+	/*
 	// TODO: test code
 	uint32_t* p1 = (uint32_t*) pmmgr_alloc_block();
 	kprint("\np1 allocated at: ");
@@ -152,7 +151,7 @@ void init_phys_mem(){
 	print_int_as_hex((int)p2);	
 
 	pmmgr_free_block(p1);
-	pmmgr_free_block(p2);
+	pmmgr_free_block(p2);*/
 
 }
 
@@ -177,6 +176,8 @@ void init_new_gdt(){
     uint16_t* p_gdt_limit = (uint16_t*)(&gdt_ptr[0]);
 	*p_gdt_base  = (uint32_t)&gdt;
 	*p_gdt_limit = GDT_SIZE * sizeof(struct descriptor) - 1;
+
+	load_gdt(); // load new kernel gdt
 }
 
 void init_tss(){
@@ -185,11 +186,14 @@ void init_tss(){
 	// setup single tss descriptor in gdt
 	init_descriptor((struct descriptor*)&gdt[INDEX_TSS],
 			before_paging_segbase_plus_offset(
-				before_paging_selector_to_segbase(SELECTOR_KERNEL_DATA), &tss
+				before_paging_selector_to_segbase(SELECTOR_KERNEL_DATA), // should = 0x0
+				&tss
 			),
 			sizeof(tss) - 1,
 			DA_386TSS);	
 	tss.iobase	= sizeof(tss);	// NO IOPL map
+
+	load_tss();
 }
 
 // each process has one ldt descriptor in gdt.
@@ -201,10 +205,11 @@ void init_ldt_descriptors_in_dgt(){
 		// Fill LDT descriptor in GDT
 		init_descriptor((struct descriptor*)&gdt[selector_ldt >> 3],
 				before_paging_segbase_plus_offset(
-					before_paging_selector_to_segbase(SELECTOR_KERNEL_DATA), proc_table[i].ldts
+					before_paging_selector_to_segbase(SELECTOR_KERNEL_DATA), // should = 0x0
+					proc_table[i].ldt // physical address of LDT
 				),
 				LDT_SIZE * sizeof(struct descriptor) - 1,
-				DA_LDT); // TODO: ?? problem here, virtual to physical not working/changed after enable paging in init_virt_mem
+				DA_LDT); 
 		p_proc++;
 		selector_ldt += 1 << 3;
 	}
@@ -217,7 +222,6 @@ void init_proc_table(){
 
 	struct proc* p_proc = proc_table;
 	struct task* p_task = task_table;
-	//TODO:  p_task_stack rename to process_inner_stack??
 	char* p_task_stack  = task_stack + STACK_SIZE_TOTAL;
 	uint16_t selector_ldt = SELECTOR_LDT_FIRST;
 
@@ -228,14 +232,14 @@ void init_proc_table(){
 		
 		if(i < TASKS_NUM){ // tasks
 			p_task = task_table + i;
-			privilege = PRIVILEGE_TASK;
+			privilege = PRIVILEGE_TASK; // apply system task permission
 			rpl = RPL_TASK;
 			eflags = 0x1202; // IF=1, IOPL=1, bit2 = 1
 		}else{ // user processes
 			p_task = user_proc_table + (i - TASKS_NUM);
-			privilege = PRIVILEGE_USER;
-			rpl = RPL_USER;
-			eflags = 0x202; // IF=1, bit2 = 1
+			privilege = PRIVILEGE_USER; // apply user process permission
+			rpl = RPL_TASK; //RPL_USER;
+			eflags = 0x202; // IF=1, bit2 = 1, remove IO permission for user process
 		}
 
 		strcpy(p_proc->p_name, p_task->name);
@@ -246,18 +250,18 @@ void init_proc_table(){
 
 		// init process ldt, which contains two ldt descriptors.
 		memcpy(
-			(char*)&p_proc->ldts[0], 
+			(char*)&p_proc->ldt[0], 
 			(char*)&gdt[SELECTOR_KERNEL_CODE >> 3], 
 			sizeof(struct descriptor));	
 		// change the DPL to lower privillege
-		p_proc->ldts[0].attr1 = DA_C | privilege << 5;	
+		p_proc->ldt[0].attr1 = DA_C | privilege << 5;	
 	
 		memcpy(
-			(char*)&p_proc->ldts[1], 
+			(char*)&p_proc->ldt[1], 
 			(char*)&gdt[SELECTOR_KERNEL_DATA >> 3], 
 			sizeof(struct descriptor));
 		// change the DPL to lower privillege
-		p_proc->ldts[1].attr1 = DA_DRW | privilege << 5;	
+		p_proc->ldt[1].attr1 = DA_DRW | privilege << 5;	
 
 		// init registers
 		// cs points to first LDT descriptor: code descriptor
@@ -281,21 +285,20 @@ void init_proc_table(){
 	}
 	k_reenter = 0;	
 	ticks = 0;
-	p_proc_ready = proc_table; 
+	p_proc_ready = proc_table; // set default ready process
 
 	proc_table[0].ticks = proc_table[0].priority = 15;	
 	proc_table[1].ticks = proc_table[1].priority = 5;	
 	proc_table[2].ticks = proc_table[2].priority = 5;	
 	proc_table[3].ticks = proc_table[3].priority = 5;	
 
-	proc_table[1].tty_idx = 0;
+	proc_table[1].tty_idx = 0; // proc_table[0] is system task, no need terminal
 	proc_table[2].tty_idx = 1;
 	proc_table[3].tty_idx = 1;
 }
 
-// TODO: selector_to_segment_addr
-uint32_t before_paging_selector_to_segbase(uint16_t seg){
-	struct descriptor* p_dest = &gdt[seg >> 3];
+uint32_t before_paging_selector_to_segbase(uint16_t selector){
+	struct descriptor* p_dest = &gdt[selector >> 3];
 	return (p_dest->base_high << 24) | (p_dest->base_mid << 16) | (p_dest->base_low);
 }
 
@@ -339,25 +342,26 @@ void schedule(){
 
 // TODO: move to clock module
 void clock_handler(int irq){
-	//kprint("[");
+	kprint("[");
 
 	ticks++;
 	p_proc_ready->ticks--;
 
-	if(k_reenter != 0){
-		//kprint("!");
+	if(k_reenter != 0){ // interrupt re-enter
+		kprint("!");
 		return;
 	}
 
 	//if (p_proc_ready->ticks > 0) return;
 
-	schedule();
+	schedule(); 
 
-	//kprint("]");
+	kprint("]");
 }
 
-/* round robin version of scheduler
-void clock_handler(int irq){
+// round robin version of scheduler
+/*
+void clock_handler_bak(int irq){
 	kprint("[");
 
 	ticks++;
@@ -368,12 +372,12 @@ void clock_handler(int irq){
 
 	// round robin process scheduler.
 	p_proc_ready++;
-	if(p_proc_ready >= proc_table + TASKS_NUM)
+	if(p_proc_ready >= proc_table + TASKS_NUM + PROCS_NUM)
 		p_proc_ready = proc_table;
 
 	kprint("]");
-}*/
-
+}
+*/
 void irq_handler(int irq){
     kprint("IRQ handler: ");
 	print_int_as_hex(irq);

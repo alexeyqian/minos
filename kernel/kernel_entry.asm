@@ -15,6 +15,7 @@ _start:
 %include "ke_syscalls.inc"
 %include "ke_asm_utils.inc"
 
-[section .bss]
+;[section .bss] ; our loader might not able to process bss section yet.
+;[section .data]
 stack_space resb 2*1024 ; reserved 2K for kernle stack
 kernel_stack_top: 
