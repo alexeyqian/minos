@@ -76,3 +76,23 @@ global get_cr0
 get_cr0: ;uint32_t get_cr0();
 	mov	eax, cr0
     ret
+
+; u8 in_byte(u16 port)
+global in_byte
+in_byte:
+	mov edx, [esp + 4];
+	xor eax, eax
+	in al, dx
+	nop
+	nop
+	ret
+
+; void out_byte(u16 port, u8 value);
+global out_byte
+out_byte:
+	mov edx, [esp + 4] ; port
+	mov al,  [esp + 8] ; value
+	out dx, al
+	nop
+	nop
+	ret

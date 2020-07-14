@@ -22,11 +22,11 @@ pm_print_al_as_hex:
 	ja	.if_letter
 .if_number:
 	add	al, '0'
-	jmp	.print_char
+	jmp	.kprint_char
 .if_letter:
 	sub	al, 0xa
 	add	al, 'A'
-.print_char:
+.kprint_char:
 	mov	[gs:edi], ax
 	add	edi, 2
 

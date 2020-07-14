@@ -190,14 +190,14 @@ void exception_handler(int vec_no, int err_code, int eip, int cs, int eflags){
     kprint(err_description[vec_no]);
     kprint("\n");
     kprint("EFLAGS: ");
-    print_int_as_hex(eflags);
+    kprint_int_as_hex(eflags);
     kprint(" CS: ");
-    print_int_as_hex(cs);
+    kprint_int_as_hex(cs);
     kprint(" EIP: ");
-    print_int_as_hex(eip);
+    kprint_int_as_hex(eip);
 
     if(err_code != 0xffffffff){
         kprint(" Error Code: ");
-        print_int_as_hex(err_code);
+        kprint_int_as_hex(err_code);
     }    
 }

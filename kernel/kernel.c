@@ -35,8 +35,6 @@ struct task         user_proc_table[PROCS_NUM]={
 					};	
 
 TTY tty_table[NR_CONSOLES];
-CONSOLE console_table[NR_CONSOLES];
-int current_console_idx;
 
 int write_impl(char* buf, int len, struct proc* p_proc);
 int get_ticks_impl();
@@ -66,13 +64,12 @@ void restart();
 void kmain();
 
 void kinit(){
-    kprint("\n>>> kinit begin ...");
-	
+	//kclear_screen();
+    kprint(">>> kinit begin ...\n");
 	init_new_gdt();  
 	init_idt();
 	init_tss();	
 	init_ldt_descriptors_in_dgt(); 
-
 	init_proc_table();	 	
 
 	//init_phys_mem();	
@@ -81,13 +78,13 @@ void kinit(){
 	kmain();
 }
 
-
 void kmain(){ 
-	kprint("\n>>> kmain begin ... \n");	
-	init_all_ttys();
+	kprint(">>> kmain begin ... \n");	
+	//init_all_ttys();
 	enable_clock_irq(); 
 	restart(); // pretenting a schedule happend to start a process.
 	while(1){}
+	//while(1){kprint("A-Apple\n");delay(15);kprint("B-Banana\n");delay(15);kprint("C-Car\n"); delay(15);}
 }
 
 void init_phys_mem(){
@@ -103,7 +100,7 @@ void init_phys_mem(){
 	//pmmgr_init(mem_size, KERNEL_BIN_SEG_BASE + kernel_size);
 	uint32_t mem_map_ptr = 0x500;
 	pmmgr_init(mem_size, mem_map_ptr);
-	//kprint("\n physical memory manager initilized with %i\n", mem_size);
+	//kprint("physical memory manager initilized with %i\n", mem_size);
 	// TODO: replace hard code
 	//mem_region* regions = (memory_region*)0x1000; // get region map from loader
 	
@@ -143,12 +140,12 @@ void init_phys_mem(){
 	/*
 	// TODO: test code
 	uint32_t* p1 = (uint32_t*) pmmgr_alloc_block();
-	kprint("\np1 allocated at: ");
-	print_int_as_hex((int)p1);
+	kprint("p1 allocated at: ");
+	kprint_int_as_hex((int)p1);
 	
 	uint32_t* p2 = (uint32_t*)pmmgr_alloc_block();
-	kprint("\np2 allocated at: ");
-	print_int_as_hex((int)p2);	
+	kprint("p2 allocated at: ");
+	kprint_int_as_hex((int)p2);	
 
 	pmmgr_free_block(p1);
 	pmmgr_free_block(p2);*/
@@ -157,7 +154,7 @@ void init_phys_mem(){
 
 void init_virt_mem(){	
 	vmmgr_init();
-	kprint("\n>>> virtual memory initialized and paging enabled.");
+	kprint(">>> virtual memory initialized and paging enabled.");
 }
 
 void irq_handler(int irq);
@@ -238,7 +235,7 @@ void init_proc_table(){
 		}else{ // user processes
 			p_task = user_proc_table + (i - TASKS_NUM);
 			privilege = PRIVILEGE_USER; // apply user process permission
-			rpl = RPL_TASK; //RPL_USER;
+			rpl = RPL_USER;
 			eflags = 0x202; // IF=1, bit2 = 1, remove IO permission for user process
 		}
 
@@ -340,33 +337,29 @@ void schedule(){
 	}
 }
 
-// TODO: move to clock module
 void clock_handler(int irq){
-	kprint("[");
+	//kprint("[");
 
 	ticks++;
 	p_proc_ready->ticks--;
 
 	if(k_reenter != 0){ // interrupt re-enter
-		kprint("!");
+		kprint(".");
 		return;
 	}
 
 	//if (p_proc_ready->ticks > 0) return;
-
 	schedule(); 
-
-	kprint("]");
+	//kprint("]");
 }
 
 // round robin version of scheduler
-/*
-void clock_handler_bak(int irq){
-	kprint("[");
+void clock_handler2(int irq){
+	//kprint("[");
 
 	ticks++;
 	if(k_reenter != 0){
-		kprint("!");
+		//kprint("!");
 		return;
 	}
 
@@ -375,13 +368,12 @@ void clock_handler_bak(int irq){
 	if(p_proc_ready >= proc_table + TASKS_NUM + PROCS_NUM)
 		p_proc_ready = proc_table;
 
-	kprint("]");
+	//kprint("]");
 }
-*/
+
 void irq_handler(int irq){
     kprint("IRQ handler: ");
-	print_int_as_hex(irq);
-	kprint("\n");
+	kprint_int_as_hex(irq);
 }
 
 // TODO: move to clock module

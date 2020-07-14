@@ -27,4 +27,7 @@ extern void flush_tlb_entry(uint32_t addr);
 extern void enable_paging();
 extern void disable_paging();
 
+extern void out_byte(uint16_t port, uint8_t value);
+extern uint8_t in_byte(uint16_t port);
+
 #endif

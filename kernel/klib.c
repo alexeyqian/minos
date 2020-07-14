@@ -3,27 +3,6 @@
 #include "types.h"
 #include "ke_asm_utils.h"
 
-// TODO: repace with functions in asm utils
-uint8_t in_byte(io_port_t port){
-    uint8_t result;
-    __asm__("in %%dx, %%al" : "=a" (result) : "d" (port));
-    return result;
-}
-
-void out_byte(io_port_t port , uint8_t data) {
-	__asm__("out %%al, %%dx" : :"a" (data) , "d" (port));
-}
-/*
-uint16_t in_word(io_port_t port) {
-	uint16_t result ;
-	__asm__("in %%dx, %%ax" : "=a" (result) : "d" (port));
-	return result ;
-}
-
-void out_word(io_port_t port , uint16_t data) {
-	__asm__("out %%ax, %%dx " : :"a" (data) , "d" (port));
-}*/
-
 char* memset(char* buf, char value, int size){
 	int i;
     for(i = 0; i < size; i++)
@@ -31,7 +10,7 @@ char* memset(char* buf, char value, int size){
         
     return buf;
 }
-
+/*
 int memcmp(const char* a, const char* b, int size) {
 	int i;	
 	for (i = 0; i < size; i++) {
@@ -41,7 +20,7 @@ int memcmp(const char* a, const char* b, int size) {
 			return 1;
 	}
 	return 0;
-}
+}*/
 
 void memcpy(char* dst, const char* src, int size){
 	int i;
@@ -56,7 +35,7 @@ void strcpy(char* dst, const char* src){
         i++;
     }
 }
-
+/*
 uint32_t digit_count(int num){
     uint32_t count = 0;
     if(num == 0) return 1;
@@ -66,7 +45,7 @@ uint32_t digit_count(int num){
     }
 
     return count;
-}
+}*/
 
 int strlen(const char* str){
     int len = 0;
@@ -149,26 +128,6 @@ char* itox( int num, char* str) {
 	*p = 0;
 
 	return str;
-}
-
-void kprint(char* str){
-    for(int i=0; str[i]!='\0'; i++)
-		print_char(str[i], -1, -1, 0);
-}
-
-void print_int(int num){
-    //char str[digit_count(num) + 1];
-	char str[16];
-    itoa(num, str, 10);
-    kprint(str);
-}
-
-// TODO: print uint32 as hex
-void print_int_as_hex(int num){
-    //char str[digit_count(num) + 1];
-	char str[16];
-    itox(num, str);
-    kprint(str);
 }
 
 void delay(int time){

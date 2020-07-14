@@ -273,7 +273,7 @@ void _keyboard_handler(int irq){
 
 PRIVATE void _append_scan_code_to_kb_buf(){
 	uint8_t scan_code = in_byte(KB_DATA);
-	
+		
 	if(kb_in.count < KB_IN_BYTES){
 		*(kb_in.p_head) = scan_code;
 		kb_in.p_head++;
