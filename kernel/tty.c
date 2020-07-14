@@ -13,7 +13,7 @@ extern TTY tty_table[];
 
 PRIVATE CONSOLE console_table[NR_CONSOLES];
 PRIVATE int current_console_idx = 0;
-PRIVATE int disp_pos;
+PRIVATE int _disp_pos;
 
 // ==== console ===========
 
@@ -41,13 +41,13 @@ void init_console(TTY *p_tty)
     int v_mem_size_in_word = V_MEM_SIZE >> 1;
     int v_mem_size_in_word_per_con = v_mem_size_in_word / NR_CONSOLES;
     p_tty->p_console->original_addr = tty_idx * v_mem_size_in_word_per_con;
-    p_tty->p_console->v_mem_limit = v_mem_size_in_word_per_con / SCREEN_WIDTH * SCREEN_WIDTH;
+    p_tty->p_console->v_mem_limit = v_mem_size_in_word_per_con; // /NR_CONSOLES * NR_CONSOLES ??
     p_tty->p_console->current_start_addr = p_tty->p_console->original_addr;
     p_tty->p_console->cursor = p_tty->p_console->original_addr;
     if (tty_idx == 0)
-    { // first console use current position
-        p_tty->p_console->cursor = disp_pos / 2;
-        disp_pos = 0; // TODO: ?? only used for console 0
+    {   // first console use current position
+        p_tty->p_console->cursor = _disp_pos / 2;
+        _disp_pos = 0; // TODO: ?? only used for console 0
     }
     else
     {
@@ -64,7 +64,17 @@ void tty_flush_console(CONSOLE *p_con)
     tty_set_video_start_addr(p_con->current_start_addr);
 }
 
+// TODO: for testing
 void tty_output_char(CONSOLE *p_con, char ch)
+{
+    uint8_t *p_vmem = (uint8_t *)(V_MEM_BASE + _disp_pos);
+    *p_vmem++ = ch;
+    *p_vmem++ = DEFAULT_CHAR_COLOR;
+    _disp_pos += 2;
+    tty_set_cursor(_disp_pos/2);
+}
+
+void tty_output_char2(CONSOLE *p_con, char ch)
 {
     uint8_t *p_vmem = (uint8_t *)(V_MEM_BASE + p_con->cursor * 2);
 
@@ -156,7 +166,7 @@ static void tty_do_read(TTY *p_tty)
 }
 
 // prerequisite: tty buf must not empty
-static char retrive_char_from_tty_buf(TTY *p_tty)
+PRIVATE char retrive_char_from_tty_buf(TTY *p_tty)
 {
     //disable_int();
     char ch = *(p_tty->p_inbuf_tail);
@@ -168,7 +178,7 @@ static char retrive_char_from_tty_buf(TTY *p_tty)
     return ch;
 }
 
-static void tty_do_write(TTY *p_tty)
+PRIVATE void tty_do_write(TTY *p_tty)
 {
     if (p_tty->inbuf_count)
     { // tty_buff is not empty
@@ -178,7 +188,7 @@ static void tty_do_write(TTY *p_tty)
 }
 
 // ===== tty = keyboard + console(screen) =====
-static void init_tty(TTY *p_tty)
+PRIVATE void init_tty(TTY *p_tty)
 {
     // inti tty buffer
     p_tty->inbuf_count = 0;
@@ -187,32 +197,24 @@ static void init_tty(TTY *p_tty)
     init_console(p_tty);
 }
 
-void init_all_ttys()
-{
-    enble_keyboard();
-    current_console_idx = 0;
-    for (TTY *p_tty = TTY_FIRST; p_tty < TTY_END; p_tty++)
-        init_tty(p_tty);
-}
-
 void task_tty()
-{   
-    //int counter = 20;
-    while(1){        
-        kprint("in tty");
-        milli_delay(200); 
-        //counter--;
-    }
-    /*
+{       
+    TTY *p_tty;
+
+    init_keyboard();    
+    for (p_tty = TTY_FIRST; p_tty < TTY_END; p_tty++)
+        init_tty(p_tty);
+
+    current_console_idx = 0;
+
     while (1)
     {
-        for (TTY *p_tty = TTY_FIRST; p_tty < TTY_END; p_tty++)
+        for (p_tty = TTY_FIRST; p_tty < TTY_END; p_tty++)
         {
             tty_do_read(p_tty);
             tty_do_write(p_tty);
         }
     }
-    */
 }
 
 void append_combined_key_to_tty_buf(TTY *p_tty, uint32_t key)
@@ -228,7 +230,7 @@ void append_combined_key_to_tty_buf(TTY *p_tty, uint32_t key)
     }
 }
 
-void process_printable_key(TTY *p_tty, uint32_t combined_key)
+PRIVATE void process_printable_key(TTY *p_tty, uint32_t combined_key)
 {
     append_combined_key_to_tty_buf(p_tty, combined_key);
 }

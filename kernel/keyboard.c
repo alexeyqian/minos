@@ -12,41 +12,88 @@
 // static will cause the symble not be included in export symbol table,
 // which in turn will reduce linkage time, since less symbols in the table to process.
 PRIVATE KB_INPUT kb_in;
-static bool_t code_with_E0 = FALSE;
-static bool_t shift_l; 
-static bool_t shift_r;
-static bool_t alt_l;
-static bool_t alt_r;
-static bool_t ctrl_l;
-static bool_t ctrl_r;
-static bool_t caps_lock;
-static bool_t num_lock;
-static bool_t scroll_lock;
-static int 	  column = 0; // keyrow[column]: a value in keymap
+PRIVATE bool_t code_with_E0 = FALSE;
+PRIVATE bool_t shift_l; 
+PRIVATE bool_t shift_r;
+PRIVATE bool_t alt_l;
+PRIVATE bool_t alt_r;
+PRIVATE bool_t ctrl_l;
+PRIVATE bool_t ctrl_r;
+PRIVATE bool_t caps_lock;
+PRIVATE bool_t num_lock;
+PRIVATE bool_t scroll_lock;
+PRIVATE int    column = 0; // keyrow[column]: a value in keymap
 
-PRIVATE uint8_t retrive_scan_code_from_kb_buf();
+// wait for an empty keyboard controller(8042) buffer to write
+PRIVATE void kb_wait(){
+	uint8_t kb_stat;
+	do{
+		kb_stat = in_byte(KB_CMD);
+	}while(kb_stat & 0x2);
+} 
 
-PRIVATE void _keyboard_handler(int irq);
-PRIVATE void _append_scan_code_to_kb_buf();
-static void set_leds();
-static void kb_wait();
-static void kb_ack();
+PRIVATE void kb_ack(){
+	uint8_t kb_read;
+	do{
+		kb_read = in_byte(KB_DATA);
+	}while(kb_read != KB_ACK);
+}
 
-PUBLIC void enble_keyboard(){
-	kb_in.count = 0;
-	kb_in.p_head = kb_in.p_tail = kb_in.buf;
+PRIVATE void set_leds(){
+	uint8_t leds = (caps_lock << 2) | (num_lock << 1) | scroll_lock;
+	kb_wait();
+	out_byte(KB_DATA, LED_CODE);
+	kb_ack();
 
-	caps_lock = 0;
-	num_lock = 1;
-	scroll_lock = 0;
-	set_leds();
+	kb_wait();
+	out_byte(KB_DATA, leds);
+	kb_ack();
+}
 
-	put_irq_handler(KEYBOARD_IRQ, _keyboard_handler);
-	enable_irq(KEYBOARD_IRQ);
+PRIVATE uint8_t retrive_scan_code_from_kb_buf()	
+{
+	uint8_t	scan_code;
+	while (kb_in.count <= 0) {} // waiting for at least one scan code
+
+	disable_int();
+	scan_code = *(kb_in.p_tail);
+	kb_in.p_tail++;
+	if (kb_in.p_tail == kb_in.buf + KB_IN_BYTES) {
+		kb_in.p_tail = kb_in.buf;
+	}
+	kb_in.count--;
+	enable_int();
+
+	return scan_code;
+}
+
+PRIVATE void append_scan_code_to_kb_buf(){	
+	uint8_t scan_code = in_byte(KB_DATA);   // read out from 8042, so it can response for next key interrupt.
+	if(kb_in.count >= KB_IN_BYTES) return;  // ignre scan code if buffer is full
+	
+	*(kb_in.p_head) = scan_code;
+	kb_in.p_head++;
+
+	if(kb_in.p_head == kb_in.buf + KB_IN_BYTES)
+		kb_in.p_head = kb_in.buf;
+	
+	kb_in.count++;	
+}
+
+/*
+	// for 1 byte  scan code, each keypress/release fires 2 interrupts (1 make code and 1 break code)
+	// for 2 bytes scan code, each keypress/release fires 4 interrupts (2 make codes and 2 break codes, start with E0)
+	// for 3 bytes scan code, PUASE, only has make code, no break code, so only fires 3 interrupts (start with E1)
+	// one for make code (press), one for break code (release).
+	// scan code has 2 types: make code and break code
+*/
+// Called per interrupt
+PRIVATE void keyboard_handler(int irq){
+	append_scan_code_to_kb_buf();
 }
 
 // key must be make key
-static uint32_t process_make_code(uint32_t key){
+PRIVATE uint32_t process_make_code(uint32_t key){
 		bool_t pad = FALSE;
 
 		// process pad keyboard
@@ -133,7 +180,7 @@ static uint32_t process_make_code(uint32_t key){
 // since some scan code contains more than one bytes
 // make  code | 0x80 = break code
 // break code & 0x7f = make  code
-void kb_read(TTY* p_tty) 
+PUBLIC void kb_read(TTY* p_tty) 
 {
 	uint8_t	    scan_code;
 	bool_t	    is_make_code;	               // true for make code, false for break code
@@ -260,70 +307,16 @@ void kb_read(TTY* p_tty)
 	hand_over_key_to_tty(p_tty, combinded_key);
 }
 
-/*
-	// for 1 byte  scan code, each keypress/release fires 2 interrupts (1 make code and 1 break code)
-	// for 2 bytes scan code, each keypress/release fires 4 interrupts (2 make codes and 2 break codes, start with E0)
-	// for 3 bytes scan code, PUASE, only has make code, no break code, so only fires 3 interrupts (start with E1)
-	// one for make code (press), one for break code (release).
-	// scan code has 2 types: make code and break code
-*/
-void _keyboard_handler(int irq){
-	_append_scan_code_to_kb_buf();
-}
+// TODO: move out of tty, add it in kmain?
+PUBLIC void init_keyboard(){
+	kb_in.count = 0;
+	kb_in.p_head = kb_in.p_tail = kb_in.buf;
 
-PRIVATE void _append_scan_code_to_kb_buf(){
-	uint8_t scan_code = in_byte(KB_DATA);
-		
-	if(kb_in.count < KB_IN_BYTES){
-		*(kb_in.p_head) = scan_code;
-		kb_in.p_head++;
+	caps_lock = 0;
+	num_lock = 1;
+	scroll_lock = 0;
+	set_leds();
 
-		if(kb_in.p_head == kb_in.buf + KB_IN_BYTES)
-			kb_in.p_head = kb_in.buf;
-		
-		kb_in.count++;
-	}
-}
-
-PRIVATE uint8_t retrive_scan_code_from_kb_buf()	
-{
-	uint8_t	scan_code;
-	while (kb_in.count <= 0) {} // waiting for at least one scan code
-
-	disable_int();
-	scan_code = *(kb_in.p_tail);
-	kb_in.p_tail++;
-	if (kb_in.p_tail == kb_in.buf + KB_IN_BYTES) {
-		kb_in.p_tail = kb_in.buf;
-	}
-	kb_in.count--;
-	enable_int();
-
-	return scan_code;
-}
-
-// wait for an empty keyboard controller(8042) buffer to write
-static void kb_wait(){
-	uint8_t kb_stat;
-	do{
-		kb_stat = in_byte(KB_CMD);
-	}while(kb_stat & 0x2);
-} 
-
-static void kb_ack(){
-	uint8_t kb_read;
-	do{
-		kb_read = in_byte(KB_DATA);
-	}while(kb_read != KB_ACK);
-}
-
-static void set_leds(){
-	uint8_t leds = (caps_lock << 2) | (num_lock << 1) | scroll_lock;
-	kb_wait();
-	out_byte(KB_DATA, LED_CODE);
-	kb_ack();
-
-	kb_wait();
-	out_byte(KB_DATA, leds);
-	kb_ack();
+	put_irq_handler(KEYBOARD_IRQ, keyboard_handler);
+	enable_irq(KEYBOARD_IRQ);
 }

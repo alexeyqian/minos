@@ -32,7 +32,6 @@ typedef struct s_console // CONSOLE is a video memory region
 	unsigned int	cursor;			/* 当前光标位置 */
 }CONSOLE;
 
-void init_all_ttys();
 void task_tty();
 void hand_over_key_to_tty(TTY* p_tty, uint32_t key);
 void tty_output_char(CONSOLE* p_con, char ch);

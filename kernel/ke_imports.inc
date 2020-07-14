@@ -12,4 +12,3 @@ extern kinit
 extern exception_handler
 extern irq_handler
 extern clock_handler
-extern delay

@@ -130,14 +130,14 @@ char* itox( int num, char* str) {
 	return str;
 }
 
-void delay(int time){
+void delay_loop(int time){
 	int i, j, k;
 	for(i = 0; i < time; i++)
 		for(j = 0; j < 1000; j++)
 			for(k = 0; k < 1000; k ++){}
 }
 
-void milli_delay(int milli_sec){
+void delay(int milli_sec){
     int t = get_ticks();
     while(((get_ticks() - t) * 1000 / HZ) < milli_sec) {}
 }

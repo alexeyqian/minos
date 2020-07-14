@@ -57,9 +57,8 @@ void init_proc_table();
 
 void clock_handler(int irq);
 uint32_t before_paging_selector_to_segbase(uint16_t selector);
-void enable_clock_irq();
+void enable_clock();
 
-void delay(int time);
 void restart();
 void kmain();
 
@@ -72,19 +71,17 @@ void kinit(){
 	init_ldt_descriptors_in_dgt(); 
 	init_proc_table();	 	
 
-	//init_phys_mem();	
+	init_phys_mem();	
 	//init_virt_mem();
 	 
 	kmain();
 }
 
 void kmain(){ 
-	kprint(">>> kmain begin ... \n");	
-	//init_all_ttys();
-	enable_clock_irq(); 
+	kprint(">>> kmain begin ... \n");		
+	enable_clock(); 	
 	restart(); // pretenting a schedule happend to start a process.
 	while(1){}
-	//while(1){kprint("A-Apple\n");delay(15);kprint("B-Banana\n");delay(15);kprint("C-Car\n"); delay(15);}
 }
 
 void init_phys_mem(){
@@ -376,8 +373,7 @@ void irq_handler(int irq){
 	kprint_int_as_hex(irq);
 }
 
-// TODO: move to clock module
-void enable_clock_irq(){ // init 8253 PIT
+void enable_clock(){ // init 8253 PIT
 	out_byte(TIMER_MODE, RATE_GENERATOR);
 	out_byte(TIMER0, (uint8_t) (TIMER_FREQ/HZ) );
 	out_byte(TIMER0, (uint8_t) ((TIMER_FREQ/HZ) >> 8));

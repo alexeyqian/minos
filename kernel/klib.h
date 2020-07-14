@@ -8,7 +8,7 @@ char* memset(char *dst, char val, int count);
 void memcpy(char* dst, const char* src, int size);
 void strcpy(char* dst, const char* src);
 
-void delay(int time);
+void delay_loop(int time);
 
 int strlen(const char* str);
 // integer to zero terminated string
@@ -17,7 +17,7 @@ char* itoa(int num, char* str, int base);
 char* itox(int num, char* str);
 
 // below functions are using sys calls inside, cannot be used in kernel
-void milli_delay(int milli_sec);
+void delay(int milli_sec);
 int printf(const char *fmt, ...);
 
 #endif
