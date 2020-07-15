@@ -19,9 +19,9 @@ PRIVATE bool_t alt_l;
 PRIVATE bool_t alt_r;
 PRIVATE bool_t ctrl_l;
 PRIVATE bool_t ctrl_r;
-PRIVATE bool_t caps_lock;
-PRIVATE bool_t num_lock;
-PRIVATE bool_t scroll_lock;
+PRIVATE int caps_lock;
+PRIVATE int num_lock;
+PRIVATE int scroll_lock;
 PRIVATE int    column = 0; // keyrow[column]: a value in keymap
 
 // wait for an empty keyboard controller(8042) buffer to write
@@ -29,7 +29,7 @@ PRIVATE void kb_wait(){
 	uint8_t kb_stat;
 	do{
 		kb_stat = in_byte(KB_CMD);
-	}while(kb_stat & 0x2);
+	}while(kb_stat & 0x02);
 } 
 
 PRIVATE void kb_ack(){
@@ -311,6 +311,10 @@ PUBLIC void kb_read(TTY* p_tty)
 PUBLIC void init_keyboard(){
 	kb_in.count = 0;
 	kb_in.p_head = kb_in.p_tail = kb_in.buf;
+
+	shift_l = shift_r = 0;
+	alt_l   = alt_r   = 0;
+	ctrl_l  = ctrl_r  = 0;
 
 	caps_lock = 0;
 	num_lock = 1;
