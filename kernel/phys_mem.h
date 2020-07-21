@@ -1,7 +1,8 @@
-#ifndef _MINOS_PHYS_MEM_H_
-#define _MINOS_PHYS_MEM_H_
+#ifndef MINOS_PHYS_MEM_H
+#define MINOS_PHYS_MEM_H
 
-#include "ktypes.h" // should be stdint.h
+#include "types.h"
+#include "ktypes.h" 
 
 #define MEM_REGION_COUNT 1 // TODO: update to 15
 

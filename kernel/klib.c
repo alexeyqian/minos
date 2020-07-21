@@ -5,8 +5,6 @@
 #include "global.h"
 #include "ke_asm_utils.h"
 
-#define	STR_DEFAULT_LEN	1024
-
 char* memset(char* buf, char value, int size){
 	int i;
     for(i = 0; i < size; i++)
@@ -327,8 +325,6 @@ int printf(const char *fmt, ...){
     return i;
 }
 
-#define printl printf
-
 int sprintf(char* buf, const char* fmt, ...){
     va_list arg = (va_list)((char *)(&fmt) + 4);
     return vsprintf(buf, fmt, arg);
@@ -372,4 +368,27 @@ PUBLIC void panic(const char *fmt, ...)
 PUBLIC void put_irq_handler(int irq, pf_irq_handler_t handler){
 	disable_irq(irq);
 	irq_table[irq] = handler;
+}
+
+// ring 0-1, calculate the linear address of proc's segment
+// idx: index of proc's segments
+PRIVATE int ldt_seg_linear(struct proc* p, int idx){
+	struct descriptor* d = &p->ldt[idx];
+	return d->base_high << 24 | d->base_mid << 16 | d->base_low;
+}
+
+// ring 0-1, virtual addr -> linear addr
+PUBLIC void* va2la(int pid, void* va){
+	struct proc* p = &proc_table[pid];
+	uint32_t seg_base = ldt_seg_linear(p, INDEX_LDT_RW);
+	uint32_t la = seg_base + (uint32_t)va;
+
+	if(pid < NR_TASKS + NR_PROCS)
+		assert(la == (uint32_t)va);
+	return (void*)la;
+}
+
+PUBLIC void reset_msg(MESSAGE* p)
+{
+	memset((char*)p, 0, sizeof(MESSAGE));
 }

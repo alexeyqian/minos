@@ -10,6 +10,15 @@
 #include "keyboard.h"
 #include "tty.h"
 
+// keyboard buffer, buffering scan code from 8042 keyboard controller
+// TODO: rename to kbbuf_s
+typedef struct s_kb {
+	char*	p_head;		         /* 指向缓冲区中下一个空闲位置 */	 
+	char*	p_tail;			    /* 指向键盘任务应处理的字节 */
+	int	    count;			    // how much scan codes are bufferred
+	char	buf[KB_IN_BYTES];	// buffer for keyboard scan codes
+}KB_INPUT;
+
 // static is for compiler only, will generate same asm code with or without it.
 // static will cause the symble not be included in export symbol table,
 // which in turn will reduce linkage time, since less symbols in the table to process.

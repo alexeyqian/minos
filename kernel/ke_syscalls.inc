@@ -1,8 +1,8 @@
 INT_VECTOR_SYSCALL  equ 0x90
 IDX_GET_TICKS       equ 0
-IDX_WRITE           equ 1
-IDX_SENDREC         equ 2
-IDX_PRINTX          equ 3
+IDX_PRINTX          equ 1
+IDX_WRITE           equ 2
+IDX_SENDREC         equ 3
 
 [bits 32]
 [section .text]

@@ -1,5 +1,6 @@
-#ifndef _MINOS_VIRT_MEM_H
-#define _MINOS_VIRT_MEM_H
+#ifndef MINOS_VIRT_MEM_H
+#define MINOS_VIRT_MEM_H
+
 #include "types.h"
 #include "phys_mem.h"
 

@@ -1,4 +1,4 @@
-#ifndef _MINOS_KERNEL_H_
-#define _MINOS_KERNEL_H_
+#ifndef MINOS_KERNEL_H
+#define MINOS_KERNEL_H
 
 #endif

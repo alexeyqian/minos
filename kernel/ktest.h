@@ -1,5 +1,5 @@
-#ifndef _MINOS_KTEST_H_
-#define _MINOS_KTEST_H_
+#ifndef MINOS_KTEST_H
+#define MINOS_KTEST_H
 
 #include "types.h"
 

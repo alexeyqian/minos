@@ -1,11 +1,14 @@
 #include "clock.h"
 #include "types.h"
 #include "ktypes.h"
-#include "klib.h"
 #include "global.h"
+#include "ke_asm_utils.h"
+#include "klib.h"
+#include "screen.h" // kprint
 
+PRIVATE void clock_handler(int irq);
 
-void enable_clock(){ // init 8253 PIT
+PUBLIC void enable_clock(){ // init 8253 PIT
 	out_byte(TIMER_MODE, RATE_GENERATOR);
 	out_byte(TIMER0, (uint8_t) (TIMER_FREQ/HZ) );
 	out_byte(TIMER0, (uint8_t) ((TIMER_FREQ/HZ) >> 8));
@@ -16,7 +19,7 @@ void enable_clock(){ // init 8253 PIT
 
 // priority is fixed value, ticks is counting down.
 // when all processes ticks are 0, then reset ticks to it's priority.
-void schedule(){
+PUBLIC void schedule(){
 	struct proc* p;
 	int greatest_ticks = 0;
 	while(!greatest_ticks){
@@ -34,7 +37,7 @@ void schedule(){
 	}
 }
 
-void clock_handler(int irq){
+PRIVATE void clock_handler(int irq){
 	//kprint("[");
 
 	ticks++;
@@ -51,7 +54,7 @@ void clock_handler(int irq){
 }
 
 // round robin version of scheduler
-void clock_handler2(int irq){
+PRIVATE void clock_handler_not_used(int irq){
 	//kprint("[");
 
 	ticks++;

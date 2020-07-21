@@ -1,7 +1,8 @@
 
-#ifndef	_MINOS_KEYBOARD_H_
-#define	_MINOS_KEYBOARD_H_
+#ifndef	MINOS_KEYBOARD_H
+#define	MINOS_KEYBOARD_H
 
+// TODO: move all nonpublic defines into .c file
 #define	KB_IN_BYTES	    32          /* size of keyboard input buffer */
 #define MAP_COLS	    3	        /* Number of columns in keymap */
 #define NR_SCAN_CODES	0x80	    /* Number of scan codes (rows in keymap) */
@@ -106,15 +107,6 @@
 
 #define	LED_CODE	0xED
 #define	KB_ACK		0xFA
-
-// keyboard buffer, buffering scan code from 8042 keyboard controller
-// TODO: rename to kbbuf_s
-typedef struct s_kb {
-	char*	p_head;		         /* 指向缓冲区中下一个空闲位置 */	 
-	char*	p_tail;			    /* 指向键盘任务应处理的字节 */
-	int	    count;			    // how much scan codes are bufferred
-	char	buf[KB_IN_BYTES];	// buffer for keyboard scan codes
-}KB_INPUT;
 
 void init_keyboard();
 void kb_read();

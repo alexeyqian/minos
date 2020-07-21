@@ -1,83 +1,12 @@
+#include "ipc.h"
 #include "const.h"
 #include "types.h"
 #include "ktypes.h"
 #include "global.h"
+#include "ke_asm_utils.h"
 #include "klib.h"
 
-#define proc2pid(x) (x - proc_table)
-
-extern void schedule();
-
-PUBLIC int sys_sendrec(int function, int src_dest, MESSAGE* m, struct proc* p){
-	assert(k_reenter == 0); // make sure we are not in ring0
-	assert((src_dest >= 0 && src_dest <= NR_TASKS + NR_PROCS) ||
-		src_dest == ANY || src_dest == INTERRUPT);
-
-	int ret = 0;
-	int caller = proc2pid(p);
-	MESSAGE* mla = (MESSAGE*)va2la(caller, m);
-	mla->source = caller;
-
-	assert(mla->source != src_dest);
-
-	if(function == SEND){
-		ret = msg_send(p, src_dest, m);
-		if(ret != 0) return ret;
-	}else if(function == RECEIVE){
-		ret = msg_receive(p, src_dest, m);
-		if(ret != 0) return ret;
-	}else{
-		panic("{sys_sendrec} invalid function", "%d, send: %d, receive: %d", function, SEND, RECEIVE);
-	}
-
-	return 0;
-}
-
-// ring 1-3 IPC syscall
-// use this, diret call to sendrec should be avoided.
-// always return 0;
-PUBLIC int send_recv(int function, int src_dest, MESSAGE* msg){
-    int ret = 0;
-
-    if(function == RECEIVE)
-        memset(msg, 0, sizeof(MESSAGE));
-
-    switch(function){
-        case BOTH:
-            ret = sendrec(SEND, src_dest, msg);
-            if(ret == 0)
-                ret = sendrec(RECEIVE, src_dest, msg);
-            break;
-        case SEND:
-        case RECEIVE:
-            ret = sendrec(function, src_dest, msg);
-            break;
-        default:
-            assert((function == BOTH) || 
-                (function == SEND) || (function == RECEIVE));
-            break;
-    }
-
-    return ret;
-}
-
-// ring 1, the main loop of task sys
-PUBLIC void task_sys(){
-    MESSAGE msg;
-    while(1){
-        send_recv(RECEIVE , ANY, &msg);
-        int src = msg.source;
-        switch(msg.type){
-            case GET_TICKS2:
-                msg.RETVAL = ticks;
-                send_recv(SEND, src, &msg);
-                break;
-            default:
-                panic("unknown msg type");
-                break;
-        }
-    }
-}
+#include "clock.h" // using schedule()
 
 // ring 0, this routine is called after p_flags has been set != 0
 // it calls schedule to choose another proc as the proc_ready
@@ -107,11 +36,11 @@ PRIVATE int deadlock(int src, int dest)
 			if (p->p_sendto == src) {
 				/* print the chain */
 				p = proc_table + dest;
-				printl("=_=%s", p->name);
+				printl("=_=%s", p->p_name);
 				do {
 					assert(p->p_msg);
 					p = proc_table + p->p_sendto;
-					printl("->%s", p->name);
+					printl("->%s", p->p_name);
 				} while (p != proc_table + src);
 				printl("=_=");
 
@@ -121,25 +50,6 @@ PRIVATE int deadlock(int src, int dest)
 		} else break;		
 	}
 	return 0;
-}
-
-
-// ring 0-1, calculate the linear address of proc's segment
-// idx: index of proc's segments
-int ldt_seg_linear(struct proc* p, int idx){
-	struct descriptor* d = &p->ldt[idx];
-	return d->base_high << 24 | d->base_mid << 16 | d->base_low;
-}
-
-// ring 0-1, virtual addr -> linear addr
-void* va2la(int pid, void*va){
-	struct proc* p = &proc_table[pid];
-	uint32_t seg_base = ldt_seg_linear(p, INDEX_LDT_RW);
-	uint32_t la = seg_base + (uint32_t)va;
-
-	if(pid < NR_TASKS + NR_PROCS)
-		assert(la == (uint32_t)va);
-	return (void*)la;
 }
 
 
@@ -154,7 +64,7 @@ PRIVATE int msg_send(struct proc* current, int dest, MESSAGE* m){
     assert(proc2pid(sender) != dest);
 
     if(deadlock(proc2pid(sender), dest))
-        panic(">>> DEADLOCK %s -> %s", sender->name, p_dest->name);
+        panic(">>> DEADLOCK %s -> %s", sender->p_name, p_dest->p_name);
 
     if((p_dest->p_flags & RECEIVING) && // dest is waiting for the msg
         (p_dest->p_recvfrom == proc2pid(sender) || p_dest->p_recvfrom == ANY)){
@@ -165,10 +75,10 @@ PRIVATE int msg_send(struct proc* current, int dest, MESSAGE* m){
                     va2la(proc2pid(sender), m),
                     sizeof(MESSAGE));
         
-        p_dest->p_msg = 0; // TODO: ??
+        p_dest->p_msg = 0; 
         p_dest->p_flags &= ~RECEIVING; // dest has received the msg
         p_dest->p_recvfrom = NO_TASK;
-        unlock(p_dest);
+        unblock(p_dest);
 
         assert(p_dest->p_flags == 0);
         assert(p_dest->p_msg == 0);
@@ -181,7 +91,7 @@ PRIVATE int msg_send(struct proc* current, int dest, MESSAGE* m){
     }else{ // dest is not waiting for the msg
         sender->p_flags |= SENDING;
         assert(sender->p_flags == SENDING);
-        sender->p_sento = dest;
+        sender->p_sendto = dest;
         sender->p_msg = m;
 
         // append to the sending queue
@@ -199,7 +109,7 @@ PRIVATE int msg_send(struct proc* current, int dest, MESSAGE* m){
 
         assert(sender->p_flags == SENDING);
         assert(sender->p_msg != 0);
-        assert(sender->recvfrom == NO_TASK);
+        assert(sender->p_recvfrom == NO_TASK);
         assert(sender->p_sendto == dest);
     }
 
@@ -230,7 +140,7 @@ PRIVATE int msg_receive(struct proc* current, int src, MESSAGE* m){
         
         assert(m);
 
-        phys_copy(va2la(proc2pid(p_who_wanna_recv), m), &msg, sizeof(MESSAGE));
+        phys_copy(va2la(proc2pid(p_who_wanna_recv), m), (char*)&msg, sizeof(MESSAGE));
 
         p_who_wanna_recv->has_int_msg = 0;
         assert(p_who_wanna_recv->p_flags == 0);
@@ -318,7 +228,7 @@ PRIVATE int msg_receive(struct proc* current, int src, MESSAGE* m){
     }else{ // nobody is sending any msg
         p_who_wanna_recv->p_flags |= RECEIVING;
         p_who_wanna_recv->p_msg = m;
-        p_who_wanna_recv->p_receivefrom = src;
+        p_who_wanna_recv->p_recvfrom = src;
         block(p_who_wanna_recv);
 
         assert(p_who_wanna_recv->p_flags == RECEIVING);
@@ -331,6 +241,10 @@ PRIVATE int msg_receive(struct proc* current, int src, MESSAGE* m){
     return 0;
 }
 
+void disp_color_str(char* info, int color){
+    // TODO: nothing ...
+}
+// TODO: move
 PUBLIC void dump_proc(struct proc* p)
 {
 	char info[STR_DEFAULT_LEN];
@@ -339,9 +253,9 @@ PUBLIC void dump_proc(struct proc* p)
 
 	int dump_len = sizeof(struct proc);
 
-	out_byte(CRTC_ADDR_REG, START_ADDR_H);
+	out_byte(CRTC_ADDR_REG, CRTC_DATA_IDX_START_ADDR_H);
 	out_byte(CRTC_DATA_REG, 0);
-	out_byte(CRTC_ADDR_REG, START_ADDR_L);
+	out_byte(CRTC_ADDR_REG, CRTC_DATA_IDX_START_ADDR_L);
 	out_byte(CRTC_DATA_REG, 0);
 
 	sprintf(info, "byte dump of proc_table[%d]:\n", p - proc_table); disp_color_str(info, text_color);
@@ -361,12 +275,12 @@ PUBLIC void dump_proc(struct proc* p)
 	sprintf(info, "ticks: 0x%x.  ", p->ticks); disp_color_str(info, text_color);
 	sprintf(info, "priority: 0x%x.  ", p->priority); disp_color_str(info, text_color);
 	sprintf(info, "pid: 0x%x.  ", p->pid); disp_color_str(info, text_color);
-	sprintf(info, "name: %s.  ", p->name); disp_color_str(info, text_color);
+	sprintf(info, "name: %s.  ", p->p_name); disp_color_str(info, text_color);
 	disp_color_str("\n", text_color);
 	sprintf(info, "p_flags: 0x%x.  ", p->p_flags); disp_color_str(info, text_color);
 	sprintf(info, "p_recvfrom: 0x%x.  ", p->p_recvfrom); disp_color_str(info, text_color);
 	sprintf(info, "p_sendto: 0x%x.  ", p->p_sendto); disp_color_str(info, text_color);
-	sprintf(info, "nr_tty: 0x%x.  ", p->nr_tty); disp_color_str(info, text_color);
+	sprintf(info, "nr_tty: 0x%x.  ", p->tty_idx); disp_color_str(info, text_color);
 	disp_color_str("\n", text_color);
 	sprintf(info, "has_int_msg: 0x%x.  ", p->has_int_msg); disp_color_str(info, text_color);
 }
@@ -378,7 +292,7 @@ PUBLIC void dump_msg(const char * title, MESSAGE* m)
 	       title,
 	       (int)m,
 	       packed ? "" : "\n        ",
-	       proc_table[m->source].name,
+	       proc_table[m->source].p_name,
 	       m->source,
 	       packed ? " " : "\n        ",
 	       m->type,
@@ -394,3 +308,88 @@ PUBLIC void dump_msg(const char * title, MESSAGE* m)
 		);
 }
 
+// <ring 0>
+// sys_sendrec is it's handler/implementation of system call sendrec
+PUBLIC int sys_sendrec(int function, int src_dest, MESSAGE* p_msg, struct proc* p){
+	assert(k_reenter == 0); // make sure we are not in ring0
+	assert((src_dest >= 0 && src_dest <= NR_TASKS + NR_PROCS) ||
+		src_dest == ANY || src_dest == INTERRUPT);
+
+	int ret = 0;
+	int caller = proc2pid(p);
+	MESSAGE* mla = (MESSAGE*)va2la(caller, p_msg);
+	mla->source = caller;
+
+	assert(mla->source != src_dest);
+
+	if(function == SEND){
+        printf(">>>sending msg");
+		ret = msg_send(p, src_dest, p_msg);
+		if(ret != 0) return ret;
+	}else if(function == RECEIVE){
+        printf(">>>receiving msg");
+		ret = msg_receive(p, src_dest, p_msg);
+        printf(">>> ret: %d", ret);
+		if(ret != 0) return ret;
+	}else{
+		panic("{sys_sendrec} invalid function", "%d, send: %d, receive: %d", function, SEND, RECEIVE);
+	}
+
+	return 0;
+}
+
+// ring 1-3, a wrapper for system call sendrec
+// use this, diret call to sendrec should be avoided.
+// always return 0;
+PUBLIC int send_recv(int function, int src_dest, MESSAGE* p_msg){
+    int ret = 0;
+
+    if(function == RECEIVE)
+        memset((char*)p_msg, 0, sizeof(MESSAGE));
+
+    switch(function){
+        case BOTH:
+            ret = sendrec(SEND, src_dest, p_msg);
+            if(ret == 0)
+                ret = sendrec(RECEIVE, src_dest, p_msg);
+            break;
+        case SEND:
+        case RECEIVE:
+            ret = sendrec(function, src_dest, p_msg);
+            break;
+        default:
+            assert((function == BOTH) || 
+                (function == SEND) || (function == RECEIVE));
+            break;
+    }
+
+    return ret;
+}
+
+PUBLIC int get_ticks2(){
+    MESSAGE msg;
+    reset_msg(&msg);
+    msg.type = GET_TICKS2;
+    send_recv(BOTH, TASK_SYS, &msg);
+    printf(">>>retval: %d", msg.RETVAL);
+    return msg.RETVAL;
+}
+
+// ring 1, the main loop of task sys
+PUBLIC void task_sys(){
+    MESSAGE msg;
+    while(1){
+        send_recv(RECEIVE , ANY, &msg);
+        int src = msg.source;
+        switch(msg.type){
+            case GET_TICKS2:
+                printf(">>> get ticks2");
+                msg.RETVAL = ticks;
+                send_recv(SEND, src, &msg);
+                break;
+            default:
+                panic("unknown msg type");
+                break;
+        }
+    }
+}

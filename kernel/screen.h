@@ -1,8 +1,8 @@
-#ifndef _MINOS_SCREEN_H_
-#define _MINOS_SCREEN_H_
+#ifndef MINOS_SCREEN_H
+#define MINOS_SCREEN_H
 
-extern void kprint(char* str);
-extern void kprint_int_as_hex(int num);
-extern void kclear_screen();
+void kprint(char* str);
+void kprint_int_as_hex(int num);
+void kclear_screen();
 
 #endif

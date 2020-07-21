@@ -1,18 +1,11 @@
-#ifndef _MINOS_KTYPES_H_
-#define _MINOS_KTYPES_H_
+#ifndef MINOS_KTYPES_H
+#define MINOS_KTYPES_H
 
-#include "types.h"
 #include "const.h"
-#include "../include/minos/type.h"
-
+#include "types.h"
 
 typedef int proc_nr_t; // process table entry number
 typedef short sys_id_t; // system process index
-
-struct memory{
-	phys_clicks base;
-	phys_clicks size;
-};
 
 typedef struct descriptor{
     uint16_t limit_low;
@@ -106,7 +99,7 @@ struct mess3{
     void* m3p2;
 };
 
-typedef struct{
+typedef struct s_message{
     int source;
     int type;
     union{
@@ -115,6 +108,11 @@ typedef struct{
         struct mess3 m3;
     }u;
 }MESSAGE;
+
+enum msgtype{
+	HARD_INT = 1,
+	GET_TICKS2
+};
 
 typedef struct stack_frame{ // proc_ptr points to here
     uint32_t	gs;		    /* ┓						│Low address*/ 
@@ -179,5 +177,48 @@ typedef struct task{
 	char name[32];
 }task_s;
 
+
+typedef unsigned int  vir_clicks;
+typedef unsigned int  vir_bytes;
+typedef unsigned int  phys_clicks;
+typedef unsigned long phys_bytes;
+
+struct memory{
+	phys_clicks base;
+	phys_clicks size;
+};
+
+// memory map for local text, statck, data segments.
+struct mem_map{
+    vir_clicks mem_vir;
+    vir_clicks mem_len;
+    phys_clicks mem_phys;
+};
+
+struct far_mem{
+    int in_use;
+    phys_clicks mem_phys;
+    vir_clicks  mem_len;
+};
+
+struct vir_addr{
+    int proc_nr;
+    int segment;
+    vir_bytes offset;
+};
+
+struct kinfo{
+    phys_bytes code_base; // base of kernel code
+    phys_bytes code_size;
+    phys_bytes data_base;
+    phys_bytes data_size;
+    
+    vir_bytes  proc_addr; // virtual address of process table
+
+    int nr_procs; // number of user processes
+    int nr_tasks; // number of kernel tasks
+    char release[6];
+    char version[6];
+};
 
 #endif

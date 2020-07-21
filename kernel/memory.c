@@ -1,7 +1,6 @@
 
-#include "../include/minos/const.h"
+#include "const.h"
 #include "ktypes.h"
-
 
 // just from boot loader into kernel, 
 // 1. init kernel info structure

@@ -1,32 +1,17 @@
-#ifndef _MINOS_CONST_H_
-#define _MINOS_CONST_H_
+#ifndef MINOS_CONST_H
+#define MINOS_CONST_H
 
-// TODO: merge
-#include "../include/minos/type.h"
+#define EXTERN  extern
+#define PRIVATE static
+#define PUBLIC 
+#define FORWARD static
 
-#define	PRIVILEGE_KRNL	0
-#define	PRIVILEGE_TASK	1
-#define	PRIVILEGE_USER	3
+#define TRUE  1
+#define FALSE 0
+#define true TRUE
+#define false FALSE
 
-#define RPL_KRNL SA_RPL0
-#define RPL_TASK SA_RPL1
-#define RPL_USER SA_RPL3    
-
-#define NR_TASKS 2
-#define NR_PROCS 3
-#define FIRST_PROC proc_table[0]
-#define LAST_PROC proc_table[NR_TASKS + NR_PROCS - 1] 
-
-// task types should match global vars
-#define INVALID_DRIVER	-20
-#define INTERRUPT	    -10
-#define TASK_TTY	    0
-#define TASK_SYS	    1
-/* #define TASK_WINCH	2 */
-/* #define TASK_FS	3 */
-/* #define TASK_MM	4 */
-#define ANY		       (NR_TASKS + NR_PROCS + 10)
-#define NO_TASK		   (NR_TASKS + NR_PROCS + 20)
+#define NULL ((void *)0)
 
 #define GDT_SIZE 128
 #define IDT_SIZE 256
@@ -54,6 +39,14 @@
 #define LDT_SIZE             2
 #define INDEX_LDT_C             0
 #define INDEX_LDT_RW            1
+
+#define	PRIVILEGE_KRNL	0
+#define	PRIVILEGE_TASK	1
+#define	PRIVILEGE_USER	3
+
+#define RPL_KRNL SA_RPL0
+#define RPL_TASK SA_RPL1
+#define RPL_USER SA_RPL3    
 
 // SA: Selector Attribute
 #define SA_RPL_MASK    0xfffc
@@ -88,13 +81,17 @@
 #define	DA_386IGate		0x8E	/* 386 中断门类型值			*/
 #define	DA_386TGate		0x8F	/* 386 陷阱门类型值			*/
 
-
+// ======= CLOCK ================
 #define TIMER0          0x40
 #define TIMER_MODE      0x43
 #define RATE_GENERATOR  0x34
 #define TIMER_FREQ      1193182L
 #define HZ              100
 
+#define CLICK_SIZE      1024 // unit in which memory is allocated
+#define CLICK_SHIFT     10 // log2 of CLICK_SIZE
+
+// ========= IRQ ==============
 #define IRQ_NUM         16
 
 // hardware interrupts
@@ -109,7 +106,7 @@
 #define	PRINTER_IRQ	    7
 #define	AT_WINI_IRQ	   14	/* at winchester */
 
-// AT keyboard: 8042 ports 
+//  =================== AT keyboard: 8042 ports ==============
 #define	KB_DATA		0x60	//I/O port for keyboard data
 					        //Read : Read Output Buffer 
 					        //Write: Write Input Buffer(8042 Data&8048 Command)
@@ -117,46 +114,89 @@
 					        //Read : Read Status Register
 					        //Write: Write Input Buffer(8042 Command)
 
-// VGA
+// ============= VGA ==================
+#define NR_CONSOLES                3
+
 #define CRTC_ADDR_REG			    0x3D4	/* CRT Controller Registers - Address Register */
 #define CRTC_DATA_REG			    0x3D5	/* CRT Controller Registers - Data Registers */
 #define CRTC_DATA_IDX_START_ADDR_H	0xC	    /* register index of video mem start address (MSB) */
 #define CRTC_DATA_IDX_START_ADDR_L	0xD  	/* register index of video mem start address (LSB) */
 #define CRTC_DATA_IDX_CURSOR_H		0xE  	/* register index of cursor position (MSB) */
 #define CRTC_DATA_IDX_CURSOR_L		0xF  	/* register index of cursor position (LSB) */
-#define V_MEM_BASE			       0xB8000	/* base of color video memory */
-#define V_MEM_SIZE			       0x8000	/* 32K: B8000H -> BFFFFH */
-
-#define NR_CONSOLES                3
+#define V_MEM_BASE			        0xB8000	/* base of color video memory */
+#define V_MEM_SIZE			        0x8000	/* 32K: B8000H -> BFFFFH */
 
 
-#define STACK_SIZE_TTY   0x8000  // TODO: consider appropriate stack size
-#define STACK_SIZE_SYS   0x8000
-#define STACK_SIZE_TESTA 0x8000
-#define STACK_SIZE_TESTB 0x8000
-#define STACK_SIZE_TESTC 0x8000
+/* Color */
+/*
+ * e.g.	MAKE_COLOR(BLUE, RED)
+ *	MAKE_COLOR(BLACK, RED) | BRIGHT
+ *	MAKE_COLOR(BLACK, RED) | BRIGHT | FLASH
+ */
+#define	BLACK	0x0 	/* 0000 */
+#define	WHITE	0x7 	/* 0111 */
+#define	RED	    0x4 	/* 0100 */
+#define	GREEN	0x2 	/* 0010 */
+#define	BLUE	0x1 	/* 0001 */
+#define	FLASH	0x80	/* 1000 0000 */
+#define	BRIGHT	0x08	/* 0000 1000 */
+#define	MAKE_COLOR(x,y)	((x<<4) | y)	/* MAKE_COLOR(Background,Foreground) */
+
+//#define DEFAULT_CHAR_COLOR	 0x07	/* 0000 0111 黑底白字 */
+#define DEFAULT_CHAR_COLOR	(MAKE_COLOR(BLACK, WHITE))
+#define GRAY_CHAR		(MAKE_COLOR(BLACK, BLACK) | BRIGHT)
+#define RED_CHAR		(MAKE_COLOR(BLUE, RED) | BRIGHT)
+
+// ========= TASKS ==================
+#define NR_TASKS 2
+#define NR_PROCS 3
+#define NR_SYSCALLS 4
+
+// task types should match global vars
+#define INVALID_DRIVER	-20
+#define INTERRUPT	    -10
+#define TASK_TTY	    0
+#define TASK_SYS	    1
+/* #define TASK_WINCH	2 */
+/* #define TASK_FS	3 */
+/* #define TASK_MM	4 */
+#define ANY		       (NR_TASKS + NR_PROCS + 10)
+#define NO_TASK		   (NR_TASKS + NR_PROCS + 20)
+
+#define STACK_SIZE_TTY   0x2000  // TODO: consider appropriate stack size
+#define STACK_SIZE_SYS   0x2000
+#define STACK_SIZE_TESTA 0x2000
+#define STACK_SIZE_TESTB 0x2000
+#define STACK_SIZE_TESTC 0x2000
 #define STACK_SIZE_TOTAL STACK_SIZE_TTY+STACK_SIZE_SYS+STACK_SIZE_TESTA+STACK_SIZE_TESTB+STACK_SIZE_TESTC
 
+// ========= memory ===================
 /* Sizes of memory tables. The boot monitor distinguishes three memory areas, 
  * namely low mem below 1M, 1M-16M, and mem after 16M. More chunks are needed
  * for MINOS.
  */
 #define NR_MEMS            8	
 
-// ipc
-#define SEND    1
-#define RECEIVE 2
-#define BOTH    3
+// Memory management
+#define SEGMENT_TYPE  0xFF00
+#define SEGMENT_INDEX 0x00FF
+
+#define LOCAL_SEG 0x0000
+#define NR_LOCAL_SEGS  3 // local segments per process (fixed)
+#define T              0 // proc[i].mem_map[T] is for text
+#define D              1 // for data
+#define S              2 // for stack
+
+#define REMOTE_SEG   0x0100
+#define NR_REMOTE_SEGS    3
+
+#define BIOS_SEG     0x0200
+#define NR_BIOS_SEGS      3
+
+#define PHYS_SEG     0x0400
+
 // magic chars used by 'printx'
 #define MAG_CH_PANIC   '\002'
 #define MAG_CH_ASSERT  '\003'
-
-enum msgtype{
-	HARD_INT = 1,
-	GET_TICKS2,
-};
-
-#define RETVAL u.m3.m3il
-
 
 #endif

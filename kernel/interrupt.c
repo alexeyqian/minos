@@ -1,8 +1,11 @@
 #include "interrupt.h"
 #include "const.h"
+#include "types.h"
 #include "ktypes.h"
+#include "global.h"
 #include "klib.h"
 #include "ke_asm_utils.h"
+#include "screen.h" // kprint
 
 // exceptions 
 #define	INT_VECTOR_DIVIDE		    0x0
@@ -34,11 +37,6 @@
 #define	INT_M_CTLMASK	0x21	/* setting bits in this port disables ints   <Master> */
 #define	INT_S_CTL	    0xA0	/* I/O port for second interrupt controller  <Slave>  */
 #define	INT_S_CTLMASK	0xA1	/* setting bits in this port disables ints   <Slave>  */
-
-extern struct descriptor    gdt[];   
-extern struct gate			idt[];
-extern uint8_t			    idt_ptr[];	 
-extern pf_irq_handler_t     irq_table[];
 
 // imported from asm
 // exception handlers

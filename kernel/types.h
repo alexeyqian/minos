@@ -1,15 +1,5 @@
-#ifndef _MINOS_TYPES_H_
-#define _MINOS_TYPES_H_
-
-#define PUBLIC 
-#define PRIVATE static
-
-#define NULL	(void*)0
-
-#define TRUE  1
-#define FALSE 0
-#define true TRUE
-#define false FALSE
+#ifndef MINOS_TYPES_H
+#define MINOS_TYPES_H
 
 typedef int              bool_t;
 typedef char             int8_t;

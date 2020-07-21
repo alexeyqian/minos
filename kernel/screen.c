@@ -1,4 +1,5 @@
 #include "types.h"
+#include "klib.h"
 //#include "ke_asm_utils.h"
 
 #define VIDEO_ADDRESS 0xb8000
@@ -8,9 +9,6 @@
 // Screen device I/O ports
 #define REG_SCREEN_CTRL 0x3D4
 #define REG_SCREEN_DATA 0X3D5
-
-extern void memcpy(char* dst, const char* src, int size);
-extern char* itox(int num, char* str);
 
 PRIVATE uint32_t _cursor = 2; // TODO: very weired issue: cannot set _curror = 0
 

@@ -1,8 +1,6 @@
 
-#ifndef	_MINOS_KEYMAP_H_
-#define	_MINOS_KEYMAP_H_
-
-#include "const.h"
+#ifndef	MINOS_KEYMAP_H
+#define	MINOS_KEYMAP_H
 #include "types.h"
 #include "keyboard.h"
 
