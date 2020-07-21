@@ -3,9 +3,29 @@
 
 #include "const.h"
 #include "types.h"
+#include "ktypes.h"
 
 #define TTY_IN_BYTES         256    // tty input queue size
-#define DEFAULT_CHAR_COLOR	 0x07	/* 0000 0111 黑底白字 */
+
+/* Color */
+/*
+ * e.g.	MAKE_COLOR(BLUE, RED)
+ *	MAKE_COLOR(BLACK, RED) | BRIGHT
+ *	MAKE_COLOR(BLACK, RED) | BRIGHT | FLASH
+ */
+#define	BLACK	0x0 	/* 0000 */
+#define	WHITE	0x7 	/* 0111 */
+#define	RED	    0x4 	/* 0100 */
+#define	GREEN	0x2 	/* 0010 */
+#define	BLUE	0x1 	/* 0001 */
+#define	FLASH	0x80	/* 1000 0000 */
+#define	BRIGHT	0x08	/* 0000 1000 */
+#define	MAKE_COLOR(x,y)	((x<<4) | y)	/* MAKE_COLOR(Background,Foreground) */
+
+//#define DEFAULT_CHAR_COLOR	 0x07	/* 0000 0111 黑底白字 */
+#define DEFAULT_CHAR_COLOR	(MAKE_COLOR(BLACK, WHITE))
+#define GRAY_CHAR		(MAKE_COLOR(BLACK, BLACK) | BRIGHT)
+#define RED_CHAR		(MAKE_COLOR(BLUE, RED) | BRIGHT)
 
 #define SCROLL_SCREEN_UP	 1	    /* scroll forward */
 #define SCROLL_SCREEN_DOWN	-1	    /* scroll backward */
@@ -35,4 +55,7 @@ typedef struct s_console // CONSOLE is a video memory region
 void task_tty();
 void hand_over_key_to_tty(TTY* p_tty, uint32_t key);
 void tty_output_char(CONSOLE* p_con, char ch);
+
+int sys_write(char* buf, int len, struct proc* p_proc);
+int sys_printx(int _unused1, int _unused2, char* s, struct proc* p_proc);
 #endif

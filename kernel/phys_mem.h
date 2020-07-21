@@ -7,20 +7,7 @@
 
 typedef uint32_t physical_addr;
 
-struct mem_region{
-	uint32_t start_low;
-	uint32_t start_high;
-	uint32_t size_low;
-	uint32_t size_high;
-	uint32_t type;
-	//uint32_t acpi_3_0; // TODO
-};
-
-void pmmgr_init(size_t, physical_addr);
-//! enables a physical memory region for use
-void pmmgr_init_region(physical_addr, size_t);
-//! disables a physical memory region as in use (unuseable)
-void pmmgr_uninit_region (physical_addr base, size_t);
+void pmmgr_init();
 void* pmmgr_alloc_block ();
 void pmmgr_free_block (void*);
 void* pmmgr_alloc_blocks (size_t);

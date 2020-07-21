@@ -96,3 +96,7 @@ out_byte:
 	nop
 	nop
 	ret
+
+global halt
+halt:
+    hlt

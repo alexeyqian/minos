@@ -1,6 +1,7 @@
 #ifndef _MINOS_CONST_H_
 #define _MINOS_CONST_H_
 
+// TODO: merge
 #include "../include/minos/type.h"
 
 #define	PRIVILEGE_KRNL	0
@@ -11,13 +12,21 @@
 #define RPL_TASK SA_RPL1
 #define RPL_USER SA_RPL3    
 
-#define TASKS_NUM 1
-#define PROCS_NUM 3 
-#define STACK_SIZE_TTY   0x2000  // TODO: consider appropriate stack size
-#define STACK_SIZE_TESTA 0x2000
-#define STACK_SIZE_TESTB 0x2000
-#define STACK_SIZE_TESTC 0x2000
-#define STACK_SIZE_TOTAL STACK_SIZE_TTY+STACK_SIZE_TESTA+STACK_SIZE_TESTB+STACK_SIZE_TESTC
+#define NR_TASKS 2
+#define NR_PROCS 3
+#define FIRST_PROC proc_table[0]
+#define LAST_PROC proc_table[NR_TASKS + NR_PROCS - 1] 
+
+// task types should match global vars
+#define INVALID_DRIVER	-20
+#define INTERRUPT	    -10
+#define TASK_TTY	    0
+#define TASK_SYS	    1
+/* #define TASK_WINCH	2 */
+/* #define TASK_FS	3 */
+/* #define TASK_MM	4 */
+#define ANY		       (NR_TASKS + NR_PROCS + 10)
+#define NO_TASK		   (NR_TASKS + NR_PROCS + 20)
 
 #define GDT_SIZE 128
 #define IDT_SIZE 256
@@ -43,6 +52,8 @@
 
 // each task has it's own LDT, each LDT contains 2 descriptors
 #define LDT_SIZE             2
+#define INDEX_LDT_C             0
+#define INDEX_LDT_RW            1
 
 // SA: Selector Attribute
 #define SA_RPL_MASK    0xfffc
@@ -77,7 +88,6 @@
 #define	DA_386IGate		0x8E	/* 386 中断门类型值			*/
 #define	DA_386TGate		0x8F	/* 386 陷阱门类型值			*/
 
-#define SYSCALLS_NUM  2
 
 #define TIMER0          0x40
 #define TIMER_MODE      0x43
@@ -99,21 +109,6 @@
 #define	PRINTER_IRQ	    7
 #define	AT_WINI_IRQ	   14	/* at winchester */
 
-/* Color */
-/*
- * e.g.	MAKE_COLOR(BLUE, RED)
- *	MAKE_COLOR(BLACK, RED) | BRIGHT
- *	MAKE_COLOR(BLACK, RED) | BRIGHT | FLASH
- */
-#define	BLACK	0x0 	/* 0000 */
-#define	WHITE	0x7 	/* 0111 */
-#define	RED	    0x4 	/* 0100 */
-#define	GREEN	0x2 	/* 0010 */
-#define	BLUE	0x1 	/* 0001 */
-#define	FLASH	0x80	/* 1000 0000 */
-#define	BRIGHT	0x08	/* 0000 1000 */
-#define	MAKE_COLOR(x,y)	((x<<4) | y)	/* MAKE_COLOR(Background,Foreground) */
-
 // AT keyboard: 8042 ports 
 #define	KB_DATA		0x60	//I/O port for keyboard data
 					        //Read : Read Output Buffer 
@@ -132,12 +127,36 @@
 #define V_MEM_BASE			       0xB8000	/* base of color video memory */
 #define V_MEM_SIZE			       0x8000	/* 32K: B8000H -> BFFFFH */
 
-#define NR_CONSOLES 3
+#define NR_CONSOLES                3
+
+
+#define STACK_SIZE_TTY   0x8000  // TODO: consider appropriate stack size
+#define STACK_SIZE_SYS   0x8000
+#define STACK_SIZE_TESTA 0x8000
+#define STACK_SIZE_TESTB 0x8000
+#define STACK_SIZE_TESTC 0x8000
+#define STACK_SIZE_TOTAL STACK_SIZE_TTY+STACK_SIZE_SYS+STACK_SIZE_TESTA+STACK_SIZE_TESTB+STACK_SIZE_TESTC
 
 /* Sizes of memory tables. The boot monitor distinguishes three memory areas, 
  * namely low mem below 1M, 1M-16M, and mem after 16M. More chunks are needed
  * for MINOS.
  */
 #define NR_MEMS            8	
+
+// ipc
+#define SEND    1
+#define RECEIVE 2
+#define BOTH    3
+// magic chars used by 'printx'
+#define MAG_CH_PANIC   '\002'
+#define MAG_CH_ASSERT  '\003'
+
+enum msgtype{
+	HARD_INT = 1,
+	GET_TICKS2,
+};
+
+#define RETVAL u.m3.m3il
+
 
 #endif

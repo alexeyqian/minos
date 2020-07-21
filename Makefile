@@ -24,20 +24,23 @@ boot/boot.bin: boot/boot.asm
 boot/loader.bin: boot/loader.asm
 	nasm $< -f bin -I 'boot/' -o $@
 
-kernel/kernel.bin: kernel/kernel_entry.asm kernel/klib.c kernel/interrupt.c kernel/phys_mem.c kernel/virt_mem.c \
-	kernel/screen.c kernel/keyboard.c kernel/tty.c kernel/ktest.c  kernel/kernel.c
+kernel/kernel.bin: kernel/kernel_entry.asm kernel/klib.c kernel/global.c kernel/interrupt.c kernel/clock.c kernel/phys_mem.c kernel/virt_mem.c \
+	kernel/screen.c kernel/keyboard.c kernel/tty.c kernel/ktest.c kernel/ipc.c  kernel/kernel.c
 	nasm kernel/kernel_entry.asm -f elf32 -I 'kernel/' -o kernel/kernel_entry.o	
-	gcc -c -m32 -fno-builtin -o kernel/klib.o kernel/klib.c
+	gcc -c -m32 -fno-builtin -o kernel/klib.o      kernel/klib.c
+	gcc -c -m32 -fno-builtin -o kernel/global.o    kernel/global.c
 	gcc -c -m32 -fno-builtin -o kernel/interrupt.o kernel/interrupt.c
-	gcc -c -m32 -fno-builtin -o kernel/phys_mem.o kernel/phys_mem.c
-	gcc -c -m32 -fno-builtin -o kernel/virt_mem.o kernel/virt_mem.c
-	gcc -c -m32 -fno-builtin -o kernel/keyboard.o kernel/keyboard.c
-	gcc -c -m32 -fno-builtin -o kernel/screen.o   kernel/screen.c
-	gcc -c -m32 -fno-builtin -o kernel/tty.o kernel/tty.c
-	gcc -c -m32 -fno-builtin -o kernel/ktest.o kernel/ktest.c	
-	gcc -c -m32 -fno-builtin -o kernel/kernel.o kernel/kernel.c
-	ld -m elf_i386 -s -Ttext 0x30400 -o $@ kernel/kernel_entry.o kernel/klib.o kernel/interrupt.o kernel/phys_mem.o kernel/virt_mem.o \
-	kernel/screen.o kernel/keyboard.o kernel/tty.o kernel/ktest.o kernel/kernel.o
+	gcc -c -m32 -fno-builtin -o kernel/clock.o     kernel/clock.c
+	gcc -c -m32 -fno-builtin -o kernel/phys_mem.o  kernel/phys_mem.c
+	gcc -c -m32 -fno-builtin -o kernel/virt_mem.o  kernel/virt_mem.c
+	gcc -c -m32 -fno-builtin -o kernel/keyboard.o  kernel/keyboard.c
+	gcc -c -m32 -fno-builtin -o kernel/screen.o    kernel/screen.c
+	gcc -c -m32 -fno-builtin -o kernel/tty.o       kernel/tty.c
+	gcc -c -m32 -fno-builtin -o kernel/ktest.o     kernel/ktest.c	
+	gcc -c -m32 -fno-builtin -o kernel/ipc.o       kernel/ipc.c	
+	gcc -c -m32 -fno-builtin -o kernel/kernel.o    kernel/kernel.c
+	ld -m elf_i386 -s -Ttext 0x30400 -o $@ kernel/kernel_entry.o kernel/klib.o kernel/global.o kernel/interrupt.o kernel/clock.o \
+	kernel/phys_mem.o kernel/virt_mem.o kernel/screen.o kernel/keyboard.o kernel/tty.o kernel/ktest.o kernel/ipc.o kernel/kernel.o
 	
 #kernel/kernel.bin: kernel/kernel_entry.o kernel/kernel.o ${OBJ}
 #	ld -m elf_i386 -Ttext 0x1000 --oformat binary -o $@  $^ 

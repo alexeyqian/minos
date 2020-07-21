@@ -1,63 +1,33 @@
 #include "kernel.h"
 #include "ke_asm_utils.h"
-#include "klib.h"
 #include "const.h"
 #include "ktypes.h"
+#include "global.h"
+
+#include "klib.h"
 #include "interrupt.h"
-#include "keyboard.h"
+#include "clock.h"
+#include "keyboard.h" // TODO: remove, already have tty
+#include "tty.h"
 #include "func_def.h"
 #include "ktest.h"
-#include "shared.h"
-#include "tty.h"
 #include "phys_mem.h"
 #include "virt_mem.h"
+
+#include "ipc.h"
 
 // linear address to physical address
 #define before_paging_segbase_plus_offset(seg_base, offset) (uint32_t)(((uint32_t)seg_base) + (uint32_t)(offset))
 
-// global vars
-uint8_t			    gdt_ptr[6];	               
-struct descriptor   gdt[GDT_SIZE];
-uint8_t			    idt_ptr[6];	               
-struct gate			idt[IDT_SIZE];
-struct tss          tss;                        // only one tss in kernel, resides in mem, and it has a descriptor in gdt.
-struct proc*        p_proc_ready;               // points to next about to run process's pcb in proc_table
-struct proc         proc_table[TASKS_NUM + PROCS_NUM];  // contains array of process control block: proc
-struct task         task_table[TASKS_NUM]={ 
-						{task_tty, STACK_SIZE_TTY,   "tty"  }				
-					};
+int sys_get_ticks();
 
-// TODO: in future, os should dynamically create user process table
-struct task         user_proc_table[PROCS_NUM]={ 					
-						{test_a,   STACK_SIZE_TESTA, "TestA"},
-						{test_b,   STACK_SIZE_TESTB, "TestB"},
-						{test_c,   STACK_SIZE_TESTC, "TestC"}
-					};	
-
-TTY tty_table[NR_CONSOLES];
-
-int write_impl(char* buf, int len, struct proc* p_proc);
-int get_ticks_impl();
-syscall_t           syscall_table[SYSCALLS_NUM] = {get_ticks_impl, write_impl};
-
-// task stack is a mem area divided into MAX_TASK_NUM small areas
-// each small area used as stack for a process/task
-char                task_stack[STACK_SIZE_TOTAL];
-pf_irq_handler_t    irq_table[IRQ_NUM];
-int k_reenter;
-int ticks;
-
-void init_phys_mem();
-void init_virt_mem();
 void init_new_gdt();
 void init_tss();
 void init_descriptor(struct descriptor* p_desc, uint32_t base, uint32_t limit, uint16_t attribute);
 void init_ldt_descriptors_in_dgt();
 void init_proc_table();
 
-void clock_handler(int irq);
 uint32_t before_paging_selector_to_segbase(uint16_t selector);
-void enable_clock();
 
 void restart();
 void kmain();
@@ -71,8 +41,8 @@ void kinit(){
 	init_ldt_descriptors_in_dgt(); 
 	init_proc_table();	 	
 
-	init_phys_mem();	
-	//init_virt_mem();
+	//pmmgr_init();	
+	//vmmgr_init();kprint(">>> virtual memory initialized and paging enabled.");
 	 
 	kmain();
 }
@@ -83,78 +53,6 @@ void kmain(){
 	restart(); // pretenting a schedule happend to start a process.
 	while(1){}
 }
-
-void init_phys_mem(){
-	// TODO: get boot info
-	//boot_info* binfo_ptr = (boot_info*)(LOADER_PHYSICAL_BASE + ??)
-
-	// memory size
-	// TODO: replace hardcodes
-	//uint32_t mem_size = binfo_ptr->mem_size;
-	uint32_t mem_size = 0x00A00000; // 10M, need 320 bytes for mem map
-	//uint32_t kenel_size = binfo_ptr->kernel_size; 
-	// place the memory map of physical memory manager at end of kernel
-	//pmmgr_init(mem_size, KERNEL_BIN_SEG_BASE + kernel_size);
-	uint32_t mem_map_ptr = 0x500;
-	pmmgr_init(mem_size, mem_map_ptr);
-	//kprint("physical memory manager initilized with %i\n", mem_size);
-	// TODO: replace hard code
-	//mem_region* regions = (memory_region*)0x1000; // get region map from loader
-	
-	struct mem_region r1;
-	r1.start_low = 0x00100000; // start from 1M
-	r1.start_high = 0x0;
-	r1.size_low = 0x00900000;  // size 9M
-	r1.size_high = 0x0;
-	r1.type = 1;
-	
-	struct mem_region regions[MEM_REGION_COUNT];
-	regions[0] = r1;
-	/*
-	char* mem_types_str[] = {
-		{"available"},
-		{"reserved"},
-		{"acpi reclaim"},
-		{"acpi nvs memory"}
-	};*/
-
-	for(int i = 0; i < MEM_REGION_COUNT; i++){
-		if(regions[i].type > 4) regions[i].type = 1; // sanity check		
-		if(i > 0 && regions[i].start_low == 0) break; // no more entries
-
-		// print region ...
-		// print region %i: start: length: type:
-		if(regions[i].type == 1)
-			pmmgr_init_region(regions[i].start_low, regions[i].size_low);			
-	}
-
-	// mark boot region, loader region, kernel.bin region, and kernel region as used.
-	// pmmgr_uninit_region(-x10000, kernel_size*512);
-	// TODO: replace hard code.
-	pmmgr_uninit_region(0x0, 0x100000); // reserver lower 1M
-
-	// print i% regions initialized: %i max blocks, %i used blocks
-	/*
-	// TODO: test code
-	uint32_t* p1 = (uint32_t*) pmmgr_alloc_block();
-	kprint("p1 allocated at: ");
-	kprint_int_as_hex((int)p1);
-	
-	uint32_t* p2 = (uint32_t*)pmmgr_alloc_block();
-	kprint("p2 allocated at: ");
-	kprint_int_as_hex((int)p2);	
-
-	pmmgr_free_block(p1);
-	pmmgr_free_block(p2);*/
-
-}
-
-void init_virt_mem(){	
-	vmmgr_init();
-	kprint(">>> virtual memory initialized and paging enabled.");
-}
-
-void irq_handler(int irq);
 
 void init_new_gdt(){
 	store_gdt(); // store old gdt to [gdt_ptr]
@@ -195,7 +93,7 @@ void init_ldt_descriptors_in_dgt(){
 	int i;
 	struct proc* p_proc = proc_table;
 	uint16_t selector_ldt = INDEX_LDT_FIRST << 3; 
-	for(i = 0; i < TASKS_NUM + PROCS_NUM; i++){
+	for(i = 0; i < NR_TASKS + NR_PROCS; i++){
 		// Fill LDT descriptor in GDT
 		init_descriptor((struct descriptor*)&gdt[selector_ldt >> 3],
 				before_paging_segbase_plus_offset(
@@ -222,15 +120,15 @@ void init_proc_table(){
 	// initialize proc_table according to task_table
 	// each process has a ldt selector points to a ldt descriptor in GDT.
 	int i;
-	for(i = 0; i < TASKS_NUM + PROCS_NUM; i++){
+	for(i = 0; i < NR_TASKS + NR_PROCS; i++){
 		
-		if(i < TASKS_NUM){ // tasks
+		if(i < NR_TASKS){ // tasks
 			p_task = task_table + i;
 			privilege = PRIVILEGE_TASK; // apply system task permission
 			rpl = RPL_TASK;
 			eflags = 0x1202; // IF=1, IOPL=1, bit2 = 1
 		}else{ // user processes
-			p_task = user_proc_table + (i - TASKS_NUM);
+			p_task = user_proc_table + (i - NR_TASKS);
 			privilege = PRIVILEGE_USER; // apply user process permission
 			rpl = RPL_USER;
 			eflags = 0x202; // IF=1, bit2 = 1, remove IO permission for user process
@@ -272,6 +170,14 @@ void init_proc_table(){
 		p_proc->regs.eflags	= eflags;
 	
 		p_proc->tty_idx = 0;
+		p_proc->p_flags = 0;
+		p_proc->p_msg = 0;
+		p_proc->p_recvfrom = NO_TASK;
+		p_proc->p_sendto = NO_TASK;
+		p_proc->has_int_msg = 0;
+		p_proc->q_sending = 0;
+		p_proc->next_sending = 0;
+
 		p_task_stack -= p_task->stack_size;
 		p_proc++;
 		p_task++;
@@ -311,92 +217,8 @@ void init_descriptor(struct descriptor* p_desc, uint32_t base, uint32_t limit, u
 	p_desc->base_high		= (base >> 24) & 0x0FF;		 // 段基址 3		(1 字节)
 }
 
-void put_irq_handler(int irq, pf_irq_handler_t handler){
-	disable_irq(irq);
-	irq_table[irq] = handler;
-}
-
-// priority is fixed value, ticks is counting down.
-// when all processes ticks are 0, then reset ticks to it's priority.
-void schedule(){
-	struct proc* p;
-	int greatest_ticks = 0;
-	while(!greatest_ticks){
-		for( p = proc_table; p < proc_table + TASKS_NUM + PROCS_NUM; p++)
-			if(p->ticks > greatest_ticks){
-				greatest_ticks = p->ticks;
-				p_proc_ready = p;
-			}
-
-		if(!greatest_ticks)
-			for(p = proc_table; p < proc_table + TASKS_NUM + PROCS_NUM; p++)
-				p->ticks = p->priority;
-	}
-}
-
-void clock_handler(int irq){
-	//kprint("[");
-
-	ticks++;
-	p_proc_ready->ticks--;
-
-	if(k_reenter != 0){ // interrupt re-enter
-		kprint(".");
-		return;
-	}
-
-	//if (p_proc_ready->ticks > 0) return;
-	schedule(); 
-	//kprint("]");
-}
-
-// round robin version of scheduler
-void clock_handler2(int irq){
-	//kprint("[");
-
-	ticks++;
-	if(k_reenter != 0){
-		//kprint("!");
-		return;
-	}
-
-	// round robin process scheduler.
-	p_proc_ready++;
-	if(p_proc_ready >= proc_table + TASKS_NUM + PROCS_NUM)
-		p_proc_ready = proc_table;
-
-	//kprint("]");
-}
-
-void irq_handler(int irq){
-    kprint("IRQ handler: ");
-	kprint_int_as_hex(irq);
-}
-
-void enable_clock(){ // init 8253 PIT
-	out_byte(TIMER_MODE, RATE_GENERATOR);
-	out_byte(TIMER0, (uint8_t) (TIMER_FREQ/HZ) );
-	out_byte(TIMER0, (uint8_t) ((TIMER_FREQ/HZ) >> 8));
-
-	put_irq_handler(CLOCK_IRQ, clock_handler);
-	enable_irq(CLOCK_IRQ);	
-}
-
 // system call implementations
-int get_ticks_impl(){
+int sys_get_ticks(){
 	return ticks;	
 }
 
-void write_to_tty(TTY* p_tty, char* buf, int len){
-	char* p = buf;
-	int i = len;
-	while(i){
-		tty_output_char(p_tty->p_console, *p++);
-		i--;
-	}
-}
-
-int write_impl(char* buf, int len, struct proc* p_proc){
-	write_to_tty(&tty_table[p_proc->tty_idx], buf, len);
-	return 0;
-}

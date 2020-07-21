@@ -80,6 +80,42 @@ typedef struct tss{
 	uint16_t	iobase;	// if I/O base >= TSS limit，means no IOPL map // TODO: renamed to iopb_offset
 }tss_s;
 
+
+struct mess1{
+    int m1i1;
+    int m1i2;
+    int m1i3;
+    int m1i4;
+};
+
+struct mess2{
+    void* m2p1;
+    void* m2p2;
+    void* m2p3;
+    void* m2p4;
+};
+
+struct mess3{
+    int m3i1;
+    int m3i2;
+    int m3i3;
+    int m3i4;
+    uint64_t m3l1;
+    uint64_t m3l2;
+    void* m3p1;
+    void* m3p2;
+};
+
+typedef struct{
+    int source;
+    int type;
+    union{
+        struct mess1 m1;
+        struct mess2 m2;
+        struct mess3 m3;
+    }u;
+}MESSAGE;
+
 typedef struct stack_frame{ // proc_ptr points to here
     uint32_t	gs;		    /* ┓						│Low address*/ 
 	uint32_t	fs;		    /* ┃						│			*/
@@ -110,7 +146,6 @@ typedef struct stack_frame{ // proc_ptr points to here
 // in GDT: ... video descroptor ... 
 // TSS descriptor (points to TSS)
 // -> LDT descriptor(points to desc1 and desc2) ...
-
 // ldt is part of process
 // ldt_sel points to the LDT descriptor in GDT, 
 // which in turn points to the ldt in struct proc
@@ -125,6 +160,14 @@ typedef struct proc{
     char                p_name[16];               // process name
 	int                 ticks;
 	int                 priority;
+
+	int p_flags; // runnable if = 0
+	MESSAGE* p_msg;
+	int p_recvfrom; // pid_t: indicates from who this proc wants to receive msg?
+	int p_sendto;   // pid_t
+	int has_int_msg; // non zero if an INTERRUPT occurred when the task is not ready to deal with it.
+	struct proc* q_sending; //queue of procs sending message to this proc
+	struct proc* next_sending; // next proc in the sending queue
 	int 				tty_idx;
 }proc_s;
 
@@ -135,5 +178,6 @@ typedef struct task{
 	int stack_size;
 	char name[32];
 }task_s;
+
 
 #endif

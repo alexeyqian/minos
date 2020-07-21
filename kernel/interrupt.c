@@ -1,9 +1,9 @@
 #include "interrupt.h"
-#include "ke_asm_utils.h"
-#include "klib.h"
 #include "const.h"
 #include "ktypes.h"
-	  
+#include "klib.h"
+#include "ke_asm_utils.h"
+
 // exceptions 
 #define	INT_VECTOR_DIVIDE		    0x0
 #define	INT_VECTOR_DEBUG		    0x1
@@ -39,7 +39,6 @@ extern struct descriptor    gdt[];
 extern struct gate			idt[];
 extern uint8_t			    idt_ptr[];	 
 extern pf_irq_handler_t     irq_table[];
-extern void irq_handler(int irq);
 
 // imported from asm
 // exception handlers
@@ -78,6 +77,11 @@ void	irq13();
 void	irq14();
 void	irq15();
 
+
+void irq_handler(int irq){
+    kprint("IRQ handler: ");
+	kprint_int_as_hex(irq);
+}
 
 // setup chip 8259A which is a bridge between interrupting devices and CPU
 // ICW: Initialization Command Word

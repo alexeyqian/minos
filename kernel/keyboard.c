@@ -1,10 +1,12 @@
 #include "const.h"
 #include "types.h"
-#include "ke_asm_utils.h"
+#include "ktypes.h"
+#include "global.h"
 #include "klib.h"
+#include "ke_asm_utils.h"
+
 #include "keymap.h"
 #include "keyboard.h"
-#include "shared.h"
 #include "keyboard.h"
 #include "tty.h"
 
@@ -22,7 +24,7 @@ PRIVATE bool_t ctrl_r;
 PRIVATE int caps_lock;
 PRIVATE int num_lock;
 PRIVATE int scroll_lock;
-PRIVATE int    column = 0; // keyrow[column]: a value in keymap
+PRIVATE int column = 0; // keyrow[column]: a value in keymap
 
 // wait for an empty keyboard controller(8042) buffer to write
 PRIVATE void kb_wait(){

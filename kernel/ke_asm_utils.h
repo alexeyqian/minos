@@ -3,10 +3,14 @@
 #define _MINOS_KE_ASM_UTILS_H_
 #include "types.h"
 
+struct proc;
+struct MESSAGE;
+
 // system calls
-extern void syscall();             
-extern int  get_ticks();    
-extern void write(char* buf, int len);   
+void syscall();             
+int  get_ticks();    
+void write(char* buf, int len);  
+int sendrec(int function, int src_dest, MESSAGE*m, struct proc* p); 
 
 // util functions called by c language vmmgr
 extern void disable_int();
@@ -29,5 +33,8 @@ extern void disable_paging();
 
 extern void out_byte(uint16_t port, uint8_t value);
 extern uint8_t in_byte(uint16_t port);
+
+int	printx(char* str);
+void halt();
 
 #endif
