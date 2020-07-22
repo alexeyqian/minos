@@ -5,6 +5,7 @@
 #include "ktypes.h"
 #include "global.h"
 #include "ke_asm_utils.h"
+#include "syscall.h"
 #include "klib.h"
 
 #include "interrupt.h"
@@ -18,10 +19,9 @@
 #include "proc.h"
 #include "ktest.h"
 
+
 // linear address to physical address
 #define before_paging_segbase_plus_offset(seg_base, offset) (uint32_t)(((uint32_t)seg_base) + (uint32_t)(offset))
-
-int sys_get_ticks();
 
 void init_new_gdt();
 void init_tss();

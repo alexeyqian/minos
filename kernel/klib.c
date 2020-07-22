@@ -293,6 +293,8 @@ int printf(const char *fmt, ...){
     return i;
 }
 
+// TODO: create printfx as printl/printlx for assert / panic only
+
 int sprintf(char* buf, const char* fmt, ...){
     va_list arg = (va_list)((char *)(&fmt) + 4);
     return vsprintf(buf, fmt, arg);

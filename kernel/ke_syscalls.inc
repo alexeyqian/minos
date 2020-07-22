@@ -11,10 +11,10 @@ syscall:
     call save
     sti             ; allow maskable interrupts
     push esi
-    push dword [p_proc_ready] ; push proc addr as 1st parameter    
-    push edx
-    push ecx        ; push 2nd param
-    push ebx        ; push 3rd param
+    push dword [p_proc_ready] ; push 4th param  
+    push edx                  ; push 3rd param
+    push ecx                  ; push 2nd param
+    push ebx                  ; push 1rd param
     call [syscall_table + eax*4]
     add esp, 4 * 4  ; clean call stack
     
@@ -30,7 +30,6 @@ get_ticks:
     int INT_VECTOR_SYSCALL   
     ret
 
-
 global printx
 printx:
     mov eax, IDX_PRINTX
@@ -41,8 +40,8 @@ printx:
 global write
 write:
     mov eax, IDX_WRITE
-    mov ebx, [esp + 4]
-    mov ecx, [esp + 8]
+    mov ecx, [esp + 4]
+    mov edx, [esp + 8]
     int INT_VECTOR_SYSCALL
     ret
 

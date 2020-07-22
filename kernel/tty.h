@@ -35,6 +35,4 @@ typedef struct s_console // CONSOLE is a video memory region
 void task_tty();
 void hand_over_key_to_tty(TTY* p_tty, uint32_t key);
 void tty_output_char(CONSOLE* p_con, char ch);
-int sys_printx(int _unused1, int _unused2, char* s, struct proc* p_proc);
-int sys_write(char* buf, int len, struct proc* p_proc);
 #endif

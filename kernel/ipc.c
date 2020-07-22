@@ -4,6 +4,7 @@
 #include "ktypes.h"
 #include "global.h"
 #include "ke_asm_utils.h"
+#include "syscall.h"
 #include "klib.h"
 
 #include "clock.h" // using schedule()

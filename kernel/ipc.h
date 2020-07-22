@@ -12,7 +12,6 @@ struct s_message;
 struct proc;
 
 void task_sys();
-int sys_sendrec(int function, int src_dest, struct s_message* m, struct proc* p);
 int send_recv(int function, int src_dest, struct s_message* msg);
 int get_ticks2();
 #endif

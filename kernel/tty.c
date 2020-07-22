@@ -3,8 +3,10 @@
 #include "types.h"
 #include "ktypes.h"
 #include "global.h"
-#include "klib.h"
+#include "syscall.h"
 #include "ke_asm_utils.h"
+#include "klib.h"
+
 #include "keyboard.h"
 
 PRIVATE TTY tty_table[NR_CONSOLES];
@@ -28,7 +30,7 @@ PRIVATE void tty_output_str(TTY* p_tty, char* buf, int len){
 	}
 }
 
-PUBLIC int sys_write(char* buf, int len, struct proc* p_proc){
+PUBLIC int sys_write(int _unused, char* buf, int len, struct proc* p_proc){
 	tty_output_str(&tty_table[p_proc->tty_idx], buf, len);
 	return 0;
 }

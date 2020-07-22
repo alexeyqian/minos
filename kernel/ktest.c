@@ -9,9 +9,10 @@
 void test_a(){	
 	int i = 0;	
 	while(1){	
-		kprint("A"); 
+		//kprint("A"); 
 		printf("X:");	
-		//printf(">>> hardcode: %x", 100); // TODO: NOT WORKING ... PROBLEM CODE
+		int a = 0;
+		printf(">>> hardcode: %d", a); // TODO: NOT WORKING ... PROBLEM CODE
 		//printf("<Ticks: %d>", get_ticks());
 		delay(5000);
 	}
@@ -20,7 +21,7 @@ void test_a(){
 void test_b(){
 	int i = 0x1000;
 	while(1){	
-		kprint("B");
+		//kprint("B");
 		//printf("<Ticks2: %d>", get_ticks2());	
 		delay(5000);
 	}
