@@ -102,12 +102,12 @@ PUBLIC void init_proc_table(){
 	ticks = 0;
 	p_proc_ready = proc_table; // set default ready process
 
-	proc_table[0].ticks = proc_table[0].priority = 10;	
+	proc_table[0].ticks = proc_table[0].priority = 5;	
 	proc_table[1].ticks = proc_table[1].priority = 5;	
 	proc_table[2].ticks = proc_table[2].priority = 5;	
 	proc_table[3].ticks = proc_table[3].priority = 5;	
 
-	proc_table[1].tty_idx = 1; // proc_table[0] is system task, no need terminal
-	proc_table[2].tty_idx = 1;
+	proc_table[1].tty_idx = 0; // proc_table[0] is system task, no need terminal
+	proc_table[2].tty_idx = 0;
 	proc_table[3].tty_idx = 1;
 }

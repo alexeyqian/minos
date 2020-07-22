@@ -1,6 +1,6 @@
 #ifndef MINOS_KLIB_H
 #define MINOS_KLIB_H
-
+#include "const.h"
 #include "types.h"
 #include "ktypes.h"
 #include "global.h"
@@ -11,14 +11,11 @@ char* memset(char *dst, char val, int count);
 void memcpy(char* dst, const char* src, int size);
 void strcpy(char* dst, const char* src);
 
-void delay_loop(int time);
-
 int strlen(const char* str);
 // integer to hex, prefix 0s are ignored
 char* itox(int num, char* str);
 
 // below functions are using sys calls inside, cannot be used in kernel
-void delay(int milli_sec);
 int printf(const char *fmt, ...);
 int sprintf(char* buf, const char* fmt, ...);
 
@@ -32,7 +29,6 @@ void* va2la(int pid, void*va);
 void put_irq_handler(int irq, pf_irq_handler_t handler);
 
 #define printl printf
-
 
 /**
  * `phys_copy' and `phys_set' are used only in the kernel, where segments

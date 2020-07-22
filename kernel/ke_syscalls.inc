@@ -11,8 +11,7 @@ syscall:
     call save
     sti             ; allow maskable interrupts
     push esi
-    push dword [p_proc_ready] ; push proc addr as 1st parameter
-    
+    push dword [p_proc_ready] ; push proc addr as 1st parameter    
     push edx
     push ecx        ; push 2nd param
     push ebx        ; push 3rd param
@@ -31,6 +30,14 @@ get_ticks:
     int INT_VECTOR_SYSCALL   
     ret
 
+
+global printx
+printx:
+    mov eax, IDX_PRINTX
+    mov edx, [esp + 4]
+    int INT_VECTOR_SYSCALL
+    ret
+
 global write
 write:
     mov eax, IDX_WRITE
@@ -45,12 +52,5 @@ sendrec:
     mov ebx, [esp + 4]  ; function
     mov ecx, [esp + 8]  ; src_dest
     mov edx, [esp + 12] ; p_msg
-    int INT_VECTOR_SYSCALL
-    ret
-
-global printx
-printx:
-    mov eax, IDX_PRINTX
-    mov edx, [esp + 4]
     int INT_VECTOR_SYSCALL
     ret

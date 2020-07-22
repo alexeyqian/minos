@@ -6,6 +6,11 @@
 #include "klib.h"
 #include "screen.h" // kprint
 
+PUBLIC void delay(int milli_sec){
+    int t = get_ticks();
+    while(((get_ticks() - t) * 1000 / HZ) < milli_sec) {}
+}
+
 PRIVATE void clock_handler(int irq);
 
 PUBLIC void enable_clock(){ // init 8253 PIT
@@ -44,7 +49,7 @@ PRIVATE void clock_handler(int irq){
 	p_proc_ready->ticks--;
 
 	if(k_reenter != 0){ // interrupt re-enter
-		kprint(".");
+		//kprint("!]");
 		return;
 	}
 
@@ -52,10 +57,10 @@ PRIVATE void clock_handler(int irq){
 	schedule(); 
 	//kprint("]");
 }
-
+/*
 // round robin version of scheduler
 PRIVATE void clock_handler_not_used(int irq){
-	//kprint("[");
+	kprint("[");
 
 	ticks++;
 	if(k_reenter != 0){
@@ -68,6 +73,6 @@ PRIVATE void clock_handler_not_used(int irq){
 	if(p_proc_ready >= proc_table + NR_TASKS + NR_PROCS)
 		p_proc_ready = proc_table;
 
-	//kprint("]");
-}
+	kprint("]");
+}*/
 

@@ -107,6 +107,61 @@ exception:
 	hlt             
 
 ; ========== interrupt handlers ==========
+
+; ========================= save   =========================
+; jump from ring1/3(user space) into ring0 kernel space.
+; when entring interrupt, the esp/ss is restored from esp0/ss in TSS automatically
+; since we've saved the proc->regs:high address as stack pointer into tss:esp0 before
+; so at beginning esp is point to a high addr of a struct proc->regs in proc_table
+; then CPU automatically (as part of interruption process, invisable to user) 
+; pushes ss->esp->eflags->cs->eip into struct proc(used as stack)
+; value of esp is pointing to just above retaddr
+
+; IT TOOK ME WEEKS TO UNDERSTAND THE STACKS/TSS DURING TASK SWITCH AND REENTER
+save:
+	pushad     ; save status of current process which is being interrupted.
+	push ds    ; the esp is copied from tss:esp0 matching current process's proc->regs high addr
+	push es
+	push fs
+	push gs    ; at this point, all current process's registers are saved in struct proc->regs(current process PCB in PCB table)
+
+	; IMPORTANT:
+	; from now until 'move esp, kernel_stack_top', we cannot use push/pop
+	; since current esp is pointing to proc_table, push/pop will corrupt the table.
+	; only ESI is used as storage for variable here.
+
+	mov esi, edx   ; save edx, since edx has been used somewhere else (cannot use stack here)
+
+	mov dx, ss
+	mov ds, dx
+	mov es, dx
+	mov fs, dx
+
+	mov edx, esi  ; restore value of edx
+
+	mov esi, esp ; start address of struct proc,
+	             ; avoid to use eax, since it might be used as parameter for syscall
+
+	inc dword [k_reenter] 
+	cmp dword [k_reenter], 0
+	jne .reenter                ; if it's reenter, jmp to re_enter
+	
+	mov esp, kernel_stack_top   ; switch to kernel stack to avoid messing up with PCB tables, 
+							    ; since before this line, esp is pointing to some where in PCB table.
+								; if it's reenter, will not need to switch to kernel stack, since it's already in kernel stack.
+	
+	push restart                ; push a return address for not_reenter, after intr handler, return to this addr
+	jmp [esi + RETADDR - P_STACKBASE]   ; = return to next line of code calling save
+.reenter:
+	push restart_reenter        ; push a return address for reenter, after intr handler, return to this addr
+	jmp [esi + RETADDR - P_STACKBASE]	; = return to next line of code calling save
+	; DO NOT USE RET HERE
+	; IN BOTHER ENTER OR REENTER, IT WILL FOLLOW TO NEXT CODE BELOW CALL SAVE,
+	; THE DIFFERENCE WILL ONLY APPEAR AT LATER RET INSTRUCTION
+; INTERRUPT IS NOT RE-OPEN YET FROM SAVE TO THIS POINT
+; INTERRUPT IS DISABLED DURINT ENTIRE SAVE PROCESS
+
+
 %macro irq_master 1
 	call save            ; save all registers into proc table in kernel
 
@@ -116,11 +171,13 @@ exception:
 	
 	; 8259 and sti together can allow interrupt happen again.
 	mov al, EOI          ; reenable master 8259a
-	out INT_M_CTL, al
-	
+	out INT_M_CTL, al	
 	sti                  ; enable interrupt, since CPU disabled interrupt automatcally during interrupt.
 	
-	push %1
+	; interrupt re-enter can only happens during kernel status, which esp is pointing to kernel stack.
+	; so it save registers to kernel stack, after re-enter interrupt returns it will returns to kernel 
+	; and continue to the kernel code being interrupted.
+	push %1              ; re-enter interrupt only possible during these 3 lines between sti and cli
 	call [irq_table + 4 * %1] ;  call interrupt handler
 	pop ecx
 	
@@ -130,9 +187,43 @@ exception:
 	and al, ~(1 << %1)
 	out INT_M_CTLMASK, al
 
-	ret         ; return to restart or restart_reenter based on if previous pushed return address on stack.         
-						 
+	ret         ; return to restart or restart_reenter based on if previous pushed return address on stack.        
 %endmacro
+
+%macro	irq_slave	1
+	push	%1
+	call	irq_handler
+	add	esp, 4
+	hlt
+%endmacro
+
+; ========================= restart =========================
+; restart suspended user process
+; start in kernel mode ring0, prepare registers for user process, and then use iretd to jump to ring 3 user process.
+; first copy values in PCB(stored in kernel) of ready process to registers, prepare registers before jump to user process
+restart:
+	mov esp, [p_proc_ready] ; leave kernel stack, using next process's struct proc as stack	
+	lldt [esp + P_LDT_SEL]  ; load process LDT, prepare for next process
+	
+	lea eax, [esp + P_STACKTOP]       ; setup tss.esp0 for p_proc_ready.
+	mov dword [tss + TSS3_S_SP0], eax ; TSS3_S_SP0 now is pointing to p_ready_proc->regs high addr
+									  ; at the beginning of next interrupt, 
+									  ; esp will be copied from tss:esp0 is automatically done by CPU,
+									  ; not controlled by programmer. 
+									  ; by doing this the running user process always has the tss.esp0 point to it's PCB in kernel.
+									  ; TSS3_S_SP0 = 4, point to tss->esp0
+
+restart_reenter:                      ; if it's reenter or end of interrupt procedure
+	dec dword [k_reenter]             ; if it's reenter, then system will not switch process
+	pop gs                            ; restore all registers form p_proc_ready pointed struct proc.
+	pop fs
+	pop es
+	pop ds
+	popad
+	add esp, 4                        ;  remove reserved 4 bytes space for retaddr
+
+	iretd                             ; all registers prepared, return and run the ring 3 user process pointed by p_proc_ready
+
 
 ALIGN	16
 irq00:		; Interrupt routine for irq 0 (the clock).		
@@ -166,15 +257,6 @@ ALIGN	16
 irq07:		; Interrupt routine for irq 7 (printer)
 	irq_master	7
 
-; ---------------------------------
-%macro	irq_slave	1
-	push	%1
-	call	irq_handler
-	add	esp, 4
-	hlt
-%endmacro
-; ---------------------------------
-
 ALIGN	16
 irq08:		; Interrupt routine for irq 8 (realtime clock).
 	irq_slave	8
@@ -206,7 +288,6 @@ irq14:		; Interrupt routine for irq 14 (AT winchester)
 ALIGN	16
 irq15:		; Interrupt routine for irq 15
 	irq_slave	15
-
 
 ; ========================================================================
 ;                  void disable_irq(int irq);
@@ -279,78 +360,3 @@ enable_8:
         out	INT_S_CTLMASK, al	; clear bit at slave 8259
         popf
         ret
-
-; ========================= save   =========================
-; jump from ring1/3(user space) into ring0 kernel space.
-; when entring interrupt, the esp/ss is restored from esp0/ss in TSS automatically
-; since we've saved the proc->regs:high address as stack pointer into tss:esp0 before
-; so at beginning esp is point to a high addr of a struct proc->regs in proc_table
-; then CPU automatically (as part of interruption process, invisable to user) 
-; pushes ss->esp->eflags->cs->eip into struct proc(used as stack)
-; value of esp is pointing to just above retaddr
-
-; IT TOOK ME WEEKS TO UNDERSTAND THE STACKS/TSS DURING TASK SWITCH AND REENTER
-save:
-	pushad     ; save status of current process which is being interrupted.
-	push ds    ; the esp is copied from tss:esp0 matching current process's proc->regs high addr
-	push es
-	push fs
-	push gs    ; at this point, all current process's registers are saved in struct proc->regs(current process PCB in PCB table)
-
-	; IMPORTANT:
-	; from now until 'move esp, kernel_stack_top', we cannot use push/pop
-	; since current esp is pointing to proc_table, push/pop will corrupt the table.
-	; only ESI is used as storage for variable here.
-
-	mov esi, edx   ; save edx, since edx has been used somewhere else (cannot use stack here)
-
-	mov dx, ss
-	mov ds, dx
-	mov es, dx
-	mov fs, dx
-
-	mov edx, esi  ; restore value of edx
-
-	mov esi, esp ; start address of struct proc,
-	             ; avoid to use eax, since it might be used as parameter for syscall
-
-	inc dword [k_reenter] 
-	cmp dword [k_reenter], 0
-	jne .reenter                ; if it's reenter, jmp to re_enter
-	
-	mov esp, kernel_stack_top   ; switch to kernel stack to avoid messing up with PCB tables, 
-							    ; since before this line, esp is pointing to some where in PCB table.
-	
-	push restart                ; push a return address for not_reenter, after intr handler, return to this addr
-	jmp [esi + RETADDR - P_STACKBASE]   ; = return to next line of code calling save
-.reenter:
-	push restart_reenter        ; push a return address for reenter, after intr handler, return to this addr
-	jmp [esi + RETADDR - P_STACKBASE]	; = return to next line of code calling save
-	; DO NOT USE RET HERE
-
-; ========================= restart =========================
-; restart suspended user process
-; start in kernel mode ring0, prepare registers for user process, and then use iretd to jump to ring 3 user process.
-; first copy values in PCB(stored in kernel) of ready process to registers, prepare registers before jump to user process
-restart:
-	mov esp, [p_proc_ready] ; leave kernel stack, using next process's struct proc as stack	
-	lldt [esp + P_LDT_SEL]  ; load process LDT, prepare for next process
-	
-	lea eax, [esp + P_STACKTOP]       ; setup tss.esp0 for p_proc_ready.
-	mov dword [tss + TSS3_S_SP0], eax ; TSS3_S_SP0 now is pointing to p_ready_proc->regs high addr
-									  ; at the beginning of next interrupt, 
-									  ; esp will be copied from tss:esp0 is automatically done by CPU,
-									  ; not controlled by programmer. 
-									  ; by doing this the running user process always has the tss.esp0 point to it's PCB in kernel.
-									  ; TSS3_S_SP0 = 4, point to tss->esp0
-
-restart_reenter:                      ; if it's reenter or end of interrupt procedure
-	dec dword [k_reenter]
-	pop gs                            ; restore all registers form p_proc_ready pointed struct proc.
-	pop fs
-	pop es
-	pop ds
-	popad
-	add esp, 4                        ;  remove reserved 4 bytes space for retaddr
-
-	iretd                             ; all registers prepared, return and run the ring 3 user process pointed by p_proc_ready

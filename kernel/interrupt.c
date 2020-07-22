@@ -97,8 +97,8 @@ void init_8259a(){
 	out_byte(INT_M_CTLMASK,	0x1);			     // Master, ICW4.
 	out_byte(INT_S_CTLMASK,	0x1);		         // Slave , ICW4.
 
-	// TODO? disable all irq interrupts, except clock ?? or FF
-	out_byte(INT_M_CTLMASK,	0xFE);	             // Master, OCW1. 
+	// disable all irq interrupts.
+	out_byte(INT_M_CTLMASK,	0xFF);	             // Master, OCW1. 
 	out_byte(INT_S_CTLMASK,	0xFF);	             // Slave , OCW1. 
 
 	int i;

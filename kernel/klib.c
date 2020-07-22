@@ -6,27 +6,14 @@
 #include "ke_asm_utils.h"
 
 char* memset(char* buf, char value, int size){
-	int i;
-    for(i = 0; i < size; i++)
+    for(int i = 0; i < size; i++)
         buf[i] = value;
         
     return buf;
 }
-/*
-int memcmp(const char* a, const char* b, int size) {
-	int i;	
-	for (i = 0; i < size; i++) {
-		if (a[i] < b[i])
-			return -1;
-		else if (b[i] < a[i])
-			return 1;
-	}
-	return 0;
-}*/
 
 void memcpy(char* dst, const char* src, int size){
-	int i;
-    for(i = 0; i < size; i++)
+    for(int i = 0; i < size; i++)
         dst[i] = src[i];    
 }
 
@@ -37,8 +24,8 @@ void strcpy(char* dst, const char* src){
         i++;
     }
 }
-/*
-uint32_t digit_count(int num){
+
+uint32_t digit_count(uint32_t num){
     uint32_t count = 0;
     if(num == 0) return 1;
     while(num > 0){
@@ -47,7 +34,7 @@ uint32_t digit_count(int num){
     }
 
     return count;
-}*/
+}
 
 int strlen(const char* str){
     int len = 0;
@@ -56,7 +43,7 @@ int strlen(const char* str){
 }
 
 // reverse string, keep the last '\0'.
-void _reverse_str(char str[], int length){
+void reverse_str(char str[], int length){
     int start = 0;
     int end = length - 1;
     while(start < end)
@@ -66,7 +53,7 @@ void _reverse_str(char str[], int length){
         str[end--] = tmp;
     }
 }
-/*
+
 char* itoa(int num, char* str, int base){
     int i = 0;
     int is_negative = 0;
@@ -97,10 +84,10 @@ char* itoa(int num, char* str, int base){
     // add terminator
     str[i] = '\0';
 
-    _reverse_str(str, i);
+    reverse_str(str, i);
     return str;
 }
-*/
+
 char* itox( int num, char* str) {
     char *	p = str;
 	char	ch;
@@ -132,18 +119,6 @@ char* itox( int num, char* str) {
 	return str;
 }
 
-void delay_loop(int time){
-	int i, j, k;
-	for(i = 0; i < time; i++)
-		for(j = 0; j < 1000; j++)
-			for(k = 0; k < 1000; k ++){}
-}
-
-void delay(int milli_sec){
-    int t = get_ticks();
-    while(((get_ticks() - t) * 1000 / HZ) < milli_sec) {}
-}
-
 PRIVATE char* i2a(int val, int base, char ** ps)
 {
 	int m = val % base;
@@ -155,44 +130,36 @@ PRIVATE char* i2a(int val, int base, char ** ps)
 
 	return *ps;
 }
-/*
-// leading 0s are ignored, ex. 0000B800 displayed as B800 
-char * itoa2(char * str, int num)
-{
-	char *	p = str;
-	char	ch;
-	int	i;
-	bool_t	flag = FALSE;
 
-	*p++ = '0';
-	*p++ = 'x';
-
-	if(num == 0){
-		*p++ = '0';
-	}
-	else{	
-		for(i=28;i>=0;i-=4){
-			ch = (num >> i) & 0xF;
-			if(flag || (ch > 0)){
-				flag = TRUE;
-				ch += '0';
-				if(ch > '9'){
-					ch += 7;
-				}
-				*p++ = ch;
+PUBLIC int vsprintf_simple(char *buf, const char *fmt, va_list args){
+	char* p;
+	char tmp[256];
+	va_list p_next_arg = args;
+	for(p=buf; *fmt; fmt++)
+		if(*fmt != '%') *p++ = *fmt;
+		else{
+			fmt++;
+			switch(*fmt){
+				case 'x':
+					//memset(q, 0, sizeof(tmp));				
+					//i2a(*((int*)p_next_arg), 16, &q);
+					strcpy(p, tmp);
+					p_next_arg += 4;
+					p += strlen(tmp);
+					break;
+				case 's':
+					break;
+				default:
+					break;
 			}
-		}
-	}
+		}	
 
-	*p = 0;
-
-	return str;
-}*/
+	return (p-buf);
+}
 
 PUBLIC int vsprintf(char *buf, const char *fmt, va_list args)
 {
 	char*	p;
-
 	va_list	p_next_arg = args;
 	int	m;
 
@@ -321,7 +288,8 @@ int printf(const char *fmt, ...){
     // args is actually a char*
     i = vsprintf(buf, fmt, args); 
     buf[i] = 0;
-    printx(buf); // syscall
+    //write(buf, i);
+	printx(buf); // syscall
     return i;
 }
 

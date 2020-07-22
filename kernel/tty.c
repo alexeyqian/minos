@@ -1,3 +1,4 @@
+#include "tty.h"
 #include "const.h"
 #include "types.h"
 #include "ktypes.h"
@@ -5,7 +6,6 @@
 #include "klib.h"
 #include "ke_asm_utils.h"
 #include "keyboard.h"
-#include "tty.h"
 
 PRIVATE TTY tty_table[NR_CONSOLES];
 #define TTY_FIRST (tty_table)
@@ -19,7 +19,7 @@ PRIVATE int _disp_pos;
 
 PUBLIC void tty_output_char(CONSOLE *p_con, char ch);
 
-PRIVATE void write_to_tty(TTY* p_tty, char* buf, int len){
+PRIVATE void tty_output_str(TTY* p_tty, char* buf, int len){
 	char* p = buf;
 	int i = len;
 	while(i){
@@ -29,7 +29,7 @@ PRIVATE void write_to_tty(TTY* p_tty, char* buf, int len){
 }
 
 PUBLIC int sys_write(char* buf, int len, struct proc* p_proc){
-	write_to_tty(&tty_table[p_proc->tty_idx], buf, len);
+	tty_output_str(&tty_table[p_proc->tty_idx], buf, len);
 	return 0;
 }
 
@@ -95,7 +95,7 @@ PRIVATE void scroll_screen(CONSOLE *p_con, int direction)
     tty_set_cursor(p_con->cursor);
 }
 
-void tty_output_char(CONSOLE *p_con, char ch)
+PUBLIC void tty_output_char(CONSOLE *p_con, char ch)
 {
     uint8_t *p_vmem = (uint8_t *)(V_MEM_BASE + p_con->cursor * 2);
 
@@ -276,6 +276,8 @@ void hand_over_key_to_tty(TTY *p_tty, uint32_t combined_key)
         process_command_key(p_tty, combined_key);
 }
 
+// TODO: move
+// implementation for syscall printx
 PUBLIC int sys_printx(int _unused1, int _unused2, char* s, struct proc* p_proc)
 {
 	const char * p;
@@ -286,8 +288,7 @@ PUBLIC int sys_printx(int _unused1, int _unused2, char* s, struct proc* p_proc)
 
 	/**
 	 * @note Code in both Ring 0 and Ring 1~3 may invoke printx().
-	 * If this happens in Ring 0, no linear-physical address mapping
-	 * is needed.
+	 * If this happens in Ring 0, no linear-physical address mapping is needed.
 	 *
 	 * @attention The value of `k_reenter' is tricky here. When
 	 *   -# printx() is called in Ring 0

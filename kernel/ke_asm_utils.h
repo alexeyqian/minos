@@ -10,6 +10,7 @@ struct s_message;
 void syscall();             
 int  get_ticks();    
 void write(char* buf, int len);  
+int	printx(char* str);
 int sendrec(int function, int src_dest, struct s_message* m); 
 
 // util functions called by c language vmmgr
@@ -34,7 +35,6 @@ void disable_paging();
 void out_byte(uint16_t port, uint8_t value);
 uint8_t in_byte(uint16_t port);
 
-int	printx(char* str);
 void halt();
 
 #endif

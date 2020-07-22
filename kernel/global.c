@@ -6,8 +6,8 @@
 
 extern int sys_get_ticks();
 extern int sys_write(char* buf, int len, struct proc* p_proc);
-extern int sys_sendrec(int function, int src_dest, struct s_message* m, struct proc* p);
 extern int sys_printx(int _unused1, int _unused2, char* s, struct proc* p_proc);
+extern int sys_sendrec(int function, int src_dest, struct s_message* m, struct proc* p);
 
 int ticks;
 int k_reenter;
