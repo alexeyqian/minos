@@ -14,4 +14,5 @@ struct proc;
 void task_sys();
 int send_recv(int function, int src_dest, struct s_message* msg);
 int get_ticks2();
+void inform_int(int task_nr);
 #endif
