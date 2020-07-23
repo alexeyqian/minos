@@ -324,13 +324,11 @@ PUBLIC int sys_sendrec(int function, int src_dest, MESSAGE* p_msg, struct proc* 
 	assert(mla->source != src_dest);
 
 	if(function == SEND){
-        printf(">>>sending msg");
 		ret = msg_send(p, src_dest, p_msg);
 		if(ret != 0) return ret;
 	}else if(function == RECEIVE){
-        printf(">>>receiving msg");
 		ret = msg_receive(p, src_dest, p_msg);
-        printf(">>> ret: %d", ret);
+        //printf(">>> ret: %x", ret);
 		if(ret != 0) return ret;
 	}else{
 		panic("{sys_sendrec} invalid function", "%d, send: %d, receive: %d", function, SEND, RECEIVE);
@@ -372,7 +370,7 @@ PUBLIC int get_ticks2(){
     reset_msg(&msg);
     msg.type = GET_TICKS2;
     send_recv(BOTH, TASK_SYS, &msg);
-    printf(">>>retval: %d", msg.RETVAL);
+    //printf(">>>retval: %x", msg.RETVAL);
     return msg.RETVAL;
 }
 
@@ -384,7 +382,6 @@ PUBLIC void task_sys(){
         int src = msg.source;
         switch(msg.type){
             case GET_TICKS2:
-                printf(">>> get ticks2");
                 msg.RETVAL = ticks;
                 send_recv(SEND, src, &msg);
                 break;

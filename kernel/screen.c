@@ -109,7 +109,6 @@ PUBLIC void kprint(char* str){
 		kprint_char(str[i], -1, -1, 0);
 }
 
-// TODO: print uint32 as hex
 PUBLIC void kprint_int_as_hex(int num){
 	char str[16];
     itox(num, str);

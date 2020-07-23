@@ -3,6 +3,7 @@
 #include "types.h"
 #include "ktypes.h"
 #include "klib.h"
+#include "ipc.h"
 #include "ktest.h"
 
 // TODO: replace externs with header inclusion
@@ -107,7 +108,35 @@ PUBLIC void init_proc_table(){
 	proc_table[2].ticks = proc_table[2].priority = 5;	
 	proc_table[3].ticks = proc_table[3].priority = 5;	
 
+	proc_table[0].tty_idx = 0;
 	proc_table[1].tty_idx = 0; // proc_table[0] is system task, no need terminal
 	proc_table[2].tty_idx = 0;
 	proc_table[3].tty_idx = 1;
+	proc_table[4].tty_idx = 1;
 }
+
+
+// <ring 0> inform a proc that an interrupt has occured
+PUBLIC void inform_int(int task_nr){
+    struct proc* p = proc_table + task_nr;
+	if((p->p_flags & RECEIVING) && // dest is wating for the msg
+		((p->p_recvfrom == INTERRUPT) || (p->p_recvfrom == ANY))) {
+		p->p_msg->source = INTERRUPT;
+		p->p_msg->type = HARD_INT;
+		p->p_msg = 0; // TODO: ??
+		p->has_int_msg = 0; // ??
+		p->p_flags &= ~RECEIVING; 
+		p->p_recvfrom = NO_TASK;
+		assert(p->p_flags = 0);
+		unblock(p);
+
+		assert(p->p_flags == 0);
+		assert(p->p_msg == 0);
+		assert(p->p_recvfrom == NO_TASK);
+		assert(p->p_sendto == NO_TASK);
+	}else
+	{
+		p->has_int_msg = 1;
+	}	
+}
+

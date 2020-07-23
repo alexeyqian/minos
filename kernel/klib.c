@@ -4,6 +4,7 @@
 #include "ktypes.h"
 #include "global.h"
 #include "ke_asm_utils.h"
+#include "screen.h"
 
 char* memset(char* buf, char value, int size){
     for(int i = 0; i < size; i++)
@@ -131,18 +132,28 @@ PRIVATE char* i2a(int val, int base, char ** ps)
 	return *ps;
 }
 
-PUBLIC int vsprintf_simple(char *buf, const char *fmt, va_list args){
+PUBLIC int vsprintf_ism(char *buf, const char *fmt, va_list args){
 	char* p;
 	char tmp[256];
 	va_list p_next_arg = args;
+	int num;
 	for(p=buf; *fmt; fmt++)
 		if(*fmt != '%') *p++ = *fmt;
 		else{
 			fmt++;
 			switch(*fmt){
+				case 'd':
+					num = *((int*)p_next_arg);
+					kprint("k1:");					
+					kprint_int_as_hex(num);
+					break;
 				case 'x':
-					//memset(q, 0, sizeof(tmp));				
-					//i2a(*((int*)p_next_arg), 16, &q);
+					//memset(q, 0, sizeof(tmp));									
+					//i2a(*((int*)p_next_arg), 16, &q);					
+					num = *((int*)p_next_arg);
+					kprint("k2:");
+					kprint_int_as_hex(num);
+					itoa(num, tmp, 16);
 					strcpy(p, tmp);
 					p_next_arg += 4;
 					p += strlen(tmp);
@@ -160,6 +171,7 @@ PUBLIC int vsprintf_simple(char *buf, const char *fmt, va_list args){
 PUBLIC int vsprintf(char *buf, const char *fmt, va_list args)
 {
 	char*	p;
+
 	va_list	p_next_arg = args;
 	int	m;
 
@@ -205,16 +217,20 @@ PUBLIC int vsprintf(char *buf, const char *fmt, va_list args)
 			break;
 		case 'x':
 			m = *((int*)p_next_arg);
+
 			i2a(m, 16, &q);
 			p_next_arg += 4;
 			break;
 		case 'd':
 			m = *((int*)p_next_arg);
+			//kprint("k:");
+			//kprint_int_as_hex(m);
 			if (m < 0) {
 				m = m * (-1);
 				*q++ = '-';
 			}
 			i2a(m, 10, &q);
+			
 			p_next_arg += 4;
 			break;
 		case 's':

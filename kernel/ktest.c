@@ -7,31 +7,27 @@
 #include "screen.h"
 
 void test_a(){	
-	int i = 0;	
+	int i = 100;	
 	while(1){	
-		//kprint("A"); 
-		printf("X:");	
-		int a = 0;
-		printf(">>> hardcode: %d", a); // TODO: NOT WORKING ... PROBLEM CODE
-		//printf("<Ticks: %d>", get_ticks());
+		printf("<A: %d %d %d>", 100, 300, i++); 
+		//kprint_int_as_hex(i++);
+		//kprint_int_as_hex(get_ticks());
+		//kprint(":");
+		//kprint_int_as_hex(get_ticks2());
 		delay(5000);
 	}
 }
 
 void test_b(){
-	int i = 0x1000;
+	int i = 200;
 	while(1){	
-		//kprint("B");
-		//printf("<Ticks2: %d>", get_ticks2());	
 		delay(5000);
 	}
 }
 
 void test_c(){
 	int i = 0x2000;
-	int counter = 10;
 	while(1){	
-		//printf("Z");
 		delay(5000);
 	}
 }
