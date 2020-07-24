@@ -5,7 +5,10 @@
 #include "global.h"
 #include "ke_asm_utils.h"
 #include "syscall.h"
+#include "assert.h"
+#include "string.h"
 #include "klib.h"
+#include "kio.h"
 
 #include "clock.h" // using schedule()
 

@@ -26,6 +26,42 @@ void disable_paging();
 
 void halt();
 
+// exception handlers
+void	divide_error();
+void	single_step_exception();
+void	nmi();
+void	breakpoint_exception();
+void	overflow();
+void	bounds_check();
+void	inval_opcode();
+void	copr_not_available();
+void	double_fault();
+void	copr_seg_overrun();
+void	inval_tss();
+void	segment_not_present();
+void	stack_exception();
+void	general_protection();
+void	page_fault();
+void	copr_error();
+
+// interrupt handlers
+void	irq00(); 
+void	irq01();
+void	irq02();
+void	irq03();
+void	irq04();
+void	irq05();
+void	irq06();
+void	irq07();
+void	irq08();
+void	irq09();
+void	irq10();
+void	irq11();
+void	irq12();
+void	irq13();
+void	irq14();
+void	irq15();
+
 struct s_message;
 // syscalls
 void syscall();             

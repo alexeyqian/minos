@@ -111,7 +111,13 @@ typedef struct s_message{
 
 enum msgtype{
 	HARD_INT = 1,
-	GET_TICKS2
+	GET_TICKS2,
+    /* message type for drivers */
+	DEV_OPEN = 1001,
+	DEV_CLOSE,
+	DEV_READ,
+	DEV_WRITE,
+	DEV_IOCTL
 };
 
 typedef struct stack_frame{ // proc_ptr points to here

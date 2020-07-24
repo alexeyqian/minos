@@ -16,6 +16,7 @@
 // init physical memory at kernel init
 
 PRIVATE void get_mem_chucks(struct memory* mem_chunks){
+    /*
     long base, size, limit;
     char *s, *end;
     int i, done = 0;
@@ -27,13 +28,13 @@ PRIVATE void get_mem_chucks(struct memory* mem_chunks){
         memp->base = memp->size = 0;
     }
 
-    /* The available memory is determined by MINOS' boot loader as a list of 
-    * (base:size)-pairs in boothead.s. The 'memory' boot variable is set in
-    * in boot.s.  The format is "b0:s0,b1:s1,b2:s2", where b0:s0 is low mem,
-    * b1:s1 is mem between 1M and 16M, b2:s2 is mem above 16M. Pairs b1:s1 
-    * and b2:s2 are combined if the memory is adjacent. 
-    */
-    //s = find_param("memory");		/* get memory boot variable */
+    // The available memory is determined by MINOS' boot loader as a list of 
+    // (base:size)-pairs in boothead.s. The 'memory' boot variable is set in
+    // in boot.s.  The format is "b0:s0,b1:s1,b2:s2", where b0:s0 is low mem,
+    // b1:s1 is mem between 1M and 16M, b2:s2 is mem above 16M. Pairs b1:s1 
+    // and b2:s2 are combined if the memory is adjacent. 
+    
+    //s = find_param("memory");		// get memory boot variable 
     // TODO: hardcoded, need to be replaced later
     s = "0x100000:0x800000,0x900000:0x800000";
     for(i = 0; i < NR_MEMS && !done; i++){
@@ -62,5 +63,7 @@ PRIVATE void get_mem_chucks(struct memory* mem_chunks){
         if(limit <= base) continue; //TODO:?
         memp->base = base >> CLICK_SHIFT;
         memp->size = (limit - base) >> CLICK_SHIFT;
+        
     }
+    */
 }

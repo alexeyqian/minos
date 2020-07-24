@@ -2,6 +2,7 @@
 #include "const.h"
 #include "types.h"
 #include "ktypes.h"
+#include "string.h"
 #include "klib.h"
 #include "ipc.h"
 #include "ktest.h"

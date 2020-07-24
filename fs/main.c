@@ -1,3 +1,6 @@
+#include "const.h"
+#include "types.h"
+#include "kio.h"
 
 // <ring 1>
 PUBLIC void task_fs(){

@@ -6,7 +6,9 @@
 #include "global.h"
 #include "ke_asm_utils.h"
 #include "syscall.h"
+#include "string.h"
 #include "klib.h"
+#include "kio.h"
 
 #include "interrupt.h"
 #include "clock.h"
@@ -36,6 +38,8 @@ void kmain();
 void kinit(){
 	//kclear_screen();
     kprint(">>> kinit begin ...\n");
+	kprintf(">>> kprintf: %x %x %d\n", 32, 64, 200);
+	//printf(">>> printf: %x %d\n", 64, 200); cannot use printf here
 	init_new_gdt();  
 	init_idt();
 	init_tss();	

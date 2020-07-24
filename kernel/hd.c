@@ -1,10 +1,16 @@
-#include "hc.h"
+#include "hd.h"
 #include "const.h"
 #include "types.h"
 #include "ktypes.h"
 #include "global.h"
 #include "ke_asm_utils.h"
+#include "assert.h"
 #include "klib.h"
+#include "kio.h"
+#include "ipc.h"
+
+PRIVATE	uint8_t	hd_status;
+PRIVATE	uint8_t	hdbuf[SECTOR_SIZE * 2];
 
 PRIVATE void hd_handler(){
     hd_status = in_byte(REG_STATUS);

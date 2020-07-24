@@ -5,12 +5,13 @@
 #include "interrupt.h"
 #include "ipc.h"
 #include "screen.h"
+#include "kio.h"
 
 void test_a(){	
 	int i = 100;	
 	while(1){	
-		printf("<A: %d %d %d>", 100, 300, i++); 
-		//kprint_int_as_hex(i++);
+		//printf("<A: %d %d %d>", 100, 300, i++); 
+		kprint_int_as_hex(i++);
 		//kprint_int_as_hex(get_ticks());
 		//kprint(":");
 		//kprint_int_as_hex(get_ticks2());

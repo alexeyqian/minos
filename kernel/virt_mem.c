@@ -1,6 +1,7 @@
 #include "virt_mem.h"
 #include "types.h"
 #include "ke_asm_utils.h"
+#include "string.h"
 #include "klib.h"
 
 // ============= PTE =================

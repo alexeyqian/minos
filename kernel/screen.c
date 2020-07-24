@@ -1,4 +1,6 @@
 #include "types.h"
+#include "string.h"
+#include "vsprintf.h"
 #include "klib.h"
 //#include "ke_asm_utils.h"
 
@@ -111,7 +113,18 @@ PUBLIC void kprint(char* str){
 
 PUBLIC void kprint_int_as_hex(int num){
 	char str[16];
-    itox(num, str);
+    itoa(num, str, 16);
     kprint(str);
 }
 
+PUBLIC void kprintf(const char *fmt, ...){
+    int i;
+    char buf[256];
+    va_list args = (va_list)((char*)(&fmt) + 4); // points to next params after fmt
+    // now args is actually the addr of arg1 just behind fmt
+    // args is actually a char*
+    i = vsprintf(buf, fmt, args); 
+    buf[i] = 0;
+    //write(buf, i);
+	kprint(buf);
+}

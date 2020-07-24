@@ -1,9 +1,11 @@
 C_SOURCES=$(wildcard kernel/*.c)
-HEADERS=$(wildcard kernel/*.h)
-OBJ=$(C_SOURCES:.c=.o)
+C_HEADERS=$(wildcard include/*.h)
+C_FLAGS = -c -m32 -fno-builtin -I include/
+C_OBJS=$(C_SOURCES:.c=.o)
 #$(info $$C_SOURCES is [${C_SOURCES}])
 #$(info $$OBJ is [${OBJ}])
-CFLAGS = -c -m32 -fno-builtin -I include/
+
+
 all: clean os.img
 
 #run: all
@@ -24,27 +26,28 @@ boot/boot.bin: boot/boot.asm
 boot/loader.bin: boot/loader.asm
 	nasm $< -f bin -I 'boot/' -o $@
 
-kernel/kernel.bin: kernel/kernel_entry.asm kernel/klib.c kernel/global.c kernel/interrupt.c kernel/proc.c \
-	kernel/clock.c kernel/phys_mem.c kernel/virt_mem.c \
-	kernel/screen.c kernel/keyboard.c kernel/tty.c kernel/ktest.c kernel/ipc.c  kernel/kernel.c
+kernel/kernel.bin: $(C_SOURCES) $(C_HEADERS)
 	nasm kernel/kernel_entry.asm -f elf32 -I 'kernel/' -o kernel/kernel_entry.o	
-	gcc $(CFLAGS) -o kernel/klib.o      kernel/klib.c
-	gcc $(CFLAGS) -o kernel/global.o    kernel/global.c
-	gcc $(CFLAGS) -o kernel/interrupt.o kernel/interrupt.c
-	gcc $(CFLAGS) -o kernel/proc.o      kernel/proc.c
-	gcc $(CFLAGS) -o kernel/clock.o     kernel/clock.c
-	gcc $(CFLAGS) -o kernel/phys_mem.o  kernel/phys_mem.c
-	gcc $(CFLAGS) -o kernel/virt_mem.o  kernel/virt_mem.c
-	gcc $(CFLAGS) -o kernel/keyboard.o  kernel/keyboard.c
-	gcc $(CFLAGS) -o kernel/screen.o    kernel/screen.c
-	gcc $(CFLAGS) -o kernel/tty.o       kernel/tty.c
-	gcc $(CFLAGS) -o kernel/ktest.o     kernel/ktest.c	
-	gcc $(CFLAGS) -o kernel/ipc.o       kernel/ipc.c	
-	gcc $(CFLAGS) -o kernel/kernel.o    kernel/kernel.c
-	ld -m elf_i386 -s -Ttext 0x30400 -o $@ kernel/kernel_entry.o kernel/klib.o \
-	kernel/global.o kernel/interrupt.o kernel/proc.o kernel/clock.o \
-	kernel/phys_mem.o kernel/virt_mem.o kernel/screen.o kernel/keyboard.o \
-	kernel/tty.o kernel/ktest.o kernel/ipc.o kernel/kernel.o
+	gcc $(C_FLAGS) -o kernel/klib.o      kernel/klib.c
+	gcc $(C_FLAGS) -o kernel/global.o    kernel/global.c
+	gcc $(C_FLAGS) -o kernel/interrupt.o kernel/interrupt.c
+	gcc $(C_FLAGS) -o kernel/proc.o      kernel/proc.c
+	gcc $(C_FLAGS) -o kernel/clock.o     kernel/clock.c
+	gcc $(C_FLAGS) -o kernel/memory.o    kernel/memory.c
+	gcc $(C_FLAGS) -o kernel/phys_mem.o  kernel/phys_mem.c
+	gcc $(C_FLAGS) -o kernel/virt_mem.o  kernel/virt_mem.c
+	gcc $(C_FLAGS) -o kernel/keyboard.o  kernel/keyboard.c
+	gcc $(C_FLAGS) -o kernel/screen.o    kernel/screen.c
+	gcc $(C_FLAGS) -o kernel/string.o    kernel/string.c
+	gcc $(C_FLAGS) -o kernel/assert.o    kernel/assert.c
+	gcc $(C_FLAGS) -o kernel/vsprintf.o  kernel/vsprintf.c
+	gcc $(C_FLAGS) -o kernel/kio.o       kernel/kio.c
+	gcc $(C_FLAGS) -o kernel/tty.o       kernel/tty.c
+	gcc $(C_FLAGS) -o kernel/ktest.o     kernel/ktest.c	
+	gcc $(C_FLAGS) -o kernel/ipc.o       kernel/ipc.c	
+	gcc $(C_FLAGS) -o kernel/hd.o        kernel/hd.c	
+	gcc $(C_FLAGS) -o kernel/kernel.o    kernel/kernel.c
+	ld -m elf_i386 -s -Ttext 0x30400 -o $@ kernel/kernel_entry.o $(C_OBJS)
 	
 #kernel/kernel.bin: kernel/kernel_entry.o kernel/kernel.o ${OBJ}
 #	ld -m elf_i386 -Ttext 0x1000 --oformat binary -o $@  $^ 
