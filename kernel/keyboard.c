@@ -1,3 +1,4 @@
+#include "keyboard.h"
 #include "const.h"
 #include "types.h"
 #include "ktypes.h"
@@ -6,8 +7,6 @@
 #include "ke_asm_utils.h"
 
 #include "keymap.h"
-#include "keyboard.h"
-#include "keyboard.h"
 #include "tty.h"
 
 // keyboard buffer, buffering scan code from 8042 keyboard controller

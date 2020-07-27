@@ -10,13 +10,17 @@
 // TODO: replace externs with header inclusion
 extern void task_tty();
 extern void task_sys();
+extern void task_hd();
+extern void task_fs();
 
 // task stack is a mem area divided into MAX_TASK_NUM small areas
 // each small area used as stack for a process/task
 char                task_stack[STACK_SIZE_TOTAL];
 struct task         task_table[NR_TASKS]={ 
 						{task_tty, STACK_SIZE_TTY,   "task_tty"  },
-						{task_sys, STACK_SIZE_SYS,   "task_sys"  }						
+						{task_sys, STACK_SIZE_SYS,   "task_sys"  },
+						{task_hd,  STACK_SIZE_HD,    "task_hd"   },
+						{task_fs,  STACK_SIZE_FS,    "task_fs"   }
 					};
 struct task         user_proc_table[NR_PROCS]={ 					
 						{test_a,   STACK_SIZE_TESTA, "TestA"},
@@ -108,10 +112,15 @@ PUBLIC void init_proc_table(){
 	proc_table[1].ticks = proc_table[1].priority = 5;	
 	proc_table[2].ticks = proc_table[2].priority = 5;	
 	proc_table[3].ticks = proc_table[3].priority = 5;	
+	proc_table[4].ticks = proc_table[4].priority = 5;	
+	proc_table[5].ticks = proc_table[5].priority = 5;	
+	proc_table[6].ticks = proc_table[5].priority = 5;	
 
 	proc_table[0].tty_idx = 0;
-	proc_table[1].tty_idx = 0; // proc_table[0] is system task, no need terminal
-	proc_table[2].tty_idx = 0;
+	proc_table[1].tty_idx = 1; 
+	proc_table[2].tty_idx = 1;
 	proc_table[3].tty_idx = 1;
 	proc_table[4].tty_idx = 1;
+	proc_table[5].tty_idx = 1;
+	proc_table[6].tty_idx = 1;
 }

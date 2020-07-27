@@ -1,4 +1,5 @@
 bochsrc.bxrc
+80m.img
 kernel/*.o
 kernel/*.bin
 boot/*.o

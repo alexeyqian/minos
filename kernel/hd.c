@@ -20,7 +20,7 @@ PRIVATE void hd_handler(){
 PRIVATE void init_hd(){
     // get the numbe of drives from the BIOS data area
     uint8_t *p_nr_drives = (uint8_t*)(0x475);
-    printl("number of drives: %d. \n", *p_nr_drives);
+    printf("number of drives: %d. \n", *p_nr_drives);
     assert(*p_nr_drives);
 
     put_irq_handler(AT_WINI_IRQ, hd_handler);
@@ -66,6 +66,7 @@ PRIVATE void interrupt_wait(){
 
 // <ring 1>
 PRIVATE void print_identify_info(uint16_t* hdinfo){
+    printf(">>> print identify info\n");
     int i, k;
 	char s[64];
 
@@ -100,6 +101,7 @@ PRIVATE void print_identify_info(uint16_t* hdinfo){
 
 // <ring 0> get the disk information
 PRIVATE void hd_identify(int drive){
+    printf(">>> in hd_identify () \n");
     struct hd_cmd cmd;
     cmd.device = MAKE_DEVICE_REG(0, drive, 0);
     cmd.command = ATA_IDENTIFY;
@@ -114,9 +116,11 @@ PUBLIC void task_hd(){
     init_hd();
     while(1){
         send_recv(RECEIVE, ANY, &msg);
+        printf(">>> message receive passed.");
         int src = msg.source;
         switch(msg.type){
             case DEV_OPEN:
+                printf("receive message DEV_OPEN");
                 hd_identify(0);
                 break;
             default:

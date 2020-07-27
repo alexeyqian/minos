@@ -11,7 +11,21 @@ PUBLIC void delay(int milli_sec){
     while(((get_ticks() - t) * 1000 / HZ) < milli_sec) {}
 }
 
-PRIVATE void clock_handler(int irq);
+PRIVATE void clock_handler(int irq){
+	//kprint("[");
+
+	ticks++;
+	p_proc_ready->ticks--;
+
+	if(k_reenter != 0){ // interrupt re-enter
+		//kprint("!]");
+		return;
+	}
+
+	//if (p_proc_ready->ticks > 0) return;
+	schedule(); 
+	//kprint("]");
+}
 
 PUBLIC void enable_clock(){ // init 8253 PIT
 	out_byte(TIMER_MODE, RATE_GENERATOR);
@@ -40,22 +54,6 @@ PUBLIC void schedule(){
 			for(p = proc_table; p < proc_table + NR_TASKS + NR_PROCS; p++)
 				if (p->p_flags == 0)p->ticks = p->priority;
 	}
-}
-
-PRIVATE void clock_handler(int irq){
-	//kprint("[");
-
-	ticks++;
-	p_proc_ready->ticks--;
-
-	if(k_reenter != 0){ // interrupt re-enter
-		//kprint("!]");
-		return;
-	}
-
-	//if (p_proc_ready->ticks > 0) return;
-	schedule(); 
-	//kprint("]");
 }
 /*
 // round robin version of scheduler

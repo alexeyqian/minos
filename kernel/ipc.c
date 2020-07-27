@@ -57,7 +57,7 @@ PRIVATE int deadlock(int src, int dest)
 }
 
 
-// ring 0, send a message to the dest proc.
+// <ring 0> send a message to the dest proc.
 // if the dest is blocked waiting for the message, 
 // copy the message to it and unlock dest.
 // otherwise the caller will be blocked and appended to the dest's sending queue.
@@ -88,6 +88,7 @@ PRIVATE int msg_send(struct proc* current, int dest, MESSAGE* m){
         assert(p_dest->p_msg == 0);
         assert(p_dest->p_recvfrom == NO_TASK);
         assert(p_dest->p_sendto == NO_TASK);
+        
         assert(sender->p_flags == 0);
         assert(sender->p_msg == 0);
         assert(sender->p_recvfrom == NO_TASK);
@@ -120,7 +121,7 @@ PRIVATE int msg_send(struct proc* current, int dest, MESSAGE* m){
     return 0;
 }
 
-//ring 0, try to get a message from the src proc.
+// <ring 0> try to get a message from the src proc.
 // if the src is blocked sending the message, 
 // copy the message from it and unlock src.
 // Otherwise the caller will be blocked.
@@ -166,6 +167,7 @@ PRIVATE int msg_receive(struct proc* current, int src, MESSAGE* m){
 			assert(p_who_wanna_recv->p_recvfrom == NO_TASK);
 			assert(p_who_wanna_recv->p_sendto == NO_TASK);
 			assert(p_who_wanna_recv->q_sending != 0);
+
 			assert(p_from->p_flags == SENDING);
 			assert(p_from->p_msg != 0);
 			assert(p_from->p_recvfrom == NO_TASK);
@@ -194,6 +196,7 @@ PRIVATE int msg_receive(struct proc* current, int src, MESSAGE* m){
 			assert(p_who_wanna_recv->p_recvfrom == NO_TASK);
 			assert(p_who_wanna_recv->p_sendto == NO_TASK);
 			assert(p_who_wanna_recv->q_sending != 0);
+
 			assert(p_from->p_flags == SENDING);
 			assert(p_from->p_msg != 0);
 			assert(p_from->p_recvfrom == NO_TASK);
@@ -356,7 +359,7 @@ PUBLIC int send_recv(int function, int src_dest, MESSAGE* p_msg){
                 ret = sendrec(RECEIVE, src_dest, p_msg);
             break;
         case SEND:
-        case RECEIVE:
+        case RECEIVE:            
             ret = sendrec(function, src_dest, p_msg);
             break;
         default:
@@ -403,8 +406,8 @@ PUBLIC void inform_int(int task_nr){
 		((p->p_recvfrom == INTERRUPT) || (p->p_recvfrom == ANY))) {
 		p->p_msg->source = INTERRUPT;
 		p->p_msg->type = HARD_INT;
-		p->p_msg = 0; // TODO: ??
-		p->has_int_msg = 0; // ??
+		p->p_msg = 0; 
+		p->has_int_msg = 0; 
 		p->p_flags &= ~RECEIVING; 
 		p->p_recvfrom = NO_TASK;
 		assert(p->p_flags = 0);

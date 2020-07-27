@@ -251,14 +251,14 @@ struct hd_info
 /***************/
 /* DEFINITIONS */
 /***************/
-#define	HD_TIMEOUT		10000	/* in millisec */
+#define	HD_TIMEOUT		        10000	/* in millisec */
 #define	PARTITION_TABLE_OFFSET	0x1BE
-#define ATA_IDENTIFY		0xEC
-#define ATA_READ		0x20
-#define ATA_WRITE		0x30
+#define ATA_IDENTIFY		    0xEC
+#define ATA_READ		        0x20
+#define ATA_WRITE		        0x30
 /* for DEVICE register. */
-#define	MAKE_DEVICE_REG(lba,drv,lba_highest) (((lba) << 6) |		\
-					      ((drv) << 4) |		\
+#define	MAKE_DEVICE_REG(lba,drv,lba_highest) (((lba) << 6) | \
+					      ((drv) << 4) | \
 					      (lba_highest & 0xF) | 0xA0)
 
 

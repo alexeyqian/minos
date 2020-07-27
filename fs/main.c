@@ -1,6 +1,10 @@
+#include "fs.h"
 #include "const.h"
 #include "types.h"
+#include "ktypes.h"
+#include "string.h"
 #include "kio.h"
+#include "ipc.h"
 
 // <ring 1>
 PUBLIC void task_fs(){

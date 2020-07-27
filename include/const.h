@@ -148,7 +148,7 @@
 #define RED_CHAR		(MAKE_COLOR(BLUE, RED) | BRIGHT)
 
 // ========= TASKS ==================
-#define NR_TASKS 2
+#define NR_TASKS 4
 #define NR_PROCS 3
 #define NR_SYSCALLS 4
 
@@ -158,17 +158,19 @@
 #define TASK_TTY	    0
 #define TASK_SYS	    1
 #define TASK_HD		    2
-/* #define TASK_FS	3 */
+#define TASK_FS	        3
 /* #define TASK_MM	4 */
 #define ANY		       (NR_TASKS + NR_PROCS + 10)
 #define NO_TASK		   (NR_TASKS + NR_PROCS + 20)
 
-#define STACK_SIZE_TTY   0x8000  // TODO: consider appropriate stack size
-#define STACK_SIZE_SYS   0x8000
-#define STACK_SIZE_TESTA 0x8000
-#define STACK_SIZE_TESTB 0x8000
-#define STACK_SIZE_TESTC 0x8000
-#define STACK_SIZE_TOTAL STACK_SIZE_TTY+STACK_SIZE_SYS+STACK_SIZE_TESTA+STACK_SIZE_TESTB+STACK_SIZE_TESTC
+#define STACK_SIZE_TTY   0x4000  // TODO: consider appropriate stack size
+#define STACK_SIZE_SYS   0x4000
+#define STACK_SIZE_HD    0x4000
+#define STACK_SIZE_FS    0x4000
+#define STACK_SIZE_TESTA 0x4000
+#define STACK_SIZE_TESTB 0x4000
+#define STACK_SIZE_TESTC 0x4000
+#define STACK_SIZE_TOTAL STACK_SIZE_TTY+STACK_SIZE_SYS+STACK_SIZE_HD+STACK_SIZE_FS+STACK_SIZE_TESTA+STACK_SIZE_TESTB+STACK_SIZE_TESTC
 
 // ========= memory ===================
 /* Sizes of memory tables. The boot monitor distinguishes three memory areas, 

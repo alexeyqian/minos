@@ -3,24 +3,28 @@ Minimal OS Kernel, inspired by:
 - Yuan Yu (Tinix)
 - Andrew S. Tanenbaum (Minix3)
 - http://www.brokenthorn.com/Resources/OSDevIndex.html
+- osdev.org
 
 The best way to study OS is to make a simple one by yourself.
 
+# Compiler
+Create your own cross platfom gcc compiler: i686-elf-gcc, the hosted compiler is not working at this stage.
+Why do I need a cross compiler: https://wiki.osdev.org/Why_do_I_need_a_Cross_Compiler%3F
+implement your own memcmp, memcpy, memmove, memset and abort.
+int memcmp(const void*, const void*, size_t);
+void* memcpy(void* __restrict, const void* __restrict, size_t);
+void* memmove(void*, const void*, size_t);
+void* memset(void*, int, size_t);
+size_t strlen(const char*);
 # Bochs debug commands
-- lb 0x090100
-- info break
-- info cpu
-- s <n>
-- c
-- regs
-- sregs
-- cregs
-# Other tips
+lb 0x090100 / info break / info cpu / s <n> / c / regs / sregs / cregs /
+
+# Tools to check binary file
 od -t x1 -A n boot/boot_sect.bin
 hp -C filename
 
 # Boot Loader
-It's a two stage boot loader, also follow multiboot specification.
+It's a two stage boot loader, (not yet)) follow multiboot specification.
 ## Boot and loder info and error messages
 The reason for just print a leter on top left of screen to show the steps instead of meaningful message is to save size,
 since we only have 512 bytes in boot.
@@ -105,6 +109,10 @@ In future, might need to find a better solution to remove this 400 thing, to mak
 ?? need reseserve some space (0x400) for elf header and program headers/section headers.
 ?? above statements are my guess, might wrong, need to confirm in future.
 ## Kernel Initialize Process
+- replace gdt from loader to kernel.
+- setup idt
+- setup clock handler
+- setup proc array for system tasks and user processes.
 ### Switch from Loader's GDT to Kernel's GDT
 
 ### Init IDT
@@ -144,6 +152,8 @@ Whenever a system call occurs, the CPU gets the SS0 and ESP0-value in its TSS an
 
 
 # File System
+## Hard drive driver
+
 ## File System Layers
 
 

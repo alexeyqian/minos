@@ -12,7 +12,7 @@
 #define REG_SCREEN_CTRL 0x3D4
 #define REG_SCREEN_DATA 0X3D5
 
-PRIVATE uint32_t _cursor = 2; // TODO: very weired issue: cannot set _curror = 0
+PRIVATE uint32_t _cursor = 0;
 
 /*
 PRIVATE int get_cursor(){    
@@ -69,7 +69,7 @@ PRIVATE int scroll(int cursor_offset){
     return cursor_offset;
 }
 
-PRIVATE void kprint_char(char c, int row, int col, char attribute){
+PRIVATE void kprint_char(unsigned char c, int row, int col, char attribute){
     unsigned char* vidmem = (unsigned char *) VIDEO_ADDRESS;
     if(!attribute)
         attribute = WHITE_ON_BLACK;

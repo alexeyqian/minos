@@ -4,7 +4,7 @@
 #include "string.h"
 #include "klib.h"
 
-PUBLIC int vsprintf_ism(char *buf, const char *fmt, va_list args){
+PUBLIC int vsprintf_sim(char *buf, const char *fmt, va_list args){
 	char* p;
 	char tmp[256];
 	va_list p_next_arg = args;
@@ -16,10 +16,14 @@ PUBLIC int vsprintf_ism(char *buf, const char *fmt, va_list args){
 			switch(*fmt){
 				case 'd':
 					num = *((int*)p_next_arg);					
+					if (num < 0) {
+						num = num * (-1);
+						*p++ = '-';
+					}
+					itoa(num, tmp, 10);			
+					p_next_arg += 4;
 					break;
 				case 'x':
-					//memset(q, 0, sizeof(tmp));									
-					//i2a(*((int*)p_next_arg), 16, &q);					
 					num = *((int*)p_next_arg);
 					itoa(num, tmp, 16);
 					strcpy(p, tmp);
