@@ -1,6 +1,8 @@
+#include "screen.h"
 #include "types.h"
 #include "string.h"
 #include "vsprintf.h"
+#include "global.h"
 #include "klib.h"
 //#include "ke_asm_utils.h"
 
@@ -11,8 +13,6 @@
 // Screen device I/O ports
 #define REG_SCREEN_CTRL 0x3D4
 #define REG_SCREEN_DATA 0X3D5
-
-PRIVATE uint32_t _cursor = 0;
 
 /*
 PRIVATE int get_cursor(){    
@@ -25,7 +25,7 @@ PRIVATE int get_cursor(){
 }*/
 
 PRIVATE uint32_t get_cursor(){    
-    return _cursor;
+    return disp_pos;
 }
 
 /*
@@ -40,7 +40,7 @@ PRIVATE void set_cursor(int offset){
 }*/
 
 PRIVATE void set_cursor(uint32_t offset){
-    _cursor = offset;
+    disp_pos = offset;
 }
 
 PRIVATE int get_screen_offset(int row, int col){

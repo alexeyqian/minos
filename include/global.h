@@ -27,5 +27,8 @@ EXTERN struct proc         proc_table[NR_TASKS + NR_PROCS]; // contains array of
 
 EXTERN pf_irq_handler_t    irq_table[IRQ_NUM];
 EXTERN syscall_t           syscall_table[NR_SYSCALLS];
+// TODO: move
+EXTERN struct dev_drv_map  dd_map[];
 
+EXTERN uint32_t disp_pos; // for screen.c and tty.c
 #endif

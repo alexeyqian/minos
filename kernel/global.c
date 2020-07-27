@@ -4,9 +4,11 @@
 #include "types.h"
 #include "ktypes.h"
 #include "syscall.h"
+#include "fs.h"
 
 int ticks;
 int k_reenter;
+uint32_t disp_pos = 0;
 
 uint8_t			    gdt_ptr[6];	               
 struct descriptor   gdt[GDT_SIZE];
@@ -19,3 +21,13 @@ struct proc         proc_table[NR_TASKS + NR_PROCS];  // contains array of proce
 
 pf_irq_handler_t    irq_table[IRQ_NUM];
 syscall_t           syscall_table[NR_SYSCALLS] = {sys_get_ticks, sys_printx, sys_write, sys_sendrec};
+
+// remember to modify include/const.h if the order is changed
+PUBLIC struct dev_drv_map dd_map[] = {
+    {INVALID_DRIVER}, // unused
+    {INVALID_DRIVER}, // reserved for floppy driver
+    {INVALID_DRIVER}, // reserved for cdrom
+    {TASK_HD},        // hard disk: driver is task_hd
+    {TASK_TTY},       // tty
+    {INVALID_DRIVER}  // reserved for scsi disk driver
+};

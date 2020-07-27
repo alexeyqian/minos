@@ -410,7 +410,7 @@ PUBLIC void inform_int(int task_nr){
 		p->has_int_msg = 0; 
 		p->p_flags &= ~RECEIVING; 
 		p->p_recvfrom = NO_TASK;
-		assert(p->p_flags = 0);
+		assert(p->p_flags == 0);
 		unblock(p);
 
 		assert(p->p_flags == 0);

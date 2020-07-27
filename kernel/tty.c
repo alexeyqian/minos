@@ -6,7 +6,6 @@
 #include "syscall.h"
 #include "ke_asm_utils.h"
 #include "klib.h"
-
 #include "keyboard.h"
 
 PRIVATE TTY tty_table[NR_CONSOLES];
@@ -15,7 +14,6 @@ PRIVATE TTY tty_table[NR_CONSOLES];
 
 PRIVATE CONSOLE console_table[NR_CONSOLES];
 PRIVATE int current_console_idx = 0;
-PRIVATE int _disp_pos;
 
 // ==== console ===========
 
@@ -55,8 +53,8 @@ PRIVATE void init_console(CONSOLE *p_console, int idx)
     p_console->cursor = p_console->original_addr;
     if (idx == 0)
     {   // first console use current position
-        p_console->cursor = _disp_pos / 2;
-        _disp_pos = 0; 
+        p_console->cursor = disp_pos / 2; // disp_pos comes from screen.h TODO: move
+        disp_pos = 0; 
     }
     else
     {
@@ -77,8 +75,23 @@ PRIVATE void tty_set_video_start_addr(uint32_t addr)
     enable_int();
 }
 
-PRIVATE void scroll_screen(CONSOLE *p_con, int direction)
+
+PRIVATE bool_t is_current_console(CONSOLE *p_con)
 {
+    return (p_con == &console_table[current_console_idx]);
+}
+
+PRIVATE void flush(CONSOLE* p_con)
+{
+	if (is_current_console(p_con)) {
+		tty_set_cursor(p_con->cursor);
+		tty_set_video_start_addr(p_con->current_start_addr);
+	}
+}
+
+PRIVATE void scroll_screen(CONSOLE *p_con, int direction)
+{   if(!is_current_console(p_con)) return;
+
     if (direction == SCROLL_SCREEN_UP)
     {
         if (p_con->current_start_addr > p_con->original_addr){
@@ -93,8 +106,7 @@ PRIVATE void scroll_screen(CONSOLE *p_con, int direction)
     }
     else{}
 
-    tty_set_video_start_addr(p_con->current_start_addr);
-    tty_set_cursor(p_con->cursor);
+    flush(p_con);
 }
 
 PUBLIC void tty_output_char(CONSOLE *p_con, char ch)
@@ -128,10 +140,10 @@ PUBLIC void tty_output_char(CONSOLE *p_con, char ch)
             break;
     }
 
-    if (p_con->cursor >= p_con->current_start_addr + SCREEN_SIZE)
+    if (p_con->cursor >= p_con->current_start_addr + SCREEN_SIZE) // TODO: if -> while?
        scroll_screen(p_con, SCROLL_SCREEN_DOWN);
 
-    tty_set_cursor(p_con->cursor);
+    flush(p_con);
 }
 
 PRIVATE void select_console(int con_idx)
@@ -140,13 +152,7 @@ PRIVATE void select_console(int con_idx)
         return; // invalid number
 
     current_console_idx = con_idx;
-    tty_set_cursor(console_table[con_idx].cursor);
-    tty_set_video_start_addr(console_table[con_idx].current_start_addr);
-}
-
-PRIVATE bool_t is_current_console(CONSOLE *p_con)
-{
-    return (p_con == &console_table[current_console_idx]);
+    flush(&console_table[con_idx]);
 }
 
 // keyboard interrupt handler put keys into keyboard buffer

@@ -46,7 +46,7 @@ void restart();
 void kmain();
 
 void kinit(){
-	//kclear_screen();
+	kclear_screen();
     kprint(">>> kinit begin ...\n");
 	kprintf(">>> kprintf: %x %x %d\n", 32, 64, 200);
 	//printf(">>> printf: %x %d\n", 64, 200); cannot use printf here
@@ -63,7 +63,8 @@ void kinit(){
 }
 
 void kmain(){ 
-	kprint(">>> kmain begin ... \n");		
+	kprint(">>> kmain begin ... \n");	// kprint SHOULD NOT BE USED ANYMORE AFTER THIS
+	
 	enable_clock(); 	
 	restart(); // pretenting a schedule happend to start a process.
 	while(1){}

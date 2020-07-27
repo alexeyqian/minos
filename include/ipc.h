@@ -4,7 +4,7 @@
 #define SEND    1
 #define RECEIVE 2
 #define BOTH    3
-#define RETVAL u.m3.m3i1
+
 #define SENDING   0x02	/* set when proc trying to send */
 #define RECEIVING 0x04	/* set when proc trying to recv */
 

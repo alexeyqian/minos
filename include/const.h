@@ -157,7 +157,7 @@
 #define INTERRUPT	    -10
 #define TASK_TTY	    0
 #define TASK_SYS	    1
-#define TASK_HD		    2
+#define TASK_HD		    2 // hd driver
 #define TASK_FS	        3
 /* #define TASK_MM	4 */
 #define ANY		       (NR_TASKS + NR_PROCS + 10)
@@ -201,6 +201,7 @@
 #define MAG_CH_PANIC   '\002'
 #define MAG_CH_ASSERT  '\003'
 
+// ======== HD related constants ==================
 #define	DIOCTL_GET_GEO	1
 
 /* Hard Drive */
@@ -213,7 +214,7 @@
 #define	DEV_FLOPPY		1
 #define	DEV_CDROM		2
 #define	DEV_HD			3
-#define	DEV_CHAR_TTY		4
+#define	DEV_CHAR_TTY    4
 #define	DEV_SCSI		5
 /* make device number from major and minor numbers */
 #define	MAJOR_SHIFT		8
@@ -222,19 +223,10 @@
 #define	MAJOR(x)		((x >> MAJOR_SHIFT) & 0xFF)
 #define	MINOR(x)		(x & 0xFF)
 
-/* device numbers of hard disk */
-#define	MINOR_hd1a		0x10
-#define	MINOR_hd2a		0x20
-#define	MINOR_hd2b		0x21
-#define	MINOR_hd3a		0x30
-#define	MINOR_hd4a		0x40
-
-#define	ROOT_DEV		MAKE_DEV(DEV_HD, MINOR_BOOT)	/* 3, 0x21 */
-
 #define	INVALID_INODE		0
-#define	ROOT_INODE		1
+#define	ROOT_INODE          1
 
-#define	MAX_DRIVES		2
+#define	MAX_DRIVES          2
 #define	NR_PART_PER_DRIVE	4
 #define	NR_SUB_PER_PART		16
 #define	NR_SUB_PER_DRIVE	(NR_SUB_PER_PART * NR_PART_PER_DRIVE)
@@ -250,12 +242,23 @@
 
 #define	MAX_SUBPARTITIONS	(NR_SUB_PER_DRIVE * MAX_DRIVES)
 
+/* device numbers of hard disk */
+#define	MINOR_hd1a		0x10
+#define MINOR_hd2a      (MINOR_hd1a + NR_SUB_PER_PART)
+//#define	MINOR_hd2a		0x20
+//#define	MINOR_hd2b		0x21
+//#define	MINOR_hd3a		0x30
+//#define	MINOR_hd4a		0x40
+
+#define MINOR_BOOT MINOR_hd2a // TODO: move to config.h
+#define	ROOT_DEV		MAKE_DEV(DEV_HD, MINOR_BOOT)	/* 3, 0x21 */
+
 #define	P_PRIMARY	0
 #define	P_EXTENDED	1
 
 #define ORANGES_PART	0x99	/* Orange'S partition */
-#define NO_PART		0x00	/* unused entry */
-#define EXT_PART	0x05	/* extended partition */
+#define NO_PART	    	0x00	/* unused entry */
+#define EXT_PART    	0x05	/* extended partition */
 
 #define	NR_FILES	64
 #define	NR_FILE_DESC	64	/* FIXME */
