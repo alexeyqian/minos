@@ -106,6 +106,7 @@
 #define	PRINTER_IRQ	    7
 #define	AT_WINI_IRQ	   14	/* at winchester */
 
+
 //  =================== AT keyboard: 8042 ports ==============
 #define	KB_DATA		0x60	//I/O port for keyboard data
 					        //Read : Read Output Buffer 
@@ -260,7 +261,7 @@
 #define NO_PART	    	0x00	/* unused entry */
 #define EXT_PART    	0x05	/* extended partition */
 
-#define	NR_FILES	64
+#define	NR_FILES	64 // max files a proc can open at same time
 #define	NR_FILE_DESC	64	/* FIXME */
 #define	NR_INODE	64	/* FIXME */
 #define	NR_SUPER_BLOCK	8
@@ -278,5 +279,9 @@
 			 (((m) & I_TYPE_MASK) == I_CHAR_SPECIAL))
 
 #define	NR_DEFAULT_FILE_SECTS	2048 /* 2048 * 512 = 1MB */
+
+// some function MICROS
+#define	max(a,b)	((a) > (b) ? (a) : (b))
+#define	min(a,b)	((a) < (b) ? (a) : (b))
 
 #endif

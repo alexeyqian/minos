@@ -3,9 +3,15 @@
 #include "kio.h"
 
 void test_a(){	
+	int fd = open("/blah", O_CREATE);
+	printf("fd: %d\n", fd);
+	close(fd);
+	spin("test a");
+	
 	int i = 100;	
 	while(1){	
-		printf("<A: %x %d>", get_ticks(), i++); 
+		//printf("<A: %x %d>", get_ticks(), i++); 
+		
 		delay(5000);
 	}
 }
@@ -13,7 +19,7 @@ void test_a(){
 void test_b(){
 	int i = 200;
 	while(1){	
-		printf("<B: %x %d>", get_ticks2(), i++); 
+		//printf("<B: %x %d>", get_ticks2(), i++); 
 		delay(5000);
 	}
 }

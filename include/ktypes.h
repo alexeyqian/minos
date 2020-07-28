@@ -111,7 +111,14 @@ typedef struct s_message{
 
 enum msgtype{
 	HARD_INT = 1,
-	GET_TICKS2,
+	GET_TICKS2, // sys task
+
+	// fs
+	OPEN, CLOSE, READ, WRITE, LSEEK, STAT, UNLINK,
+
+	// tty, sys, fs, mm, etc
+	SYSCALL_RET,
+
     /* message type for drivers */
 	DEV_OPEN = 1001,
 	DEV_CLOSE,
@@ -120,19 +127,19 @@ enum msgtype{
 	DEV_IOCTL
 };
 
-/* macros for messages */
-/* #define	FD		u.m3.m3i1 */
-/* #define	PATHNAME	u.m3.m3p1 */
-/* #define	FLAGS		u.m3.m3i1 */
-/* #define	NAME_LEN	u.m3.m3i2 */
+// macros for messages 
+#define	FD		    u.m3.m3i1 
+#define	PATHNAME	u.m3.m3p1 
+#define	FLAGS		u.m3.m3i1 
+#define	NAME_LEN	u.m3.m3i2 
 #define	CNT		    u.m3.m3i2
 #define	REQUEST		u.m3.m3i2
 #define	PROC_NR		u.m3.m3i3
 #define	DEVICE		u.m3.m3i4
 #define	POSITION	u.m3.m3l1
-#define	BUF		u.m3.m3p2
-/* #define	OFFSET		u.m3.m3i2 */
-/* #define	WHENCE		u.m3.m3i3 */
+#define	BUF	    	u.m3.m3p2
+#define	OFFSET		u.m3.m3i2 
+#define	WHENCE		u.m3.m3i3 
 
 /* #define	PID		u.m3.m3i2 */
 /* #define	STATUS		u.m3.m3i1 */
@@ -160,6 +167,9 @@ typedef struct stack_frame{ // proc_ptr points to here
 	uint32_t	esp;     	/*  ┃						│			*/
 	uint32_t	ss;         /*  ┛   	                |High Address */
 }stack_frame_s;
+
+
+struct file_desc;
 
 // here is how it looks like in memory
 // left: low addr, right: high addr
@@ -193,6 +203,7 @@ typedef struct proc{
 	struct proc* q_sending; //queue of procs sending message to this proc
 	struct proc* next_sending; // next proc in the sending queue
 	int 				tty_idx;
+	struct file_desc* filp[NR_FILES];
 }proc_s;
 
 // The paging has made LDT almost obsolete, and there is no longer need for multiple LDT descriptors.

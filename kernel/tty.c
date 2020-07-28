@@ -140,7 +140,7 @@ PUBLIC void tty_output_char(CONSOLE *p_con, char ch)
             break;
     }
 
-    if (p_con->cursor >= p_con->current_start_addr + SCREEN_SIZE) // TODO: if -> while?
+    while (p_con->cursor >= p_con->current_start_addr + SCREEN_SIZE) // TODO: if <-> while?
        scroll_screen(p_con, SCROLL_SCREEN_DOWN);
 
     flush(p_con);
@@ -268,6 +268,7 @@ PRIVATE void process_command_key(TTY *p_tty, uint32_t combined_key)
     case F12:
         if ((combined_key & FLAG_ALT_L) || (combined_key & FLAG_ALT_R))
         { /* Alt + F1~F12 */
+            kprint("alt+fn here");
             select_console(raw_code - F1);
         }
         break;

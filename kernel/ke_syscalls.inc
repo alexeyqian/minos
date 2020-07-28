@@ -1,7 +1,7 @@
 INT_VECTOR_SYSCALL  equ 0x90
 IDX_GET_TICKS       equ 0
 IDX_PRINTX          equ 1
-IDX_WRITE           equ 2
+IDX_WRITE           equ 2 ; not used
 IDX_SENDREC         equ 3
 
 [bits 32]
@@ -37,13 +37,13 @@ printx:
     int INT_VECTOR_SYSCALL
     ret
 
-global write
-write:
-    mov eax, IDX_WRITE
-    mov ecx, [esp + 4]
-    mov edx, [esp + 8]
-    int INT_VECTOR_SYSCALL
-    ret
+;global write
+;write:
+;    mov eax, IDX_WRITE
+;    mov ecx, [esp + 4]
+;    mov edx, [esp + 8]
+;    int INT_VECTOR_SYSCALL
+;    ret
 
 global sendrec
 sendrec:

@@ -31,4 +31,8 @@ EXTERN syscall_t           syscall_table[NR_SYSCALLS];
 EXTERN struct dev_drv_map  dd_map[];
 
 EXTERN uint32_t disp_pos; // for screen.c and tty.c
+
+// fs
+EXTERN MESSAGE fs_msg; 
+EXTERN struct proc* pcaller;
 #endif
