@@ -1,4 +1,6 @@
 #include "fs.h"
+#include "./fs_open.h"
+#include "./fs_shared.h"
 #include "const.h"
 #include "types.h"
 #include "ktypes.h"
@@ -192,7 +194,7 @@ PRIVATE void init_fs(){
     // init super_black[]
     struct super_block* sb = super_block;
     for(; sb < &super_block[NR_SUPER_BLOCK]; sb++)
-        sb->db_dev = NO_DEV;
+        sb->sb_dev = NO_DEV;
 
     // open device - hard disk
     MESSAGE driver_msg;

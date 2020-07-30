@@ -1,4 +1,5 @@
 #include "fs.h"
+#include "./fs_shared.h"
 #include "const.h"
 #include "types.h"
 #include "ktypes.h"
@@ -108,7 +109,7 @@ PUBLIC int search_file(char* path){
     if(filename[0] == 0) return dir_inode->i_num;
 
     // search the dir for the file
-    int dir_blk0_br = dir_inode->i_start_sect;
+    int dir_blk0_nr = dir_inode->i_start_sect;
     int nr_dir_blks = (dir_inode->i_size + SECTOR_SIZE -1)/SECTOR_SIZE;
     int nr_dir_entries = dir_inode->i_size / DIR_ENTRY_SIZE;
 
@@ -157,7 +158,7 @@ PUBLIC int search_file(char* path){
  * @return Zero if success, otherwise the pathname is not valid.
  */
 // TODO: re-arrange out params order
-PUBLIC int strip_path(char* filename, const char* path_name, struct inode** ppinode){
+PUBLIC int strip_path(char* filename, const char* pathname, struct inode** ppinode){
     const char* s = pathname;
     char* t = filename;
 

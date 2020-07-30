@@ -1,10 +1,14 @@
 #include "fs.h"
+#include "./fs_open.h"
+#include "./fs_shared.h"
 #include "const.h"
 #include "types.h"
 #include "ktypes.h"
 #include "string.h"
 #include "global.h"
 #include "klib.h"
+#include "kio.h"
+#include "assert.h"
 #include "ipc.h"
 
 /** Decrease the reference number of a slot in inode_table
@@ -46,7 +50,7 @@ PRIVATE int alloc_imap_bit(int dev){
     struct super_block * sb = get_super_block(dev);
 
     for(i = 0; i < sb->nr_imap_sects; i++){
-        RD_SECT(dev, ima_blk0_nr + i);
+        RD_SECT(dev, imap_blk0_nr + i);
 
         for(j = 0; j < SECTOR_SIZE; j++){
             // skip 11111111 bytes
@@ -60,7 +64,7 @@ PRIVATE int alloc_imap_bit(int dev){
             fsbuf[j] |= (1 << k);
 
             // write the bit to imap
-            WR_SECT(dev, impa_blk0_nr + i);
+            WR_SECT(dev, imap_blk0_nr + i);
             break;
         }
 
@@ -288,7 +292,7 @@ PUBLIC int do_open(){
         }else if(imode == I_DIRECTORY){
             assert(pin->i_num == ROOT_INODE);
         }else{
-            assert(pin->i_imode == I_REGULAR);
+            assert(pin->i_mode == I_REGULAR);
         }
 
     }else{
@@ -362,3 +366,22 @@ PUBLIC int open(const char* pathname, int flags){
 
     return msg.FD;
 }
+
+/**
+ * Close a file descriptor.
+ * 
+ * @param fd  File descriptor.
+ * 
+ * @return Zero if successful, otherwise -1.
+ *****************************************************************************/
+PUBLIC int close(int fd)
+{
+	MESSAGE msg;
+	msg.type   = CLOSE;
+	msg.FD     = fd;
+
+	send_recv(BOTH, TASK_FS, &msg);
+
+	return msg.RETVAL;
+}
+

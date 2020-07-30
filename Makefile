@@ -29,7 +29,8 @@ boot/boot.bin: boot/boot.asm
 boot/loader.bin: boot/loader.asm
 	nasm $< -f bin -I 'boot/' -o $@
 
-kernel/kernel.bin: $(C_SOURCES) fs/main.c $(C_HEADERS) 
+kernel/kernel.bin: $(C_SOURCES) $(C_HEADERS) \
+		fs/fs_main.c fs/fs_open.c fs/fs_shared.c fs/fs_shared.h fs/fs_open.h
 	nasm kernel/kernel_entry.asm -f elf32 -I 'kernel/' -o kernel/kernel_entry.o	
 	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/klib.o      kernel/klib.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/global.o    kernel/global.c
@@ -49,11 +50,14 @@ kernel/kernel.bin: $(C_SOURCES) fs/main.c $(C_HEADERS)
 	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/ktest.o     kernel/ktest.c	
 	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/ipc.o       kernel/ipc.c	
 	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/hd.o        kernel/hd.c	
-	$(CROSS_COMPILER) $(C_FLAGS) -o fs/fs.o            fs/main.c	
 	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/kernel.o    kernel/kernel.c
+	$(CROSS_COMPILER) $(C_FLAGS) -o fs/fs_main.o      fs/fs_main.c
+	$(CROSS_COMPILER) $(C_FLAGS) -o fs/fs_open.o      fs/fs_open.c
+	$(CROSS_COMPILER) $(C_FLAGS) -o fs/fs_shared.o    fs/fs_shared.c
 	#$(CROSS_COMPILER) -T linker.ld -o $@ -ffreestanding -nostdlib kernel/kernel_entry.o $(C_OBJS) fs.o -lgcc
-	ld -m elf_i386 -s -Ttext 0x30400 -nostdlib -o $@ kernel/kernel_entry.o $(C_OBJS) fs/fs.o
-	
+	ld -m elf_i386 -s -Ttext 0x30400 -nostdlib -o $@ kernel/kernel_entry.o $(C_OBJS) \
+		fs/fs_main.o fs/fs_open.o fs/fs_shared.o
+
 #kernel/kernel.bin: kernel/kernel_entry.o kernel/kernel.o ${OBJ}
 #	ld -m elf_i386 -Ttext 0x1000 --oformat binary -o $@  $^ 
 
@@ -64,4 +68,4 @@ kernel/kernel.bin: $(C_SOURCES) fs/main.c $(C_HEADERS)
 #	gcc -m32 -ffreestanding -fno-pie -c $< -o $@
 
 clean:	
-	@rm -rf os.img boot/*.o boot/*.bin kernel/*.o kernel/*.bin
+	@rm -rf os.img boot/*.o boot/*.bin kernel/*.o kernel/*.bin fs/*.o

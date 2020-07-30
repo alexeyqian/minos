@@ -3,7 +3,7 @@
 #include "kio.h"
 
 void test_a(){	
-	int fd = open("/blah", O_CREATE);
+	int fd = open("/blah", O_CREAT);
 	printf("fd: %d\n", fd);
 	close(fd);
 	spin("test a");

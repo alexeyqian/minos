@@ -7,6 +7,7 @@
 
 char* memset(char *dst, char val, int count);
 void memcpy(char* dst, const char* src, int size);
+int memcmp(const void * s1, const void *s2, int n);
 
 void reverse_str(char str[], int length);
 void strcpy(char* dst, const char* src);
