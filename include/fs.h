@@ -73,6 +73,8 @@ struct dir_entry{
 
 #define DIR_ENTRY_SIZE sizeof(struct dir_entry)
 
+int rw_sector(int io_type, int dev, uint64_t pos, int bytes, int proc_nr, void* buf);
+
 /**
  * Since all invocations of `rw_sector()' in FS look similar (most of the
  * params are the same), we use this macro to make code more readable.
@@ -81,6 +83,7 @@ struct dir_entry{
  * line matchs this emacs-style regex:
  * `rw_sector(\([-a-zA-Z0-9_>\ \*()+.]+,\)\{3\}\ *SECTOR_SIZE,\ *TASK_FS,\ *fsbuf)'
  */
+// TODO: add param buf to rplace global var: fsbuf
 #define RD_SECT(dev,sect_nr) rw_sector(DEV_READ, \
 				       dev,				\
 				       (sect_nr) * SECTOR_SIZE,		\
@@ -95,5 +98,12 @@ struct dir_entry{
 				       fsbuf);
 
 void task_fs();
-
+struct inode* get_inode(int dev, int num);
+int search_file(char* path);
+int strip_path(char* filename, const char* path_name, struct inode** ppinode);
+struct super_block* get_super_block(int dev);
+int open(const char* pathname, int flags);
+int do_open();
+int do_close();
+int do_lseek();
 #endif

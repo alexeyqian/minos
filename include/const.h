@@ -261,9 +261,9 @@
 #define NO_PART	    	0x00	/* unused entry */
 #define EXT_PART    	0x05	/* extended partition */
 
-#define	NR_FILES	64 // max files a proc can open at same time
+#define	NR_FILES	    64 // max files a proc can open at same time
 #define	NR_FILE_DESC	64	/* FIXME */
-#define	NR_INODE	64	/* FIXME */
+#define	NR_INODE	    64	/* FIXME */
 #define	NR_SUPER_BLOCK	8
 
 

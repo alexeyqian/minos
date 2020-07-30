@@ -31,3 +31,8 @@ PUBLIC struct dev_drv_map dd_map[] = {
     {TASK_TTY},       // tty
     {INVALID_DRIVER}  // reserved for scsi disk driver
 };
+
+// 6M-7M buffer for fs
+// TODO: rename to g_fs_buf
+PUBLIC uint8_t* fsbuf = (uint8_t*)0x600000;
+PUBLIC const int FSBUF_SIZE = 0x100000;

@@ -33,6 +33,13 @@ EXTERN struct dev_drv_map  dd_map[];
 EXTERN uint32_t disp_pos; // for screen.c and tty.c
 
 // fs
+EXTERN	struct inode * root_inode;
+EXTERN struct file_desc f_desc_table[NR_FILE_DESC];
+EXTERN struct inode inode_table[NR_INODE];
+EXTERN struct super_block super_block[NR_SUPER_BLOCK]; // TODO: rename to super_block_table
 EXTERN MESSAGE fs_msg; 
 EXTERN struct proc* pcaller;
+extern	uint8_t* fsbuf;
+extern	const int FSBUF_SIZE;
+
 #endif

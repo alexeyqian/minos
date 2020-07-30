@@ -9,37 +9,45 @@
 #include "ipc.h"
 #include "hd.h"
 
-// 6M-7M buffer for fs
-PRIVATE uint8_t* fsbuf = (uint8_t*)0x600000;
-PRIVATE const int FSBUF_SIZE = 0x100000;
-
-// <ring 1> r/w a sector via messageing 
-// io_type: DEV_READ or DEV_WRITE
-// dev: device number
-// pos: byte offset from/to where to r/w
-// bytes: r/w count in bytes
-// proc_nr: to whom the buffer belongs
-// buf: r/w buffer
-PUBLIC int rw_sector(int io_type, int dev, uint64_t pos, int bytes, int proc_nr, void* buf){
+PRIVATE void read_super_block(int dev){
+    int i;
     MESSAGE driver_msg;
-    driver_msg.type = io_type;
+
+    driver_msg.type = DEV_READ;
     driver_msg.DEVICE = MINOR(dev);
-    driver_msg.POSITION = pos;
-    driver_msg.BUF = buf;
-    driver_msg.CNT = bytes;
-    driver_msg.PROC_NR = proc_nr;
+    driver_msg.POSITION = SECTOR_SIZE * 1;
+    driver_msg.BUF = fsbuf;
+    driver_msg.CNT = SECTOR_SIZE;
+    driver_msg.PROC_NR = TASK_FS;
+
     assert(dd_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
     send_recv(BOTH, dd_map[MAJOR(dev)].driver_nr, &driver_msg);
-    return 0;
+
+    // find a free slot in super_block[]
+    for(i = 0; i < NR_SUPER_BLOCK; i++){
+        if(super_block[i].sb_dev == NO_DEV) break;
+    }
+
+    if(i == NR_SUPER_BLOCK) 
+        panic("super_block slots used up.\n");
+    
+    assert(i == 0); // currently we only use the 1st slot
+
+    struct super_block* psb = (struct super_block*)fsbuf;
+    super_block[i] = *psb; // TODO: copy data over ??
+    super_block[i].sb_dev = dev;
 }
 
-// <ring 1> 
-// write a super block to sector 1
-// create 3 special files: dev_tty0, dev_tty1, dev_tty2
-// create the inode map
-// create the sector map
-// create the inodes of the files
-// create /, the root directory
+/** <ring 1> 
+ * write a super block to sector 1
+ * create 3 special files: dev_tty0, dev_tty1, dev_tty2
+ * create the inode map
+ * create the sector map
+ * create the inodes of the files
+ * create /, the root directory
+ */
+// TODO: add param buf to replace global var fsbuf
+// TODO: remove global vars
 PRIVATE void mkfs(){
     MESSAGE driver_msg;
     int i, j;
@@ -169,7 +177,23 @@ PRIVATE void mkfs(){
     WR_SECT(ROOT_DEV, sb.n_1st_sect);    
 }
 
+// TODO: remove global vars
 PRIVATE void init_fs(){
+    int i;
+
+    // init f_desc_table[]
+    for(i = 0; i < NR_FILE_DESC; i++)
+        memset(&f_desc_table[i], 0, sizeof(struct file_desc));
+    
+    // init inode_table[]
+    for(i = 0; i < NR_INODE; i++)
+        memset(&inode_table[i], 0, sizeof(struct inode));
+
+    // init super_black[]
+    struct super_block* sb = super_block;
+    for(; sb < &super_block[NR_SUPER_BLOCK]; sb++)
+        sb->db_dev = NO_DEV;
+
     // open device - hard disk
     MESSAGE driver_msg;
     driver_msg.type = DEV_OPEN;
@@ -178,9 +202,17 @@ PRIVATE void init_fs(){
     send_recv(BOTH, dd_map[MAJOR(ROOT_DEV)].driver_nr, &driver_msg);
 
     mkfs();
+
+    // load super block of ROOT
+    read_super_block(ROOT_DEV);
+    sb = get_super_block(ROOT_DEV);
+    assert(sb->magic == MAGIC_V1);
+
+    root_inode = get_inode(ROOT_DEV, ROOT_INODE);
 }
 
 // <ring 1>
+// TODO: move pcaller out
 PUBLIC void task_fs(){
     printl(">>> task fs begins. \n");
     init_fs();
