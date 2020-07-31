@@ -1,17 +1,19 @@
 #include "string.h"
 #include "const.h"
 #include "types.h"
-
-PUBLIC char* memset(char* buf, char value, int size){
-    for(int i = 0; i < size; i++)
-        buf[i] = value;
+// @return pointer to buf
+PUBLIC void* memset(void* buf, int value, size_t size){
+    for(size_t i = 0; i < size; i++)
+        ((unsigned char*)buf)[i] = value;
         
     return buf;
 }
 
-PUBLIC void memcpy(char* dst, const char* src, int size){
-    for(int i = 0; i < size; i++)
-        dst[i] = src[i];    
+PUBLIC void* memcpy(void* dst, const void* src, size_t size){
+    for(size_t i = 0; i < size; i++)
+        ((unsigned char*)dst)[i] = ((unsigned char*)src)[i];    
+
+    return dst;
 }
 
 /**
@@ -19,13 +21,13 @@ PUBLIC void memcpy(char* dst, const char* src, int size){
  * 
  * @param s1  The 1st area.
  * @param s2  The 2nd area.
- * @param n   The first n bytes will be compared.
+ * @param size   The first n bytes will be compared.
  * 
  * @return  an integer less than, equal to, or greater than zero if the first
  *          n bytes of s1 is found, respectively, to be less than, to match,
  *          or  be greater than the first n bytes of s2.
  *****************************************************************************/
-PUBLIC int memcmp(const void * s1, const void *s2, int n)
+PUBLIC int memcmp(const void* s1, const void* s2, size_t size)
 {
 	if ((s1 == 0) || (s2 == 0)) { /* for robustness */
 		return (s1 - s2);
@@ -33,8 +35,8 @@ PUBLIC int memcmp(const void * s1, const void *s2, int n)
 
 	const char * p1 = (const char *)s1;
 	const char * p2 = (const char *)s2;
-	int i;
-	for (i = 0; i < n; i++,p1++,p2++) {
+	size_t i;
+	for (i = 0; i < size; i++,p1++,p2++) {
 		if (*p1 != *p2) {
 			return (*p1 - *p2);
 		}
@@ -62,8 +64,8 @@ PUBLIC void strcpy(char* dst, const char* src){
 
 }
 
-PUBLIC int strlen(const char* str){
-    int len = 0;
+PUBLIC size_t strlen(const char* str){
+    size_t len = 0;
     while(str[len]) len++;
     return len;
 }

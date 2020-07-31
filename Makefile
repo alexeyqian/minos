@@ -2,7 +2,8 @@ CROSS_COMPILER=i686-elf-gcc
 C_SOURCES=$(wildcard kernel/*.c)
 C_HEADERS=$(wildcard include/*.h)
 #C_FLAGS = -c -m32 -ffreestanding -fno-exceptions -I include/
-C_FLAGS = -c -std=gnu99 -ffreestanding -O0 -Wall -Wcast-align -Wsign-compare -Wconversion -Wextra -I include/
+C_FLAGS = -c -std=gnu99 -ffreestanding -O0 -Wall -Wcast-align -Wextra -I include/
+#-Wsign-compare -Wconversion
 #-fno-builtin -O0 or -O2?
 C_OBJS=$(C_SOURCES:.c=.o)
 #$(info $$C_SOURCES is [${C_SOURCES}])

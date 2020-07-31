@@ -58,5 +58,6 @@ struct file_desc{
 void task_fs();
 int open(const char* pathname, int flags);
 int close(int fd);
-
+int read(int fd, void* buf, int count);
+int write(int fd, const void* buf, int count);
 #endif

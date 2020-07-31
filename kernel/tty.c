@@ -29,7 +29,8 @@ PRIVATE void tty_output_str(TTY* p_tty, char* buf, int len){
 }
 
 PUBLIC int sys_write(int _unused, char* buf, int len, struct proc* p_proc){
-	tty_output_str(&tty_table[p_proc->tty_idx], buf, len);
+	UNUSED(_unused);
+    tty_output_str(&tty_table[p_proc->tty_idx], buf, len);
 	return 0;
 }
 
@@ -268,7 +269,6 @@ PRIVATE void process_command_key(TTY *p_tty, uint32_t combined_key)
     case F12:
         if ((combined_key & FLAG_ALT_L) || (combined_key & FLAG_ALT_R))
         { /* Alt + F1~F12 */
-            kprint("alt+fn here");
             select_console(raw_code - F1);
         }
         break;
@@ -289,6 +289,9 @@ void hand_over_key_to_tty(TTY *p_tty, uint32_t combined_key)
 // implementation for syscall printx
 PUBLIC int sys_printx(int _unused1, int _unused2, char* s, struct proc* p_proc)
 {
+    UNUSED(_unused1);
+    UNUSED(_unused2);
+
 	const char * p;
 	char ch;
 

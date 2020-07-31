@@ -99,6 +99,7 @@ PRIVATE void append_scan_code_to_kb_buf(){
 */
 // Called per interrupt
 PRIVATE void keyboard_handler(int irq){
+	UNUSED(irq);
 	append_scan_code_to_kb_buf();
 }
 

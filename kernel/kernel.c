@@ -47,8 +47,8 @@ void kmain();
 
 void kinit(){
 	kclear_screen();
-    kprint(">>> kinit begin ...\n");
-	kprintf(">>> kprintf: %x %x %d\n", 32, 64, 200);
+    //kprint(">>> kinit begin ...\n");
+	//kprintf(">>> kprintf: %x %x %d\n", 32, 64, 200);
 	//printf(">>> printf: %x %d\n", 64, 200); cannot use printf here
 	init_new_gdt();  
 	init_idt();

@@ -52,8 +52,8 @@ PRIVATE void read_super_block(int dev){
 // TODO: remove global vars
 PRIVATE void mkfs(){
     MESSAGE driver_msg;
-    int i, j;
-    int bits_per_sect = SECTOR_SIZE * 8;
+    uint32_t i, j;
+    uint32_t bits_per_sect = SECTOR_SIZE * 8;
     
     // get the geometry of ROOTDEV
     struct part_info geo;
@@ -123,7 +123,7 @@ PRIVATE void mkfs(){
     memset(fsbuf, 0, SECTOR_SIZE);
     // bit 0  is reserved (sector 0),
     // NR_DEFAULT_FILE_SECTS is reserved to '/'
-    int nr_sects = NR_DEFAULT_FILE_SECTS + 1; 
+    uint32_t nr_sects = NR_DEFAULT_FILE_SECTS + 1; 
 
     for(i = 0; i < nr_sects / 8; i++)
         fsbuf[i] = 0xFF;
@@ -228,7 +228,16 @@ PUBLIC void task_fs(){
                 fs_msg.FD = do_open();
                 break;
             case CLOSE:
+                printl("receive CLOSE");
                 fs_msg.RETVAL = do_close();
+                break;
+            case READ:
+            case WRITE:
+                fs_msg.CNT = do_rdwt();
+                break;
+            default:
+                dump_msg("fs: unknow message: ", &fs_msg);
+                assert(0);
                 break;
         }   
 

@@ -12,6 +12,9 @@
 #define false FALSE
 
 #define NULL ((void *)0)
+// use expression as sub-expression,
+// then make type of full expression int, discard result
+#define UNUSED(x) (void)(x) // (void)(sizeof((x), 0))
 
 #define GDT_SIZE 128
 #define IDT_SIZE 256
@@ -167,7 +170,7 @@
 #define STACK_SIZE_TTY   0x4000  // TODO: consider appropriate stack size
 #define STACK_SIZE_SYS   0x4000
 #define STACK_SIZE_HD    0x4000
-#define STACK_SIZE_FS    0x4000
+#define STACK_SIZE_FS    0x8000
 #define STACK_SIZE_TESTA 0x4000
 #define STACK_SIZE_TESTB 0x4000
 #define STACK_SIZE_TESTC 0x4000

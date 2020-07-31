@@ -99,6 +99,9 @@ PUBLIC void init_proc_table(){
 		p_proc->q_sending = 0;
 		p_proc->next_sending = 0;
 
+		for(size_t j = 0; j < NR_FILES; j++)
+			p_proc->filp[j] = 0;
+
 		p_task_stack -= p_task->stack_size;
 		p_proc++;
 		p_task++;

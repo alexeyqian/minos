@@ -98,7 +98,7 @@ PUBLIC struct inode* get_inode(int dev, int num){
  * @return success: return inode number, faile: return zero
  */
 PUBLIC int search_file(char* path){
-    int i, j;
+    uint32_t i, j;
 
     char filename[MAX_PATH];
     memset(filename, 0, MAX_FILENAME_LEN);
@@ -109,11 +109,11 @@ PUBLIC int search_file(char* path){
     if(filename[0] == 0) return dir_inode->i_num;
 
     // search the dir for the file
-    int dir_blk0_nr = dir_inode->i_start_sect;
-    int nr_dir_blks = (dir_inode->i_size + SECTOR_SIZE -1)/SECTOR_SIZE;
-    int nr_dir_entries = dir_inode->i_size / DIR_ENTRY_SIZE;
+    uint32_t dir_blk0_nr = dir_inode->i_start_sect;
+    uint32_t nr_dir_blks = (dir_inode->i_size + SECTOR_SIZE -1)/SECTOR_SIZE;
+    uint32_t nr_dir_entries = dir_inode->i_size / DIR_ENTRY_SIZE;
 
-    int m = 0;
+    uint32_t m = 0;
     struct dir_entry* pde;
     for(i = 0; i < nr_dir_blks; i++){
         RD_SECT(dir_inode->i_dev, dir_blk0_nr + i);

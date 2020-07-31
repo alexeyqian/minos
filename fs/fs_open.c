@@ -44,9 +44,9 @@ PRIVATE void sync_inode(struct inode* p){
 // return inode nr
 PRIVATE int alloc_imap_bit(int dev){
     int inode_nr = 0;
-    int i, j, k;
+    uint32_t i, j, k;
 
-    int imap_blk0_nr = 1 + 1; // one boot sector & one super block
+    uint32_t imap_blk0_nr = 1 + 1; // one boot sector & one super block
     struct super_block * sb = get_super_block(dev);
 
     for(i = 0; i < sb->nr_imap_sects; i++){
@@ -77,14 +77,14 @@ PRIVATE int alloc_imap_bit(int dev){
 
 // return 1st sector nr allocated
 PRIVATE int alloc_smap_bit(int dev, int nr_sects_to_alloc){
-    int i; // sector index
-    int j; // byte index
-    int k; // bit index
+    uint32_t i; // sector index
+    uint32_t j; // byte index
+    uint32_t k; // bit index
 
     struct super_block* sb = get_super_block(dev);
 
-    int smap_blk0_nr = 1 + 1 + sb->nr_imap_sects;
-    int free_sect_nr = 0;
+    uint32_t smap_blk0_nr = 1 + 1 + sb->nr_imap_sects;
+    uint32_t free_sect_nr = 0;
 
     for(i = 0; i < sb->nr_smap_sects; i++){
         RD_SECT(dev, smap_blk0_nr + i);
@@ -147,21 +147,14 @@ PRIVATE struct inode* new_inode(int dev, int inode_nr, int start_sect){
  * @param filename filename of the new file
  * */
 PRIVATE void new_dir_entry(struct inode* dir_inode, int inode_nr, char* filename){
-    /* write the dir_entry */
-	int dir_blk0_nr = dir_inode->i_start_sect;
-	int nr_dir_blks = (dir_inode->i_size + SECTOR_SIZE) / SECTOR_SIZE;
-	int nr_dir_entries =
-		dir_inode->i_size / DIR_ENTRY_SIZE; /**
-						     * including unused slots
-						     * (the file has been
-						     * deleted but the slot
-						     * is still there)
-						     */
-	int m = 0;
+	uint32_t dir_blk0_nr = dir_inode->i_start_sect;
+	uint32_t nr_dir_blks = (dir_inode->i_size + SECTOR_SIZE) / SECTOR_SIZE;
+	uint32_t nr_dir_entries = dir_inode->i_size / DIR_ENTRY_SIZE; 
+	uint32_t m = 0;
 	struct dir_entry * pde;
 	struct dir_entry * new_de = 0;
 
-	int i, j;
+	uint32_t i, j;
 	for (i = 0; i < nr_dir_blks; i++) {
 		RD_SECT(dir_inode->i_dev, dir_blk0_nr + i);
 
@@ -199,6 +192,8 @@ PRIVATE void new_dir_entry(struct inode* dir_inode, int inode_nr, char* filename
  * @return 0 if failed
  * */
 PRIVATE struct inode* create_file(char* path, int flags){
+    UNUSED(flags);
+
     char filename[MAX_PATH];
     struct inode* dir_inode;
 
@@ -231,8 +226,10 @@ PUBLIC int do_open(){
     // find a free slot in proc::filp[]
     int i;
     for(i = 0; i < NR_FILES; i++){
+        //printl("fd: %d pointer: %x\n", i, pcaller->filp[i]);
         if(pcaller->filp[i] == 0){
             fd = i;
+            //printl("fd: %d is free\n.", fd);
             break;
         }
     }
@@ -305,8 +302,7 @@ PUBLIC int do_open(){
 // TODO: refactory to do_close(int fd)
 PUBLIC int do_close(){
     int fd = fs_msg.FD;
-    //TODO: validate fd?
-
+    printf("do close fd: %d", fd);
     put_inode(pcaller->filp[fd]->fd_inode); // inode->cnt--
     pcaller->filp[fd]->fd_inode = 0; // disconnect file descriptor from inode
     pcaller->filp[fd] = 0;           // disconnect fd from file descriptors
@@ -375,7 +371,7 @@ PUBLIC int open(const char* pathname, int flags){
  * @return Zero if successful, otherwise -1.
  *****************************************************************************/
 PUBLIC int close(int fd)
-{
+{   
 	MESSAGE msg;
 	msg.type   = CLOSE;
 	msg.FD     = fd;
@@ -385,3 +381,137 @@ PUBLIC int close(int fd)
 	return msg.RETVAL;
 }
 
+/**
+ * Read/write file and return byte count read/written
+ * 
+ * @return On success: How many bytes have been read/written. 
+ * On error: -1
+ * */
+PUBLIC int do_rdwt(){
+    int fd = fs_msg.FD;
+    void* buf = fs_msg.BUF;
+    int len = fs_msg.CNT;
+
+    int src = fs_msg.source;
+
+    assert((pcaller->filp[fd] >= &f_desc_table[0]) 
+        && (pcaller->filp[fd] < &f_desc_table[NR_FILE_DESC]));
+    
+    if(!(pcaller->filp[fd]->fd_mode & O_RDWR))
+        return -1;
+
+    int pos = pcaller->filp[fd]->fd_pos;
+    struct inode* pin = pcaller->filp[fd]->fd_inode;
+
+    assert(pin >= &inode_table[0] && pin < &inode_table[NR_INODE]);
+
+    int imode = pin->i_mode & I_TYPE_MASK;
+    // TODO: wrap into do_rdwt_special
+    if(imode == I_CHAR_SPECIAL){ // special file, such as tty
+        printl("write to I CHAR SPECIAL");
+        int t = fs_msg.type == READ? DEV_READ : DEV_WRITE;
+        fs_msg.type = t;
+
+        int dev = pin->i_start_sect; // this field means different for special file/device
+        assert(MAJOR(dev) == 4);
+
+        fs_msg.DEVICE = MINOR(dev);
+        fs_msg.BUF = buf;
+        fs_msg.CNT = len;
+        fs_msg.PROC_NR = src;
+        assert(dd_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
+
+        send_recv(BOTH, dd_map[MAJOR(dev)].driver_nr, &fs_msg);
+        assert(fs_msg.CNT == len);
+
+        return fs_msg.CNT;
+
+    }else{ // regular file // TODO: wrap into do_rdwt_regular()
+        assert(pin->i_mode == I_REGULAR || pin->i_mode == I_DIRECTORY);
+        assert(fs_msg.type == READ || fs_msg.type == WRITE);
+
+        int pos_end;
+        if(fs_msg.type == READ)
+            pos_end = min(pos + len, pin->i_size);
+        else //WRITE
+            pos_end = min(pos + len, pin->i_nr_sects * SECTOR_SIZE);
+
+        int off = pos % SECTOR_SIZE;
+        int rw_sect_min = pin->i_start_sect + (pos >> SECTOR_SIZE_SHIFT);
+        int rw_sect_max = pin->i_start_sect + (pos_end >> SECTOR_SIZE_SHIFT);
+
+        int chunk = min(rw_sect_max - rw_sect_min + 1, FSBUF_SIZE >> SECTOR_SIZE_SHIFT);
+
+        int bytes_rw = 0;
+        int bytes_left = len;
+        int i;
+        for(i = rw_sect_min; i<= rw_sect_max; i += chunk){
+            // read/write this amount of bytes each loop
+            int bytes = min(bytes_left, chunk*SECTOR_SIZE - off); // TODO:??
+
+            rw_sector(DEV_READ, pin->i_dev, i*SECTOR_SIZE, chunk*SECTOR_SIZE, TASK_FS, fsbuf);
+
+            if(fs_msg.type == READ){
+                phys_copy((void*)va2la(src, buf + bytes_rw),
+                    (void*)va2la(TASK_FS, fsbuf + off), bytes);
+            }else { // WRITE
+                phys_copy((void*)va2la(TASK_FS, fsbuf + off),
+                    (void*)va2la(src, buf + bytes_rw), bytes);
+                
+                rw_sector(DEV_WRITE, pin->i_dev, i*SECTOR_SIZE, chunk*SECTOR_SIZE, TASK_FS, fsbuf);                
+            }
+            off = 0;
+            bytes_rw += bytes;
+            pcaller->filp[fd]->fd_pos += bytes;
+            bytes_left -= bytes;
+        }
+
+        if(pcaller->filp[fd]->fd_pos > pin->i_size){
+            // update inode size
+            pin->i_size = pcaller->filp[fd]->fd_pos;
+            sync_inode(pin);
+        }
+
+        return bytes_rw;
+    }
+}
+
+/**
+ * Read from a file descriptor
+ * 
+ * @param buf buffer to accept the bytes read
+ * 
+ * @return on success, the number of bytes read are returned
+ *         on error, -1 is returned.
+ * */
+PUBLIC int read(int fd, void* buf, int count){
+    MESSAGE msg;
+    msg.type = READ;
+    msg.FD = fd;
+    msg.BUF = buf;
+    msg.CNT = count;
+
+    send_recv(BOTH, TASK_FS, &msg);
+
+    return msg.CNT;
+}
+
+/**
+ * Write to a file descriptor
+ * 
+ * @param buf buffer including the bytes to write
+ * 
+ * @return on success, the number of bytes written are returned
+ *         on error, -1 is returned.
+ * */
+PUBLIC int write(int fd, const void* buf, int count){
+    MESSAGE msg;
+    msg.type = WRITE;
+    msg.FD = fd;
+    msg.BUF = (void*)buf;
+    msg.CNT = count;
+
+    send_recv(BOTH, TASK_FS, &msg);
+
+    return msg.CNT;
+}

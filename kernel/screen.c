@@ -125,6 +125,5 @@ PUBLIC void kprintf(const char *fmt, ...){
     // args is actually a char*
     i = vsprintf(buf, fmt, args); 
     buf[i] = 0;
-    //write(buf, i);
 	kprint(buf);
 }

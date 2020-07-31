@@ -249,7 +249,8 @@ PRIVATE int msg_receive(struct proc* current, int src, MESSAGE* m){
 }
 
 void disp_color_str(char* info, int color){
-    // TODO: nothing ...
+    UNUSED(info);
+    UNUSED(color);
 }
 // TODO: move
 PUBLIC void dump_proc(struct proc* p)

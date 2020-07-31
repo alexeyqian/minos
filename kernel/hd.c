@@ -23,8 +23,6 @@ PRIVATE void hd_handler()
 
 PRIVATE void init_hd()
 {
-	int i;
-
 	// get the numbe of drives from the BIOS data area
 	uint8_t *p_nr_drives = (uint8_t *)(0x475);
 	printf("number of drives: %d. \n", *p_nr_drives);
@@ -34,7 +32,7 @@ PRIVATE void init_hd()
 	enable_irq(CASCADE_IRQ);
 	enable_irq(AT_WINI_IRQ);
 
-	for (i = 0; i < (sizeof(hd_info) / sizeof(hd_info[0])); i++)
+	for (size_t i = 0; i < (sizeof(hd_info) / sizeof(hd_info[0])); i++)
 		memset(&hd_info[i], 0, sizeof(hd_info[0]));
 	hd_info[0].open_cnt = 0;
 }
@@ -81,17 +79,18 @@ PRIVATE void interrupt_wait()
 // <ring 1>
 PRIVATE void print_identify_info(uint16_t *hdinfo)
 {
-	printf(">>> print identify info\n");
-	int i, k;
+	uint32_t i, k;
 	char s[64];
 
 	struct iden_info_ascii
 	{
-		int idx;
-		int len;
+		uint32_t idx;
+		uint32_t len;
 		char *desc;
-	} iinfo[] = {{10, 20, "HD SN"}, /* Serial number in ASCII */
-				 {27, 40, "HD Model"} /* Model number in ASCII */};
+	} iinfo[] = {
+					{10, 20, "HD SN"},   // Serial number in ASCII 
+				 	{27, 40, "HD Model"} // Model number in ASCII
+				};
 
 	for (k = 0; k < sizeof(iinfo) / sizeof(iinfo[0]); k++)
 	{
@@ -153,7 +152,7 @@ PRIVATE void hd_identify(int drive)
 	hd_cmd_out(&cmd);
 	interrupt_wait();
 	port_read(REG_DATA, hdbuf, SECTOR_SIZE);
-	print_identify_info((uint16_t *)hdbuf);
+	//print_identify_info((uint16_t *)hdbuf);
 
 	uint16_t *hdinfo = (uint16_t *)hdbuf;
 	hd_info[drive].primary[0].base = 0;
@@ -253,7 +252,7 @@ PRIVATE void hd_open(int device)
 	if (hd_info[drive].open_cnt++ == 0)
 	{
 		partition(drive * (NR_PART_PER_DRIVE + 1), P_PRIMARY);
-		print_hdinfo(&hd_info[drive]);
+		//print_hdinfo(&hd_info[drive]);
 	}
 }
 
@@ -262,7 +261,7 @@ PRIVATE void hd_rdwt(MESSAGE *p)
 {
 	int drive = DRV_OF_DEV(p->DEVICE);
 	uint64_t pos = p->POSITION;
-	assert((pos>>SECTOR_SIZE_SHIFT) < (1 << 31)); // TODO:?
+	assert((pos>>SECTOR_SIZE_SHIFT) < (uint64_t)(1 << 31)); // TODO:?
 
 	// only allow to R/W from a sector boundary
 	assert((pos & 0x1FF) == 0);
@@ -333,6 +332,7 @@ PRIVATE void hd_ioctl(MESSAGE *p)
 
 PUBLIC void task_hd()
 {
+	printl(">>> task_hd is running\n");
 	MESSAGE msg;
 	init_hd();
 	while (1)

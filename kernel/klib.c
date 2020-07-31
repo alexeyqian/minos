@@ -78,7 +78,7 @@ PUBLIC void* va2la(int pid, void* va){
 
 PUBLIC void reset_msg(MESSAGE* p)
 {
-	memset((char*)p, 0, sizeof(MESSAGE));
+	memset(p, 0, sizeof(MESSAGE));
 }
 
 

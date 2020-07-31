@@ -12,6 +12,8 @@ PUBLIC void delay(int milli_sec){
 }
 
 PRIVATE void clock_handler(int irq){
+	UNUSED(irq);
+	
 	//kprint("[");
 
 	ticks++;

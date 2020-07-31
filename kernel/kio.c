@@ -16,7 +16,6 @@ PUBLIC int printf(const char *fmt, ...){
     // args is actually a char*
     i = vsprintf(buf, fmt, args); 
     buf[i] = 0;
-    //write(buf, i);
 	printx(buf); // syscall
     return i;
 }
@@ -34,14 +33,10 @@ PUBLIC void spin(char* func_name){
 
 PUBLIC void panic(const char *fmt, ...)
 {
-	int i;
 	char buf[256];
-
 	/* 4 is the size of fmt in the stack */
 	va_list arg = (va_list)((char*)&fmt + 4);
-
-	i = vsprintf(buf, fmt, arg);
-
+	vsprintf(buf, fmt, arg);
 	printl("%c !!panic!! %s", MAG_CH_PANIC, buf);
 
 	/* should never arrive here */
