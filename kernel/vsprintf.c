@@ -3,42 +3,7 @@
 #include "types.h"
 #include "string.h"
 #include "klib.h"
-
-PUBLIC int vsprintf_sim(char *buf, const char *fmt, va_list args){
-	char* p;
-	char tmp[256];
-	va_list p_next_arg = args;
-	int num;
-	for(p=buf; *fmt; fmt++)
-		if(*fmt != '%') *p++ = *fmt;
-		else{
-			fmt++;
-			switch(*fmt){
-				case 'd':
-					num = *((int*)p_next_arg);					
-					if (num < 0) {
-						num = num * (-1);
-						*p++ = '-';
-					}
-					itoa(num, tmp, 10);			
-					p_next_arg += 4;
-					break;
-				case 'x':
-					num = *((int*)p_next_arg);
-					itoa(num, tmp, 16);
-					strcpy(p, tmp);
-					p_next_arg += 4;
-					p += strlen(tmp);
-					break;
-				case 's':
-					break;
-				default:
-					break;
-			}
-		}	
-
-	return (p-buf);
-}
+#include "kio.h"
 
 PUBLIC int vsprintf(char *buf, const char *fmt, va_list args)
 {
@@ -113,7 +78,7 @@ PUBLIC int vsprintf(char *buf, const char *fmt, va_list args)
 			break;
 		}
 
-		int k;
+		size_t k;
 		for (k = 0; k < ((align_nr > strlen(inner_buf)) ? (align_nr - strlen(inner_buf)) : 0); k++) {
 			*p++ = cs;
 		}

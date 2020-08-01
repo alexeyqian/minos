@@ -6,9 +6,10 @@
 #include "string.h"
 
 void test_a(){	
-	int fd, n;
+	printl("running in testa()");
+	int fd, n, i;
 	const char filename[] = "blah";
-	const char bufw[] = "cbaed";
+	const char bufw[] = "abcde";
 	const int rd_bytes = 3;
 	char bufr[rd_bytes];
 
@@ -19,16 +20,12 @@ void test_a(){
 	assert(fd != -1);
 	printl("File created. fd: %d\n", fd);
 	
-	size_t temp = strlen(bufw);
-	printl("len: %d\n", temp);
-
 	// write
 	n = write(fd, bufw, strlen(bufw));
-	printl("n: %d\n", n);	
 	assert(n == strlen(bufw));
-	printl("before close fd %d\n", fd);
+
 	close(fd);
-	printl("after close fd: %d\n", fd);
+
 	// open
 	fd = open(filename, O_RDWR);
 	assert(fd != -1);
@@ -41,33 +38,63 @@ void test_a(){
 	printl("%d bytes read: %s\n", n, bufr);
 
 	close(fd);
+
+	char * filenames[] = {"/foo", "/bar", "/baz"};
+
+	/* create files */
+	for (i = 0; i < sizeof(filenames) / sizeof(filenames[0]); i++) {
+		fd = open(filenames[i], O_CREAT | O_RDWR);
+		assert(fd != -1);
+		printl("File created: %s (fd %d)\n", filenames[i], fd);
+		close(fd);
+	}
+
+	char * rfilenames[] = {"/bar", "/foo", "/baz", "/dev_tty0"};
+
+	/* remove files */
+	for (i = 0; i < sizeof(rfilenames) / sizeof(rfilenames[0]); i++) {
+		if (unlink(rfilenames[i]) == 0)
+			printl("File removed: %s\n", rfilenames[i]);
+		else
+			printl("Failed to remove file: %s\n", rfilenames[i]);
+	}
+
 	spin("test a");
-	/*
-	int fd = open("/blah", O_CREAT);
-	printf("fd: %d\n", fd);
-	close(fd);
-	spin("test a");
-	//int i = 100;	
-	while(1){	
-		//printf("<A: %x %d>", get_ticks(), i++); 
-		
-		delay(5000);
-	}*/
+	
 }
 
 void test_b(){
-	
-	//int i = 200;
-	while(1){	
-		//printf("<B: %x %d>", get_ticks2(), i++); 
-		delay(5000);
+	spin("test_b()");
+	/*
+	char tty_name[] = "/dev_tty1";
+	int fd_stdin = open(tty_name, O_RDWR);
+	assert(fd_stdin == 0);
+	int fd_stdout = open(tty_name, O_RDWR);
+	assert(fd_stdout == 1);
+
+	char rdbuf[128];
+
+	while(1){
+		printf("$ ");
+		int r = read(fd_stdin, rdbuf, 70);
+		rdbuf[r] = 0;
+
+		if(strcmp(rdbuf, "hello") == 0){
+			printf("hello world!\n");
+		}else{
+			if(rdbuf[0]){
+				printf("{%s}\n", rdbuf);
+			}
+		}
 	}
+
+	assert(0); // never arrive here.*/
 }
 
 void test_c(){
 	//int i = 0x2000;
 	while(1){	
-		//printf("<C: %d>", i++);
+		//printl("<C: %d>", i++);
 		delay(5000);
 	}
 }

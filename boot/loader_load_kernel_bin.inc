@@ -115,6 +115,15 @@ loader_load_kernel_bin:
 	add ax, dx
 	add ax, DELTA_SECTOR_NUM
 	add bx, [bpb_bytes_per_sector]
+	jc .more_than_64k
+	jmp .less_than_64k
+.more_than_64k:
+	push ax
+	mov ax, es
+	add ax, 1000h ; es += ox1000, pointing to next segment
+	mov es, ax
+	pop ax
+.less_than_64k:
 	jmp .loop_loading_file
 .file_loaded:	
     ; stop floppy motor

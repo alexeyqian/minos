@@ -288,7 +288,6 @@ PUBLIC void dump_proc(struct proc* p)
 	sprintf(info, "p_flags: 0x%x.  ", p->p_flags); disp_color_str(info, text_color);
 	sprintf(info, "p_recvfrom: 0x%x.  ", p->p_recvfrom); disp_color_str(info, text_color);
 	sprintf(info, "p_sendto: 0x%x.  ", p->p_sendto); disp_color_str(info, text_color);
-	sprintf(info, "nr_tty: 0x%x.  ", p->tty_idx); disp_color_str(info, text_color);
 	disp_color_str("\n", text_color);
 	sprintf(info, "has_int_msg: 0x%x.  ", p->has_int_msg); disp_color_str(info, text_color);
 }
@@ -335,7 +334,6 @@ PUBLIC int sys_sendrec(int function, int src_dest, MESSAGE* p_msg, struct proc* 
 		if(ret != 0) return ret;
 	}else if(function == RECEIVE){
 		ret = msg_receive(p, src_dest, p_msg);
-        //printf(">>> ret: %x", ret);
 		if(ret != 0) return ret;
 	}else{
 		panic("{sys_sendrec} invalid function", "%d, send: %d, receive: %d", function, SEND, RECEIVE);
@@ -372,12 +370,11 @@ PUBLIC int send_recv(int function, int src_dest, MESSAGE* p_msg){
     return ret;
 }
 
-PUBLIC int get_ticks2(){
+PUBLIC int get_ticks(){
     MESSAGE msg;
     reset_msg(&msg);
-    msg.type = GET_TICKS2;
+    msg.type = GET_TICKS;
     send_recv(BOTH, TASK_SYS, &msg);
-    //printf(">>>retval: %x", msg.RETVAL);
     return msg.RETVAL;
 }
 
@@ -388,7 +385,7 @@ PUBLIC void task_sys(){
         send_recv(RECEIVE , ANY, &msg);
         int src = msg.source;
         switch(msg.type){
-            case GET_TICKS2:
+            case GET_TICKS:
                 msg.RETVAL = ticks;
                 send_recv(SEND, src, &msg);
                 break;

@@ -9,11 +9,7 @@ C_OBJS=$(C_SOURCES:.c=.o)
 #$(info $$C_SOURCES is [${C_SOURCES}])
 #$(info $$OBJ is [${OBJ}])
 
-
 all: clean os.img
-
-#run: all
-#
 
 os.img: boot/boot.bin boot/loader.bin kernel/kernel.bin
 	dd if=/dev/zero of=os.img bs=512 count=2880
@@ -56,7 +52,7 @@ kernel/kernel.bin: $(C_SOURCES) $(C_HEADERS) \
 	$(CROSS_COMPILER) $(C_FLAGS) -o fs/fs_open.o      fs/fs_open.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o fs/fs_shared.o    fs/fs_shared.c
 	#$(CROSS_COMPILER) -T linker.ld -o $@ -ffreestanding -nostdlib kernel/kernel_entry.o $(C_OBJS) fs.o -lgcc
-	ld -m elf_i386 -s -Ttext 0x30400 -nostdlib -o $@ kernel/kernel_entry.o $(C_OBJS) \
+	ld -m elf_i386 -s -Ttext 0x1000 -nostdlib -o $@ kernel/kernel_entry.o $(C_OBJS) \
 		fs/fs_main.o fs/fs_open.o fs/fs_shared.o
 
 #kernel/kernel.bin: kernel/kernel_entry.o kernel/kernel.o ${OBJ}

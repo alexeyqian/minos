@@ -7,6 +7,8 @@
 #include "ke_asm_utils.h"
 #include "klib.h"
 #include "keyboard.h"
+#include "assert.h"
+#include "ipc.h"
 
 PRIVATE TTY tty_table[NR_CONSOLES];
 #define TTY_FIRST (tty_table)
@@ -15,7 +17,22 @@ PRIVATE TTY tty_table[NR_CONSOLES];
 PRIVATE CONSOLE console_table[NR_CONSOLES];
 PRIVATE int current_console_idx = 0;
 
-// ==== console ===========
+/**
+ * Copy data in WORDS.
+ *
+ * Note that the addresses of dst and src are not pointers, but integers, 'coz
+ * in most cases we pass integers into it as parameters.
+ * 
+ * @param dst   Addr of destination.
+ * @param src   Addr of source.
+ * @param size  How many words will be copied.
+ *****************************************************************************/
+PRIVATE	void w_copy(unsigned int dst, const unsigned int src, int size)
+{
+	phys_copy((void*)(V_MEM_BASE + (dst << 1)),
+		  (void*)(V_MEM_BASE + (src << 1)),
+		  size << 1);
+}
 
 PUBLIC void tty_output_char(CONSOLE *p_con, char ch);
 
@@ -28,12 +45,6 @@ PRIVATE void tty_output_str(TTY* p_tty, char* buf, int len){
 	}
 }
 
-PUBLIC int sys_write(int _unused, char* buf, int len, struct proc* p_proc){
-	UNUSED(_unused);
-    tty_output_str(&tty_table[p_proc->tty_idx], buf, len);
-	return 0;
-}
-
 PRIVATE void tty_set_cursor(unsigned int position)
 {
     disable_int();
@@ -44,12 +55,14 @@ PRIVATE void tty_set_cursor(unsigned int position)
     enable_int();
 }
 
+
 PRIVATE void init_console(CONSOLE *p_console, int idx)
 {    
+    // vars related to position and size below are in WORDS, not in BYTES.
     int v_mem_size_in_word = V_MEM_SIZE >> 1;
     int v_mem_size_in_word_per_con = v_mem_size_in_word / NR_CONSOLES;
     p_console->original_addr = idx * v_mem_size_in_word_per_con;
-    p_console->v_mem_limit = v_mem_size_in_word_per_con; // /NR_CONSOLES * NR_CONSOLES ??
+    p_console->size_in_word = v_mem_size_in_word_per_con / SCREEN_WIDTH * SCREEN_WIDTH;
     p_console->current_start_addr = p_console->original_addr;
     p_console->cursor = p_console->original_addr;
     if (idx == 0)
@@ -59,8 +72,11 @@ PRIVATE void init_console(CONSOLE *p_console, int idx)
     }
     else
     {
-        tty_output_char(p_console, idx + '0');
-        tty_output_char(p_console, '#');
+        //`?' in this string will be replaced with 0, 1, 2, ...		
+		const char prompt[] = "[TTY #?]\n";
+		const char* p = prompt;
+		for (; *p; p++)
+			tty_output_char(p_console, *p == '?' ? idx + '0' : *p);
     }
     
     tty_set_cursor(p_console->cursor);
@@ -77,9 +93,9 @@ PRIVATE void tty_set_video_start_addr(uint32_t addr)
 }
 
 
-PRIVATE bool_t is_current_console(CONSOLE *p_con)
+PRIVATE bool_t is_current_console(CONSOLE *con)
 {
-    return (p_con == &console_table[current_console_idx]);
+    return (con == &console_table[current_console_idx]);
 }
 
 PRIVATE void flush(CONSOLE* p_con)
@@ -90,75 +106,130 @@ PRIVATE void flush(CONSOLE* p_con)
 	}
 }
 
-PRIVATE void scroll_screen(CONSOLE *p_con, int direction)
-{   if(!is_current_console(p_con)) return;
+PRIVATE void scroll_screen(CONSOLE* con, int dir)
+{   /*
+	 * variables below are all in-console-offsets (based on con->orig)
+	 */
+	int oldest; /* addr of the oldest available line in the console */
+	int newest; /* .... .. ... latest ......... .... .. ... ....... */
+	int scr_top;/* position of the top of current screen */
 
-    if (direction == SCROLL_SCREEN_UP)
-    {
-        if (p_con->current_start_addr > p_con->original_addr){
-            p_con->current_start_addr -= SCREEN_WIDTH;
-        }            
-    }
-    else if (direction == SCROLL_SCREEN_DOWN)
-    {
-        if (p_con->current_start_addr + SCREEN_SIZE < p_con->original_addr + p_con->v_mem_limit){
-            p_con->current_start_addr += SCREEN_WIDTH;
-        }            
-    }
-    else{}
+	newest = (con->cursor - con->original_addr) / SCREEN_WIDTH * SCREEN_WIDTH;
+	oldest = con->is_full ? (newest + SCREEN_WIDTH) % con->size_in_word : 0;
+	scr_top = con->current_start_addr - con->original_addr;
 
-    flush(p_con);
+	if (dir == SCROLL_SCREEN_DOWN) {
+		if (!con->is_full && scr_top > 0) {
+			con->current_start_addr -= SCREEN_WIDTH;
+		}
+		else if (con->is_full && scr_top != oldest) {
+			if (con->cursor - con->original_addr >= con->size_in_word - SCREEN_SIZE) {
+				if (con->current_start_addr != con->original_addr)
+					con->current_start_addr -= SCREEN_WIDTH;
+			}
+			else if (con->current_start_addr == con->original_addr) {
+				scr_top = con->size_in_word - SCREEN_SIZE;
+				con->current_start_addr = con->original_addr + scr_top;
+			}
+			else {
+				con->current_start_addr -= SCREEN_WIDTH;
+			}
+		}
+	}
+	else if (dir == SCROLL_SCREEN_UP) {
+		if (!con->is_full && newest >= scr_top + SCREEN_SIZE) {
+			con->current_start_addr += SCREEN_WIDTH;
+		}
+		else if (con->is_full && scr_top + SCREEN_SIZE - SCREEN_WIDTH != newest) {
+			if (scr_top + SCREEN_SIZE == con->size_in_word)
+				con->current_start_addr = con->original_addr;
+			else
+				con->current_start_addr += SCREEN_WIDTH;
+		}
+	}
+	else {
+		assert(dir == SCROLL_SCREEN_DOWN || dir == SCROLL_SCREEN_UP);
+	}
+
+	flush(con);
 }
 
-PUBLIC void tty_output_char(CONSOLE *p_con, char ch)
+PRIVATE void clear_screen(int pos, int len)
 {
-    uint8_t *p_vmem = (uint8_t *)(V_MEM_BASE + p_con->cursor * 2);
+	uint8_t* pch = (uint8_t*)(V_MEM_BASE + pos * 2);
+	while (--len >= 0) {
+		*pch++ = ' ';
+		*pch++ = DEFAULT_CHAR_COLOR;
+	}
+}
+
+
+PUBLIC void tty_output_char(CONSOLE *con, char ch)
+{
+    uint8_t *p_vmem = (uint8_t *)(V_MEM_BASE + con->cursor * 2);
+    assert(con->cursor - con->original_addr < con->size_in_word);
+
+    int cursor_x = (con->cursor - con->original_addr) % SCREEN_WIDTH;
+    int cursor_y = (con->cursor - con->original_addr) / SCREEN_WIDTH;
 
     switch (ch)
     {
         case '\n':
-            if (p_con->cursor < p_con->original_addr + p_con->v_mem_limit - SCREEN_WIDTH)
-            {
-                p_con->cursor = p_con->original_addr + SCREEN_WIDTH *
-                                                        ((p_con->cursor - p_con->original_addr) / SCREEN_WIDTH + 1);
-            }
+            con->cursor = con->original_addr + SCREEN_WIDTH * (cursor_y + 1);
             break;
         case '\b':
-            if (p_con->cursor > p_con->original_addr)
+            if (con->cursor > con->original_addr)
             {
-                p_con->cursor--;
+                con->cursor--;
                 *(p_vmem - 2) = ' ';
                 *(p_vmem - 1) = DEFAULT_CHAR_COLOR;
             }
             break;
-        default:
-            if (p_con->cursor < p_con->original_addr + p_con->v_mem_limit - 1)
-            {
-                *p_vmem++ = ch;
-                *p_vmem++ = DEFAULT_CHAR_COLOR;
-                p_con->cursor++;
-            }
+        default:            
+            *p_vmem++ = ch;
+            *p_vmem++ = DEFAULT_CHAR_COLOR;
+            con->cursor++;            
             break;
     }
 
-    while (p_con->cursor >= p_con->current_start_addr + SCREEN_SIZE) // TODO: if <-> while?
-       scroll_screen(p_con, SCROLL_SCREEN_DOWN);
+    // tricks for infinete screen scroll
+    if(con->cursor - con->original_addr >= con->size_in_word){
+        cursor_x = (con->cursor - con->original_addr) % SCREEN_WIDTH;
+		cursor_y = (con->cursor - con->original_addr) / SCREEN_WIDTH;
+		int cp_orig = con->original_addr + (cursor_y + 1) * SCREEN_WIDTH - SCREEN_SIZE;
+		w_copy(con->original_addr, cp_orig, SCREEN_SIZE - SCREEN_WIDTH);
+		con->current_start_addr = con->original_addr;
+		con->cursor = con->original_addr + (SCREEN_SIZE - SCREEN_WIDTH) + cursor_x;
+		clear_screen(con->cursor, SCREEN_WIDTH);
+		if (!con->is_full)
+			con->is_full = 1;
+    }
 
-    flush(p_con);
+    assert(con->cursor - con->original_addr < con->size_in_word);
+
+    while (con->cursor >= con->current_start_addr + SCREEN_SIZE
+        || con->cursor < con->current_start_addr){ // TODO: if <-> while?
+       scroll_screen(con, SCROLL_SCREEN_UP);
+       clear_screen(con->cursor, SCREEN_WIDTH);
+    }
+
+    flush(con);
 }
 
 PRIVATE void select_console(int con_idx)
 {
-    if ((con_idx < 0) || (con_idx >= NR_CONSOLES))
-        return; // invalid number
+    if ((con_idx < 0) || (con_idx >= NR_CONSOLES)) return; // invalid number
 
     current_console_idx = con_idx;
-    flush(&console_table[con_idx]);
+    flush(&console_table[current_console_idx]);
 }
 
-// keyboard interrupt handler put keys into keyboard buffer
-// tty_do_read read key from keyboard buffer and put it to tty buffer
-PRIVATE void tty_do_read(TTY *p_tty)
+/**
+ * Get chars from the keyboard buffer if the tty is the current console.
+ * keyboard interrupt handler put keys into keyboard buffer
+ * tty_do_read read key from keyboard buffer and put it to tty buffer
+ * */
+PRIVATE void tty_dev_read(TTY *p_tty)
 {
     if (is_current_console(p_tty->p_console))
         kb_read(p_tty);
@@ -177,13 +248,69 @@ PRIVATE char retrive_char_from_tty_buf(TTY *p_tty)
     return ch;
 }
 
-PRIVATE void tty_do_write(TTY *p_tty)
+/**
+ * Echo the char just pressed and transfer it to the waiting process
+ * */
+PRIVATE void tty_dev_write(TTY *tty)
 {
-    if (p_tty->inbuf_count)
-    { // tty_buff is not empty
-        char ch = retrive_char_from_tty_buf(p_tty);
-        tty_output_char(p_tty->p_console, ch);
+    while(tty->inbuf_count){
+        char ch = retrive_char_from_tty_buf(tty);
+        if(tty->tty_left_cnt){
+            if(ch >= ' ' && ch <= '~'){ // printable
+                tty_output_char(tty->p_console, ch);
+                void* p = tty->tty_req_buf + tty->tty_trans_cnt;
+                phys_copy(p, (void*)va2la(TASK_TTY, &ch), 1);
+                tty->tty_trans_cnt++;
+                tty->tty_left_cnt--;
+            }else if(ch == '\b' && tty->tty_trans_cnt){
+                tty_output_char(tty->p_console, ch);
+                tty->tty_trans_cnt--;
+                tty->tty_left_cnt++;
+            }
+
+            if(ch == '\n' || tty->tty_left_cnt == 0){
+                tty_output_char(tty->p_console, '\n');
+                MESSAGE msg;
+                msg.type = RESUME_PROC;
+                msg.PROC_NR = tty->tty_procnr;
+                msg.CNT = tty->tty_trans_cnt;
+                send_recv(SEND, tty->tty_caller, &msg);
+                tty->tty_left_cnt = 0;
+            }
+        }
     }
+}
+
+PRIVATE void tty_do_read(TTY* tty, MESSAGE* msg){
+    tty->tty_caller = msg->source; // who called, usally task_fs
+    tty->tty_procnr = msg->PROC_NR; // who wants the chars
+    tty->tty_req_buf = va2la(tty->tty_procnr, msg->BUF); // where the chars should be put
+    tty->tty_left_cnt = msg->CNT; // how many chars are requested
+    tty->tty_trans_cnt = 0; // how many chars have been transferred
+
+    msg->type =  SUSPEND_PROC;
+    msg->CNT = tty->tty_left_cnt;
+    send_recv(SEND, tty->tty_caller, msg);
+}
+
+PRIVATE void tty_do_write(TTY* tty, MESSAGE* msg){
+    char buf[TTY_OUT_BUF_LEN];
+    char* p = (char*)va2la(msg->PROC_NR, msg->BUF);
+    int i = msg->CNT;
+    int j;
+
+    while(i){
+        int bytes = min(TTY_OUT_BUF_LEN, i);
+        phys_copy(va2la(TASK_TTY, buf), (void*)p, bytes);
+        for(j = 0; j < bytes; j++)
+            tty_output_char(tty->p_console, buf[j]);
+        
+        i -= bytes;
+        p += bytes;
+    }
+
+    msg->type = SYSCALL_RET;
+    send_recv(SEND, msg->source, msg);
 }
 
 // ===== tty = keyboard + console(screen) =====
@@ -198,25 +325,6 @@ PRIVATE void init_tty(TTY *p_tty)
     init_console(p_tty->p_console, idx);
 }
 
-void task_tty()
-{       
-    TTY *p_tty;
-
-    init_keyboard();    
-    for (p_tty = TTY_FIRST; p_tty < TTY_END; p_tty++)
-        init_tty(p_tty);
-
-    select_console(0);
-    
-    while (1)
-    {
-        for (p_tty = TTY_FIRST; p_tty < TTY_END; p_tty++)
-        {
-            tty_do_read(p_tty);
-            tty_do_write(p_tty);
-        }
-    }
-}
 
 PRIVATE void append_combined_key_to_tty_buf(TTY *p_tty, uint32_t key)
 {   
@@ -277,7 +385,7 @@ PRIVATE void process_command_key(TTY *p_tty, uint32_t combined_key)
     }
 }
 
-void hand_over_key_to_tty(TTY *p_tty, uint32_t combined_key)
+PUBLIC void hand_over_key_to_tty(TTY *p_tty, uint32_t combined_key)
 {
     if (!(combined_key & FLAG_EXT)) // 8 bits printable code
         process_printable_key(p_tty, combined_key);
@@ -285,14 +393,12 @@ void hand_over_key_to_tty(TTY *p_tty, uint32_t combined_key)
         process_command_key(p_tty, combined_key);
 }
 
-// TODO: move
-// implementation for syscall printx
 PUBLIC int sys_printx(int _unused1, int _unused2, char* s, struct proc* p_proc)
 {
     UNUSED(_unused1);
     UNUSED(_unused2);
 
-	const char * p;
+	const char* p;
 	char ch;
 
 	char reenter_err[] = "? k_reenter is incorrect for unknown reason";
@@ -345,9 +451,58 @@ PUBLIC int sys_printx(int _unused1, int _unused2, char* s, struct proc* p_proc)
 
 	while ((ch = *p++) != 0) {
 		if (ch == MAG_CH_PANIC || ch == MAG_CH_ASSERT) continue; // skip the magic char
-		tty_output_char(tty_table[p_proc->tty_idx].p_console, ch);
+		tty_output_char(TTY_FIRST->p_console, ch);
 	}
 
 	return 0;
 }
 
+PUBLIC void task_tty()
+{       
+    TTY* p_tty;
+    MESSAGE msg;
+
+    init_keyboard();    
+
+    for (p_tty = TTY_FIRST; p_tty < TTY_END; p_tty++)
+        init_tty(p_tty);
+
+    select_console(0);
+    
+    while (1)
+    {
+        for (p_tty = TTY_FIRST; p_tty < TTY_END; p_tty++)
+        {
+            do{
+                tty_dev_read(p_tty);
+                tty_dev_write(p_tty);
+            }while(p_tty->inbuf_count);            
+        }
+
+        send_recv(RECEIVE, ANY, &msg);
+
+        int src = msg.source;
+        assert(src != TASK_TTY);
+
+        TTY* ptty2 = &tty_table[msg.DEVICE];
+        switch(msg.type){
+            case DEV_OPEN: // nothing need to open, just return
+                reset_msg(&msg);
+                msg.type = SYSCALL_RET;
+                send_recv(SEND, src, &msg);
+                break;
+            case DEV_READ:
+                tty_do_read(ptty2, &msg);
+                break;
+            case DEV_WRITE:
+                tty_do_write(ptty2, &msg);
+                break;
+            case HARD_INT: // waked up by clock_handler
+                key_pressed = 0;
+                continue;
+            default:
+                dump_msg("tty::unknown message", &msg);
+                break;
+        }
+    }
+}

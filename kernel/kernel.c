@@ -48,8 +48,6 @@ void kmain();
 void kinit(){
 	kclear_screen();
     //kprint(">>> kinit begin ...\n");
-	//kprintf(">>> kprintf: %x %x %d\n", 32, 64, 200);
-	//printf(">>> printf: %x %d\n", 64, 200); cannot use printf here
 	init_new_gdt();  
 	init_idt();
 	init_tss();	
@@ -63,7 +61,7 @@ void kinit(){
 }
 
 void kmain(){ 
-	kprint(">>> kmain begin ... \n");	// kprint SHOULD NOT BE USED ANYMORE AFTER THIS
+	//kprint(">>> kmain begin ... \n");	// kprint SHOULD NOT BE USED ANYMORE AFTER THIS
 	
 	enable_clock(); 	
 	restart(); // pretenting a schedule happend to start a process.
@@ -142,9 +140,3 @@ void init_descriptor(struct descriptor* p_desc, uint32_t base, uint32_t limit, u
 	p_desc->limit_high_attr2	= ((limit >> 16) & 0x0F) | (attribute >> 8) & 0xF0; // 段界限 2 + 属性 2
 	p_desc->base_high		= (base >> 24) & 0x0FF;		 // 段基址 3		(1 字节)
 }
-
-// system call implementations
-int sys_get_ticks(){
-	return ticks;	
-}
-

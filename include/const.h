@@ -154,15 +154,15 @@
 // ========= TASKS ==================
 #define NR_TASKS 4
 #define NR_PROCS 3
-#define NR_SYSCALLS 4
+#define NR_SYSCALLS 2
 
 // task types should match global vars
 #define INVALID_DRIVER	-20
 #define INTERRUPT	    -10
-#define TASK_TTY	    0
-#define TASK_SYS	    1
+#define TASK_TTY	    0 // terminal
+#define TASK_SYS	    1 // system call
 #define TASK_HD		    2 // hd driver
-#define TASK_FS	        3
+#define TASK_FS	        3 // file system 
 /* #define TASK_MM	4 */
 #define ANY		       (NR_TASKS + NR_PROCS + 10)
 #define NO_TASK		   (NR_TASKS + NR_PROCS + 20)

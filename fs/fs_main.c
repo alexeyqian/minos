@@ -216,25 +216,43 @@ PRIVATE void init_fs(){
 // <ring 1>
 // TODO: move pcaller out
 PUBLIC void task_fs(){
-    printl(">>> task fs begins. \n");
+    printl(">>> task_fs is running\n");
     init_fs();
     while(1){
         send_recv(RECEIVE, ANY, &fs_msg);    // TODO: replace global to local
 
+        int msgtype = fs_msg.type;
         int src = fs_msg.source;
         pcaller = &proc_table[src]; // TODO: replace global var with function: get_proc(int)
-        switch(fs_msg.type){
+        switch(msgtype){
             case OPEN:
                 fs_msg.FD = do_open();
                 break;
             case CLOSE:
-                printl("receive CLOSE");
                 fs_msg.RETVAL = do_close();
                 break;
             case READ:
             case WRITE:
                 fs_msg.CNT = do_rdwt();
                 break;
+            case UNLINK:
+                fs_msg.RETVAL = do_unlink();
+                break;
+            /* case LSEEK: */
+            /* 	fs_msg.OFFSET = do_lseek(); */
+            /* 	break; */
+            case RESUME_PROC:
+                src = fs_msg.PROC_NR;
+             	break;
+            /* case FORK: */
+            /* 	fs_msg.RETVAL = fs_fork(); */
+            /* 	break; */
+            /* case EXIT: */
+            /* 	fs_msg.RETVAL = fs_exit(); */
+            /* 	break; */
+            /* case STAT: */
+            /* 	fs_msg.RETVAL = do_stat(); */
+            /* 	break; */
             default:
                 dump_msg("fs: unknow message: ", &fs_msg);
                 assert(0);
@@ -242,7 +260,12 @@ PUBLIC void task_fs(){
         }   
 
         // reply
-        fs_msg.type = SYSCALL_RET;
-        send_recv(SEND, src, &fs_msg);
+        // when fs receive SUSPEND_PROC message, it just ignore it,
+        // so the requesting process P (= fs_msg.PROC_NR) will wait, until fs receives RESUME_PROC message
+        // it then notify process P to let it continue.
+        if(fs_msg.type != SUSPEND_PROC){
+            fs_msg.type = SYSCALL_RET;
+            send_recv(SEND, src, &fs_msg);
+        }        
     }
 }

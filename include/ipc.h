@@ -13,7 +13,7 @@ struct proc;
 
 void task_sys();
 int send_recv(int function, int src_dest, struct s_message* msg);
-int get_ticks2();
+int get_ticks();
 void inform_int(int task_nr);
 void dump_msg(const char * title, struct s_message* m);
 #endif

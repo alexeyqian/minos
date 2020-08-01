@@ -43,4 +43,6 @@ EXTERN struct proc* pcaller;
 extern	uint8_t* fsbuf;
 extern	const int FSBUF_SIZE;
 
+EXTERN int key_pressed; // used for clock_handler to wake up TASK_TTY when a key is pressed
+
 #endif

@@ -69,7 +69,7 @@ It prepares:
 - transfer control to kernel
 
 ### main purpose: loading loader.bin to memory
-
+loader.bin loaded into 0x90000 ~ 0x9fc00
 ### Read Data from Disk Sectors
 
 ### Parse FAT12 File System
@@ -81,7 +81,7 @@ It prepares:
 ### Main Purpose: loading kernel.bin to memory
 
 ### Load Kernel Image into Memory from Disk 
-
+kernel.bin loaded to 0x70000 - 0x90000 (128K)
 ### Enter Protected Mode
 
 #### Setup GDT and IDT
@@ -89,12 +89,14 @@ It prepares:
 ### Parsing ELF File Format
 
 ### Load Kernel into Memory
+loaded into 0x1000h - 0x6ffff (450K)
+mem range 0x500 - 0x1000 - 1 is used to pass params from loader to kernel
 
 ### Transfer Control to Kernel
 
 # Kernel
-; kernel is first read to at address:0x8000 from disk by loader in real mode 
-; then it's been moved to address:0x30000 from 0x8000 to execute in protection mode.
+; kernel is first read to at address:0x70000 from disk by loader in real mode 
+; then it's been moved to address:0x1000 from 0x70000 to execute in protection mode.
 ; the reason for read first then move, is because is easy to read from disk in real mode which has BIOS.
 ; but the kernel is elf format, and cannot run directly as pure bin, since it has format data.
 ; so it need to parse the elf file and load/move 'segments' into memory, so it can execute. 

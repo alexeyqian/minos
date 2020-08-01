@@ -20,7 +20,7 @@ struct proc*        p_proc_ready;               // points to next about to run p
 struct proc         proc_table[NR_TASKS + NR_PROCS];  // contains array of process control block: proc
 
 pf_irq_handler_t    irq_table[IRQ_NUM];
-syscall_t           syscall_table[NR_SYSCALLS] = {sys_get_ticks, sys_printx, sys_write, sys_sendrec};
+syscall_t           syscall_table[NR_SYSCALLS] = {sys_printx, sys_sendrec};
 
 // remember to modify include/const.h if the order is changed
 PUBLIC struct dev_drv_map dd_map[] = {

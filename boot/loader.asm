@@ -4,11 +4,10 @@
 
 [bits 16]
 %include "constants.inc"
-KERNEL_BIN_SEG_BASE   equ 0x8000 
+KERNEL_BIN_SEG_BASE   equ 0x7000 
 KERNEL_BIN_OFFSET     equ 0x0
 KERNEL_BIN_PHYS_ADDR equ KERNEL_BIN_SEG_BASE * 0x10
-KERNEL_PHYS_ENTRY_POINT equ 0x30400 ; must match -Ttext in makefile
-; since ELF has 4K aligned for each segment, so the vaddr will be 0x30000
+KERNEL_PHYS_ENTRY_POINT equ 0x1000 ; must match -Ttext in makefile
 
 ; ================== entry point =================
 jmp short start       ; fixed position, start execute from first line of this bin file after loading by boot.

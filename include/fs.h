@@ -60,4 +60,5 @@ int open(const char* pathname, int flags);
 int close(int fd);
 int read(int fd, void* buf, int count);
 int write(int fd, const void* buf, int count);
+int unlink(const char* pathname);
 #endif

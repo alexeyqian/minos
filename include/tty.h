@@ -6,6 +6,7 @@
 #include "ktypes.h"
 
 #define TTY_IN_BYTES         256    // tty input queue size
+#define TTY_OUT_BUF_LEN      2
 
 #define SCROLL_SCREEN_UP	 1	    /* scroll forward */
 #define SCROLL_SCREEN_DOWN	-1	    /* scroll backward */
@@ -21,15 +22,22 @@ typedef struct s_tty{
     uint32_t* p_inbuf_head;           // point to next available space
     uint32_t* p_inbuf_tail;           // point to next should be processed value    
 
+    int tty_caller;    // usally is task_fs
+    int tty_procnr;    // process p who request data
+    void* tty_req_buf; // process P's buf address for putting data
+    int tty_left_cnt;  // how much requested
+    int tty_trans_cnt; // how much have been transferred.
+
     struct s_console* p_console;
 } TTY;
 
 typedef struct s_console // CONSOLE is a video memory region
 {
-	unsigned int	current_start_addr;	/* 当前显示到了什么位置   */
-	unsigned int	original_addr;		/* 当前控制台对应显存位置 */
-	unsigned int	v_mem_limit;		/* 当前控制台占的显存大小 */
-	unsigned int	cursor;			/* 当前光标位置 */
+	unsigned int	current_start_addr;	
+	unsigned int	original_addr;		
+	unsigned int	size_in_word; // how many words does the console have
+	unsigned int	cursor;			
+    int is_full;
 }CONSOLE;
 
 void task_tty();

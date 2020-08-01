@@ -111,10 +111,15 @@ typedef struct s_message{
 
 enum msgtype{
 	HARD_INT = 1,
-	GET_TICKS2, // sys task
+
+	// sys task
+	GET_TICKS, GET_PID, 
 
 	// fs
 	OPEN, CLOSE, READ, WRITE, LSEEK, STAT, UNLINK,
+
+	// fs & tty
+	SUSPEND_PROC, RESUME_PROC,
 
 	// tty, sys, fs, mm, etc
 	SYSCALL_RET,
@@ -124,7 +129,10 @@ enum msgtype{
 	DEV_CLOSE,
 	DEV_READ,
 	DEV_WRITE,
-	DEV_IOCTL
+	DEV_IOCTL,
+
+	// for debug
+	DISK_LOG
 };
 
 // macros for messages 
@@ -141,11 +149,9 @@ enum msgtype{
 #define	OFFSET		u.m3.m3i2 
 #define	WHENCE		u.m3.m3i3 
 
-/* #define	PID		u.m3.m3i2 */
-/* #define	STATUS		u.m3.m3i1 */
+#define	PID		    u.m3.m3i2
+#define	STATUS		u.m3.m3i1
 #define	RETVAL		u.m3.m3i1
-/* #define	STATUS		u.m3.m3i1 */
-
 
 typedef struct stack_frame{ // proc_ptr points to here
     uint32_t	gs;		    /* ┓						│Low address*/ 
@@ -202,7 +208,7 @@ typedef struct proc{
 	int has_int_msg; // non zero if an INTERRUPT occurred when the task is not ready to deal with it.
 	struct proc* q_sending; //queue of procs sending message to this proc
 	struct proc* next_sending; // next proc in the sending queue
-	int 				tty_idx;
+	//int 				tty_idx;
 	struct file_desc* filp[NR_FILES];
 }proc_s;
 

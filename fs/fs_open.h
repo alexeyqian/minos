@@ -5,4 +5,5 @@ int do_open();
 int do_close();
 int do_lseek();
 int do_rdwt();
+int do_unlink();
 #endif

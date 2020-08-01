@@ -32,6 +32,7 @@ PUBLIC void init_proc_table(){
 	uint8_t privilege;
 	uint8_t rpl;
 	int eflags;
+	int prio = 5;
 
 	struct proc* p_proc = proc_table;
 	struct task* p_task = task_table;
@@ -90,7 +91,6 @@ PUBLIC void init_proc_table(){
 		p_proc->regs.esp	= (uint32_t) p_task_stack; // points to seperate stack for process/task 
 		p_proc->regs.eflags	= eflags;
 	
-		p_proc->tty_idx = 0;
 		p_proc->p_flags = 0;
 		p_proc->p_msg = 0;
 		p_proc->p_recvfrom = NO_TASK;
@@ -107,26 +107,9 @@ PUBLIC void init_proc_table(){
 		p_task++;
 		selector_ldt += 1 << 3;	
 
-		p_proc->ticks = p_proc->priority = 5;
+		p_proc->ticks = p_proc->priority = prio;
 	}
 	k_reenter = 0;	
 	ticks = 0;
 	p_proc_ready = proc_table; // set default ready process
-
-	/*
-	proc_table[0].ticks = proc_table[0].priority = 5;	
-	proc_table[1].ticks = proc_table[1].priority = 5;	
-	proc_table[2].ticks = proc_table[2].priority = 5;	
-	proc_table[3].ticks = proc_table[3].priority = 5;	
-	proc_table[4].ticks = proc_table[4].priority = 5;	
-	proc_table[5].ticks = proc_table[5].priority = 5;	
-	proc_table[6].ticks = proc_table[6].priority = 5;	
-	*/
-	//proc_table[0].tty_idx = 0;
-	//proc_table[1].tty_idx = 0; 
-	//proc_table[2].tty_idx = 0;
-	//proc_table[3].tty_idx = 0;
-	//proc_table[4].tty_idx = 0;
-	//proc_table[5].tty_idx = 1;
-	proc_table[6].tty_idx = 1;
 }

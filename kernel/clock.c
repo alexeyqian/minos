@@ -5,6 +5,7 @@
 #include "ke_asm_utils.h"
 #include "klib.h"
 #include "screen.h" // kprint
+#include "ipc.h"
 
 PUBLIC void delay(int milli_sec){
     int t = get_ticks();
@@ -19,6 +20,9 @@ PRIVATE void clock_handler(int irq){
 	ticks++;
 	p_proc_ready->ticks--;
 
+	if(key_pressed)
+		inform_int(TASK_TTY);
+		
 	if(k_reenter != 0){ // interrupt re-enter
 		//kprint("!]");
 		return;

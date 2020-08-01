@@ -101,6 +101,8 @@ PRIVATE void append_scan_code_to_kb_buf(){
 PRIVATE void keyboard_handler(int irq){
 	UNUSED(irq);
 	append_scan_code_to_kb_buf();
+
+	key_pressed = 1;
 }
 
 // key must be make key
