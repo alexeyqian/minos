@@ -6,6 +6,7 @@
 #include "syscall.h"
 #include "fs.h"
 
+struct boot_params g_boot_params;
 int ticks;
 int k_reenter;
 uint32_t disp_pos = 0;

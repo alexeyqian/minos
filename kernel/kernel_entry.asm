@@ -20,6 +20,6 @@ _start:
 ; System V ABI standard and de-facto extensions. 
 ; The compiler will assume the stack is properly aligned 
 ; and failure to align the stack will result in undefined behavior.
-align 16 
+; align 16 
 stack_space resb 16*1024 ; reserved 16K for kernle stack
 kernel_stack_top: 

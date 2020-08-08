@@ -9,6 +9,14 @@ KERNEL_BIN_OFFSET     equ 0x0
 KERNEL_BIN_PHYS_ADDR equ KERNEL_BIN_SEG_BASE * 0x10
 KERNEL_PHYS_ENTRY_POINT equ 0x1000 ; must match -Ttext in makefile
 
+; ATTENTION: must match defines in kernel
+BOOT_PARAM_MAGIC                equ 0xb007
+BOOT_PARAM_ADDR                 equ 0x900
+BOOT_PARAM_MAGIC_ADDR           equ BOOT_PARAM_ADDR
+BOOT_PARAM_KERNEL_BIN_ADDR      equ BOOT_PARAM_ADDR + 4
+BOOT_PARAM_MEM_RANGE_COUNT_ADDR equ BOOT_PARAM_KERNEL_BIN_ADDR + 4
+BOOT_PARAM_MEM_RANGE_BUF_ADDR   equ BOOT_PARAM_MEM_RANGE_COUNT_ADDR + 4
+
 ; ================== entry point =================
 jmp short start       ; fixed position, start execute from first line of this bin file after loading by boot.
 %include "fat12_header.inc" ; contains data used to read kernel.bin from FAT12 floppy to memory
@@ -31,7 +39,19 @@ start:
 	;call rm_get_memory_map	
 	;mov ax, 'F' ; got memory map
     call loader_putax
-	; ========== step 3: enter protect mode ==========
+	; ========== step 3: save boot params for kernel ======
+	mov dword [BOOT_PARAM_ADDR], BOOT_PARAM_MAGIC
+	
+	mov eax, KERNEL_BIN_SEG_BASE
+	shl eax, 4
+	add eax, KERNEL_BIN_OFFSET
+	mov [BOOT_PARAM_KERNEL_BIN_ADDR], eax ; physical address of kernel.bin
+
+	; mem range count and mam range map is set by get_memory_map function
+	;mov eax, 0xB00000 ;[pm_mem_size] ; TODO: HARDCODE FOR TEST
+	;mov [BOOT_PARAM_ADDR + 4], eax
+
+	; ========== step 4: enter protect mode ==========
 	lgdt [gdt_ptr]
 	cli
 	
@@ -50,7 +70,7 @@ start:
 %include "loader_lib.inc"
 %include "loader_load_kernel_bin.inc"
 %include "loader_descriptor.inc" ; constants and macros
-;%include "loader_get_memory_map.inc"
+%include "loader_get_memory_map.inc"
 
 ; data section
 gdt_start:

@@ -11,6 +11,17 @@
 #include "ipc.h"
 #include "hd.h"
 
+PRIVATE int fs_fork(){
+    int i;
+    struct proc* child = &proc_table[fs_msg.PID];
+    for(i = 0; i < NR_FILES; i++){
+        if(child->filp[i]){
+            child->filp[i]->fd_cnt++;
+            child->filp[i]->fd_inode->i_cnt++;
+        }
+    }
+}
+
 PRIVATE void read_super_block(int dev){
     int i;
     MESSAGE driver_msg;
@@ -66,7 +77,7 @@ PRIVATE void mkfs(){
     assert(dd_map[MAJOR(ROOT_DEV)].driver_nr != INVALID_DRIVER);
     send_recv(BOTH, dd_map[MAJOR(ROOT_DEV)].driver_nr, &driver_msg);
 
-    printl("dev size: 0x%x sectors\n", geo.size);
+    //printl("dev size: 0x%x sectors\n", geo.size);
 
     //========= super block ============
     struct super_block sb;
@@ -93,8 +104,8 @@ PRIVATE void mkfs(){
 
     // write the super block to sector 1
     WR_SECT(ROOT_DEV, 1);
-
-    printl("devbase:0x%x00, sb:0x%x00, imap:0x%x00, smap:0x%x00\n"
+    /*
+    printl("dev base:0x%x00, sb:0x%x00, imap:0x%x00, smap:0x%x00\n"
 	       "        inodes:0x%x00, 1st_sector:0x%x00\n", 
 	       geo.base * 2,
 	       (geo.base + 1) * 2,
@@ -102,7 +113,7 @@ PRIVATE void mkfs(){
 	       (geo.base + 1 + 1 + sb.nr_imap_sects) * 2,
 	       (geo.base + 1 + 1 + sb.nr_imap_sects + sb.nr_smap_sects) * 2,
 	       (geo.base + sb.n_1st_sect) * 2);
-
+    */
     // ============= inode map =============
     memset(fsbuf, 0, SECTOR_SIZE);
     for(i = 0; i < (NR_CONSOLES + 2); i++)
@@ -213,6 +224,22 @@ PRIVATE void init_fs(){
     root_inode = get_inode(ROOT_DEV, ROOT_INODE);
 }
 
+PRIVATE int fs_exit(){
+    struct proc* p = &proc_table[fs_msg.PID];
+    for(int i = 0; i < NR_FILES; i++){
+        if(p->filp[i]){
+            // release inode
+            p->filp[i]->fd_inode->i_cnt--;
+            // release file descriptor
+            if(--p->filp[i]->fd_cnt == 0)
+                p->filp[i]->fd_inode = 0;
+            p->filp[i] = 0;
+        }
+    }
+
+    return 0;
+}
+
 // <ring 1>
 // TODO: move pcaller out
 PUBLIC void task_fs(){
@@ -226,7 +253,9 @@ PUBLIC void task_fs(){
         pcaller = &proc_table[src]; // TODO: replace global var with function: get_proc(int)
         switch(msgtype){
             case OPEN:
+                printl(">>> 2.2 in task_fs()::OPEN before do_open(), src: %d, type: %d, flags: %d\n", fs_msg.source, fs_msg.type, pcaller->p_flags);
                 fs_msg.FD = do_open();
+                printl(">>> 2.2 in task_fs()::OPEN after do open(), src: %d, type: %d, flags: %d\n", fs_msg.source, fs_msg.type, pcaller->p_flags);
                 break;
             case CLOSE:
                 fs_msg.RETVAL = do_close();
@@ -244,12 +273,12 @@ PUBLIC void task_fs(){
             case RESUME_PROC:
                 src = fs_msg.PROC_NR;
              	break;
-            /* case FORK: */
-            /* 	fs_msg.RETVAL = fs_fork(); */
-            /* 	break; */
-            /* case EXIT: */
-            /* 	fs_msg.RETVAL = fs_exit(); */
-            /* 	break; */
+            case FORK:
+             	fs_msg.RETVAL = fs_fork(); 
+             	break; 
+            case EXIT: 
+             	fs_msg.RETVAL = fs_exit(); 
+             	break; 
             /* case STAT: */
             /* 	fs_msg.RETVAL = do_stat(); */
             /* 	break; */
@@ -265,7 +294,12 @@ PUBLIC void task_fs(){
         // it then notify process P to let it continue.
         if(fs_msg.type != SUSPEND_PROC){
             fs_msg.type = SYSCALL_RET;
+            printl(">>> 2.3 in task_fs()::end before send to:%d, type: %d, flags: %d\n", src, fs_msg.type, pcaller->p_flags);
+            struct proc* ptaskfs = &proc_table[TASK_FS]; 
+            printl(">>> 2.3 in task_fs()::end, task_fs id:%d, flags: %d\n", ptaskfs->pid, ptaskfs->p_flags);            
             send_recv(SEND, src, &fs_msg);
+            printl(">>> 2.3 in task_fs()::end, task_fs id:%d, flags: %d\n", ptaskfs->pid, ptaskfs->p_flags);
+            printl(">>> 2.3 in task_fs()::end after send to:%d, type: %d\n", src, fs_msg.type);
         }        
     }
 }

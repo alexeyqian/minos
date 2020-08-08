@@ -113,13 +113,19 @@ enum msgtype{
 	HARD_INT = 1,
 
 	// sys task
-	GET_TICKS, GET_PID, 
+	GET_TICKS, GET_PID, GET_RTC_TIME,
 
 	// fs
 	OPEN, CLOSE, READ, WRITE, LSEEK, STAT, UNLINK,
 
 	// fs & tty
 	SUSPEND_PROC, RESUME_PROC,
+
+	// MM
+	EXEC, WAIT, 
+
+	// fs & mm
+	FORK, EXIT,
 
 	// tty, sys, fs, mm, etc
 	SYSCALL_RET,
@@ -193,7 +199,6 @@ struct file_desc;
 typedef struct proc{
     struct stack_frame  regs;           // process registers saved in stack frame
     uint16_t            ldt_sel;        // selector in gdt giving the ldt base and limit
-    // TODO: rename to process_ldt
 	struct descriptor   ldt[LDT_SIZE]; // local descriptors for code and data
                                         // descriptor 1 for code, descriptor 2 for data
     uint32_t            pid;
@@ -208,7 +213,9 @@ typedef struct proc{
 	int has_int_msg; // non zero if an INTERRUPT occurred when the task is not ready to deal with it.
 	struct proc* q_sending; //queue of procs sending message to this proc
 	struct proc* next_sending; // next proc in the sending queue
-	//int 				tty_idx;
+
+	int p_parent;    // the pid of parrent process
+	int exit_status; // for parent
 	struct file_desc* filp[NR_FILES];
 }proc_s;
 
@@ -267,5 +274,30 @@ struct kinfo{
 struct dev_drv_map{
     int driver_nr;
 };
+
+#define ADDR_RANGE_MEMORY   1
+#define ADDR_RANGE_RESERVED 2
+
+#define ADDR_RANGE_MAX_COUNT 10
+
+struct addr_range{
+	uint32_t baseaddr_low;
+	uint32_t baseaddr_high;
+	uint32_t length_low;
+	uint32_t length_high;
+	uint32_t type;
+};
+
+struct boot_params{	
+	uint32_t magic;
+	unsigned char* kernel_file; // addr of kernel file
+	uint32_t addr_range_count;
+	struct addr_range addr_ranges[ADDR_RANGE_MAX_COUNT];
+};
+
+#define	reassembly(high, high_shift, mid, mid_shift, low)	\
+	(((high) << (high_shift)) +				\
+	((mid)  << (mid_shift)) +				\
+	(low))
 
 #endif

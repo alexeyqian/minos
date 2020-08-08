@@ -9,6 +9,7 @@
 #include "keyboard.h"
 #include "assert.h"
 #include "ipc.h"
+#include "kio.h"
 
 PRIVATE TTY tty_table[NR_CONSOLES];
 #define TTY_FIRST (tty_table)
@@ -154,7 +155,7 @@ PRIVATE void scroll_screen(CONSOLE* con, int dir)
 	flush(con);
 }
 
-PRIVATE void clear_screen(int pos, int len)
+PUBLIC void clear_screen(int pos, int len)
 {
 	uint8_t* pch = (uint8_t*)(V_MEM_BASE + pos * 2);
 	while (--len >= 0) {
@@ -207,7 +208,7 @@ PUBLIC void tty_output_char(CONSOLE *con, char ch)
 
     assert(con->cursor - con->original_addr < con->size_in_word);
 
-    while (con->cursor >= con->current_start_addr + SCREEN_SIZE
+    if (con->cursor >= con->current_start_addr + SCREEN_SIZE
         || con->cursor < con->current_start_addr){ // TODO: if <-> while?
        scroll_screen(con, SCROLL_SCREEN_UP);
        clear_screen(con->cursor, SCREEN_WIDTH);
@@ -461,9 +462,7 @@ PUBLIC void task_tty()
 {       
     TTY* p_tty;
     MESSAGE msg;
-
-    init_keyboard();    
-
+    
     for (p_tty = TTY_FIRST; p_tty < TTY_END; p_tty++)
         init_tty(p_tty);
 
@@ -489,7 +488,9 @@ PUBLIC void task_tty()
             case DEV_OPEN: // nothing need to open, just return
                 reset_msg(&msg);
                 msg.type = SYSCALL_RET;
+                printl(">>> 4.1 in task_tty()::DEVOPEN before send, to: %d, type: %d\n", src, msg.type);
                 send_recv(SEND, src, &msg);
+                printl(">>> 4.1 in task_tty()::DEVOPEN after send, to: %d, type: %d\n", src, msg.type);
                 break;
             case DEV_READ:
                 tty_do_read(ptty2, &msg);

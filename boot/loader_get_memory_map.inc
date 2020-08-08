@@ -7,7 +7,7 @@ rm_get_memory_map:
 
 	; begin get memory range info ========================================
 	mov	ebx, 0			            ; ebx = next address range address, init to 0
-	mov	di, rm_mem_range_buf		; es:di point to next（Address Range Descriptor Structure）
+	mov	di, BOOT_PARAM_MEM_RANGE_BUF_ADDR ;rm_mem_range_buf		; es:di point to next（Address Range Descriptor Structure）
 .mem_check_loop:
 	mov	eax, 0E820h		    ; eax = 0000E820h
 	mov	ecx, 20			    ; ecx = size of ARD Structure
@@ -15,14 +15,12 @@ rm_get_memory_map:
 	int	15h			
 	jc	.mem_check_fail
 	add	di, 20
-	inc	dword [rm_mem_range_count]
+	inc	dword [BOOT_PARAM_MEM_RANGE_COUNT_ADDR] ;[rm_mem_range_count]
 	cmp	ebx, 0
 	jne	.mem_check_loop
 	jmp	.mem_check_ok
 .mem_check_fail:
-	mov	dword [rm_mem_range_count], 0
-    popa
-    ret
+	mov	dword [BOOT_PARAM_MEM_RANGE_COUNT_ADDR], 0 ; [rm_mem_range_count], 0
 .mem_check_ok:
     popa
     ret

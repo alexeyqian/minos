@@ -9,6 +9,7 @@
 #include "string.h"
 #include "klib.h"
 #include "kio.h"
+#include "boot_params.h"
 
 #include "interrupt.h"
 #include "clock.h"
@@ -54,6 +55,9 @@ void kinit(){
 	init_ldt_descriptors_in_dgt(); 
 	init_proc_table();	 	
 
+	get_boot_params(&g_boot_params);
+	print_boot_params(&g_boot_params);
+
 	//pmmgr_init();	
 	//vmmgr_init();kprint(">>> virtual memory initialized and paging enabled.");
 	 
@@ -63,7 +67,8 @@ void kinit(){
 void kmain(){ 
 	//kprint(">>> kmain begin ... \n");	// kprint SHOULD NOT BE USED ANYMORE AFTER THIS
 	
-	enable_clock(); 	
+	init_clock(); 
+	init_keyboard();    	
 	restart(); // pretenting a schedule happend to start a process.
 	while(1){}
 }
@@ -139,4 +144,25 @@ void init_descriptor(struct descriptor* p_desc, uint32_t base, uint32_t limit, u
 	p_desc->attr1			= attribute & 0xFF;		     // 属性 1
 	p_desc->limit_high_attr2	= ((limit >> 16) & 0x0F) | (attribute >> 8) & 0xF0; // 段界限 2 + 属性 2
 	p_desc->base_high		= (base >> 24) & 0x0FF;		 // 段基址 3		(1 字节)
+}
+
+void init(){
+	spin("init()");
+	/*
+	int fd_stdin = open("/dev_tty0", O_RDWR);
+	assert(fd_stdin == 0);
+	int fd_stdout = open("/dev_tty0", O_RDWR);
+	assert(fd_stdout == 1);
+
+	printf(">>> init() is running ...\n");
+
+	int pid = fork();
+	if(pid != 0){ // parent process
+		printf(">>> parent is running, child pid: %d\n", pid);
+		spin(">>> parent...\n");
+	}else { // child process
+		printf(">>> child process is running, pid: %d", getpid());
+		spin("child");
+	}
+	*/
 }

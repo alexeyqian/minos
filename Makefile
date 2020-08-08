@@ -27,8 +27,10 @@ boot/loader.bin: boot/loader.asm
 	nasm $< -f bin -I 'boot/' -o $@
 
 kernel/kernel.bin: $(C_SOURCES) $(C_HEADERS) \
-		fs/fs_main.c fs/fs_open.c fs/fs_shared.c fs/fs_shared.h fs/fs_open.h
+		fs/fs_main.c fs/fs_open.c fs/fs_shared.c fs/fs_shared.h fs/fs_open.h \
+		mm/mm_main.c 
 	nasm kernel/kernel_entry.asm -f elf32 -I 'kernel/' -o kernel/kernel_entry.o	
+	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/boot_params.o kernel/boot_params.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/klib.o      kernel/klib.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/global.o    kernel/global.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/interrupt.o kernel/interrupt.c
@@ -48,12 +50,13 @@ kernel/kernel.bin: $(C_SOURCES) $(C_HEADERS) \
 	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/ipc.o       kernel/ipc.c	
 	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/hd.o        kernel/hd.c	
 	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/kernel.o    kernel/kernel.c
-	$(CROSS_COMPILER) $(C_FLAGS) -o fs/fs_main.o      fs/fs_main.c
-	$(CROSS_COMPILER) $(C_FLAGS) -o fs/fs_open.o      fs/fs_open.c
-	$(CROSS_COMPILER) $(C_FLAGS) -o fs/fs_shared.o    fs/fs_shared.c
+	$(CROSS_COMPILER) $(C_FLAGS) -o fs/fs_main.o       fs/fs_main.c
+	$(CROSS_COMPILER) $(C_FLAGS) -o fs/fs_open.o       fs/fs_open.c
+	$(CROSS_COMPILER) $(C_FLAGS) -o fs/fs_shared.o     fs/fs_shared.c
+	$(CROSS_COMPILER) $(C_FLAGS) -o mm/mm_main.o       mm/mm_main.c
 	#$(CROSS_COMPILER) -T linker.ld -o $@ -ffreestanding -nostdlib kernel/kernel_entry.o $(C_OBJS) fs.o -lgcc
 	ld -m elf_i386 -s -Ttext 0x1000 -nostdlib -o $@ kernel/kernel_entry.o $(C_OBJS) \
-		fs/fs_main.o fs/fs_open.o fs/fs_shared.o
+		fs/fs_main.o fs/fs_open.o fs/fs_shared.o mm/mm_main.o
 
 #kernel/kernel.bin: kernel/kernel_entry.o kernel/kernel.o ${OBJ}
 #	ld -m elf_i386 -Ttext 0x1000 --oformat binary -o $@  $^ 
@@ -65,4 +68,4 @@ kernel/kernel.bin: $(C_SOURCES) $(C_HEADERS) \
 #	gcc -m32 -ffreestanding -fno-pie -c $< -o $@
 
 clean:	
-	@rm -rf os.img boot/*.o boot/*.bin kernel/*.o kernel/*.bin fs/*.o
+	@rm -rf os.img boot/*.o boot/*.bin kernel/*.o kernel/*.bin fs/*.o mm/*.o

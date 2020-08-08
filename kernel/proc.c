@@ -12,6 +12,8 @@ extern void task_tty();
 extern void task_sys();
 extern void task_hd();
 extern void task_fs();
+extern void task_mm();
+extern void init();
 
 // task stack is a mem area divided into MAX_TASK_NUM small areas
 // each small area used as stack for a process/task
@@ -20,9 +22,11 @@ struct task         task_table[NR_TASKS]={
 						{task_tty, STACK_SIZE_TTY,   "task_tty"  },
 						{task_sys, STACK_SIZE_SYS,   "task_sys"  },
 						{task_hd,  STACK_SIZE_HD,    "task_hd"   },
-						{task_fs,  STACK_SIZE_FS,    "task_fs"   }
+						{task_fs,  STACK_SIZE_FS,    "task_fs"   },
+						{task_mm,  STACK_SIZE_MM,    "task_mm"}
 					};
-struct task         user_proc_table[NR_PROCS]={ 					
+struct task         user_proc_table[NR_PROCS]={ 	
+						{init,     STACK_SIZE_INIT,  "init"},				
 						{test_a,   STACK_SIZE_TESTA, "TestA"},
 						{test_b,   STACK_SIZE_TESTB, "TestB"},
 						{test_c,   STACK_SIZE_TESTC, "TestC"}
@@ -32,7 +36,7 @@ PUBLIC void init_proc_table(){
 	uint8_t privilege;
 	uint8_t rpl;
 	int eflags;
-	int prio = 5;
+	int prio;
 
 	struct proc* p_proc = proc_table;
 	struct task* p_task = task_table;
@@ -43,21 +47,28 @@ PUBLIC void init_proc_table(){
 	// each process has a ldt selector points to a ldt descriptor in GDT.
 	int i;
 	for(i = 0; i < NR_TASKS + NR_PROCS; i++){
+		if(i >= NR_TASKS + NR_NATIVE_PROCS){
+			p_proc->p_flags = FREE_SLOT;
+			continue;
+		}
 		
 		if(i < NR_TASKS){ // tasks
 			p_task = task_table + i;
 			privilege = PRIVILEGE_TASK; // apply system task permission
 			rpl = RPL_TASK;
 			eflags = 0x1202; // IF=1, IOPL=1, bit2 = 1
+			prio = 15;
 		}else{ // user processes
 			p_task = user_proc_table + (i - NR_TASKS);
 			privilege = PRIVILEGE_USER; // apply user process permission
 			rpl = RPL_USER;
 			eflags = 0x202; // IF=1, bit2 = 1, remove IO permission for user process
+			prio = 5;
 		}
 
 		strcpy(p_proc->p_name, p_task->name);
-		p_proc->pid = 1;
+		p_proc->pid = i;
+		p_proc->p_parent = NO_TASK;
 
 		// init process ldt selector, which points to a ldt descriptor in gdt.
 		p_proc->ldt_sel = selector_ldt;
@@ -91,6 +102,8 @@ PUBLIC void init_proc_table(){
 		p_proc->regs.esp	= (uint32_t) p_task_stack; // points to seperate stack for process/task 
 		p_proc->regs.eflags	= eflags;
 	
+		p_proc->ticks = p_proc->priority = prio;
+
 		p_proc->p_flags = 0;
 		p_proc->p_msg = 0;
 		p_proc->p_recvfrom = NO_TASK;
@@ -105,9 +118,7 @@ PUBLIC void init_proc_table(){
 		p_task_stack -= p_task->stack_size;
 		p_proc++;
 		p_task++;
-		selector_ldt += 1 << 3;	
-
-		p_proc->ticks = p_proc->priority = prio;
+		selector_ldt += 1 << 3;			
 	}
 	k_reenter = 0;	
 	ticks = 0;

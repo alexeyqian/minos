@@ -17,8 +17,10 @@ PRIVATE void clock_handler(int irq){
 	
 	//kprint("[");
 
-	ticks++;
-	p_proc_ready->ticks--;
+	if(++ticks >= MAX_TICKS) ticks = 0;
+
+	if(p_proc_ready->ticks)
+		p_proc_ready->ticks--;
 
 	if(key_pressed)
 		inform_int(TASK_TTY);
@@ -28,12 +30,13 @@ PRIVATE void clock_handler(int irq){
 		return;
 	}
 
-	//if (p_proc_ready->ticks > 0) return;
+	if (p_proc_ready->ticks > 0) return;
 	schedule(); 
+
 	//kprint("]");
 }
 
-PUBLIC void enable_clock(){ // init 8253 PIT
+PUBLIC void init_clock(){ // init 8253 PIT
 	out_byte(TIMER_MODE, RATE_GENERATOR);
 	out_byte(TIMER0, (uint8_t) (TIMER_FREQ/HZ) );
 	out_byte(TIMER0, (uint8_t) ((TIMER_FREQ/HZ) >> 8));
@@ -47,6 +50,7 @@ PUBLIC void enable_clock(){ // init 8253 PIT
 PUBLIC void schedule(){
 	struct proc* p;
 	int greatest_ticks = 0;
+
 	while(!greatest_ticks){
 		for( p = proc_table; p < proc_table + NR_TASKS + NR_PROCS; p++)
 			if(p->p_flags == 0){
@@ -58,7 +62,8 @@ PUBLIC void schedule(){
 
 		if(!greatest_ticks)
 			for(p = proc_table; p < proc_table + NR_TASKS + NR_PROCS; p++)
-				if (p->p_flags == 0)p->ticks = p->priority;
+				if (p->p_flags == 0)
+					p->ticks = p->priority;
 	}
 }
 /*

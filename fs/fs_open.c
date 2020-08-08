@@ -153,7 +153,7 @@ PRIVATE void new_dir_entry(struct inode* dir_inode, int inode_nr, char* filename
 	uint32_t m = 0;
 	struct dir_entry * pde;
 	struct dir_entry * new_de = 0;
-
+    printl("here 6.1");
 	uint32_t i, j;
 	for (i = 0; i < nr_dir_blks; i++) {
 		RD_SECT(dir_inode->i_dev, dir_blk0_nr + i);
@@ -178,12 +178,11 @@ PRIVATE void new_dir_entry(struct inode* dir_inode, int inode_nr, char* filename
 	}
 	new_de->inode_nr = inode_nr;
 	strcpy(new_de->name, filename);
-
 	/* write dir block -- ROOT dir block */
 	WR_SECT(dir_inode->i_dev, dir_blk0_nr + i);
-
 	/* update dir inode */
 	sync_inode(dir_inode);
+    printl("here 6.5");
 
 }
 
@@ -199,12 +198,11 @@ PRIVATE struct inode* create_file(char* path, int flags){
 
     if(strip_path(filename, path, &dir_inode) != 0)
         return 0;
-
     int inode_nr = alloc_imap_bit(dir_inode->i_dev);
     int free_sect_nr = alloc_smap_bit(dir_inode->i_dev, NR_DEFAULT_FILE_SECTS);
     struct inode* newino = new_inode(dir_inode->i_dev, inode_nr, free_sect_nr);
-
     new_dir_entry(dir_inode, newino->i_num, filename);
+    printl("here 5.5");
     return newino;
 }
 
@@ -226,28 +224,27 @@ PUBLIC int do_open(){
     // find a free slot in proc::filp[]
     int i;
     for(i = 0; i < NR_FILES; i++){
-        //printl("fd: %d pointer: %x\n", i, pcaller->filp[i]);
         if(pcaller->filp[i] == 0){
             fd = i;
-            //printl("fd: %d is free\n.", fd);
             break;
         }
     }
 
-    if((fd < 0) || (fd >= NR_FILES))
+    if((fd < 0) || (fd >= NR_FILES)){
         panic("filp[] is full (pid: %d)", proc2pid(pcaller));
+    }
+        
 
     // find a free slot in f_desc_table[]
     for(i = 0; i < NR_FILE_DESC; i++){
         if(f_desc_table[i].fd_inode == 0)
             break;
     }
-
+    
     if(i >= NR_FILE_DESC)
         panic("f_desc_table[] is full, pid: %d", proc2pid(pcaller));
 
     int inode_nr = search_file(pathname);
-
     struct inode* pin = 0;
     if(flags & O_CREAT){
         if(inode_nr){
@@ -258,7 +255,7 @@ PUBLIC int do_open(){
         }
     }else{
         assert(flags & O_RDWR);
-
+        
         char filename[MAX_PATH];
         struct inode* dir_inode;
         if(strip_path(filename, pathname, &dir_inode) != 0)
@@ -272,11 +269,10 @@ PUBLIC int do_open(){
         // connects file_descriptor with inode
         f_desc_table[i].fd_inode = pin;
         f_desc_table[i].fd_mode = flags;
-        // f_desc_table[i].fd_cnt = 1;
+        f_desc_table[i].fd_cnt = 1;
         f_desc_table[i].fd_pos = 0;
 
         int imode = pin->i_mode & I_TYPE_MASK;
-
         if(imode == I_CHAR_SPECIAL){
             MESSAGE driver_msg;
             driver_msg.type = DEV_OPEN;
@@ -284,8 +280,9 @@ PUBLIC int do_open(){
             driver_msg.DEVICE = MINOR(dev);
             assert(MAJOR(dev) == 4);
             assert(dd_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
-
+            printl(">>> 3.3 in do_open(), before send, src: %d, type: %d\n", dd_map[MAJOR(dev)].driver_nr, driver_msg.type);
             send_recv(BOTH, dd_map[MAJOR(dev)].driver_nr, &driver_msg);
+            printl(">>> 3.3 in do_open(), after send, src: %d, type: %d\n", dd_map[MAJOR(dev)].driver_nr, driver_msg.type);
         }else if(imode == I_DIRECTORY){
             assert(pin->i_num == ROOT_INODE);
         }else{
@@ -303,7 +300,8 @@ PUBLIC int do_open(){
 PUBLIC int do_close(){
     int fd = fs_msg.FD;
     put_inode(pcaller->filp[fd]->fd_inode); // inode->cnt--
-    pcaller->filp[fd]->fd_inode = 0; // disconnect file descriptor from inode
+    if(--pcaller->filp[fd]->fd_cnt == 0)
+        pcaller->filp[fd]->fd_inode = 0; // disconnect file descriptor from inode 
     pcaller->filp[fd] = 0;           // disconnect fd from file descriptors
 
     return 0;
@@ -355,8 +353,9 @@ PUBLIC int open(const char* pathname, int flags){
     msg.PATHNAME = (void*)pathname;
     msg.FLAGS = flags;
     msg.NAME_LEN = strlen(pathname);
-
+    printl(">>> 1.1 in open() before send_recv BOTH, to/from: %d, type: %d\n", TASK_FS, msg.type);
     send_recv(BOTH, TASK_FS, &msg);
+    printl(">>> 1.1 in open() after send_recv BOTH, to/from: %d, type: %d\n", TASK_FS, msg.type);
     assert(msg.type == SYSCALL_RET);
 
     return msg.FD;
@@ -456,8 +455,9 @@ PUBLIC int do_rdwt(){
             }else { // WRITE
                 phys_copy((void*)va2la(TASK_FS, fsbuf + off),
                     (void*)va2la(src, buf + bytes_rw), bytes);
-                
+                printl(">>> 8.2 in do_rwrt(), before rw_sector()\n");
                 rw_sector(DEV_WRITE, pin->i_dev, i*SECTOR_SIZE, chunk*SECTOR_SIZE, TASK_FS, fsbuf);                
+                printl(">>> 8.2 in do_rwrt(), after rw_sector()\n");
             }
             off = 0;
             bytes_rw += bytes;
@@ -674,8 +674,9 @@ PUBLIC int write(int fd, const void* buf, int count){
     msg.FD = fd;
     msg.BUF = (void*)buf;
     msg.CNT = count;
-
+    printl(">>> 6.1 int write(), before sending message, src: %d", fd);
     send_recv(BOTH, TASK_FS, &msg);
+    printl(">>> 6.1 int write(), after sending message, src: %d", fd);
 
     return msg.CNT;
 }

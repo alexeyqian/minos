@@ -84,6 +84,8 @@
 #define	DA_386IGate		0x8E	/* 386 中断门类型值			*/
 #define	DA_386TGate		0x8F	/* 386 陷阱门类型值			*/
 
+#define	LIMIT_4K_SHIFT 12
+
 // ======= CLOCK ================
 #define TIMER0          0x40
 #define TIMER_MODE      0x43
@@ -152,9 +154,14 @@
 #define RED_CHAR		(MAKE_COLOR(BLUE, RED) | BRIGHT)
 
 // ========= TASKS ==================
-#define NR_TASKS 4
-#define NR_PROCS 3
-#define NR_SYSCALLS 2
+#define NR_TASKS       5
+#define NR_PROCS       32
+#define NR_NATIVE_PROCS 4
+#define NR_SYSCALLS    2
+
+#define PROCS_BASE 0xa00000 // 10MB
+#define PROC_IMAGE_SIZE_DEFAULT 0x100000 // 1MB
+#define PROC_ORIGIN_STACK 0x400 // 1KB
 
 // task types should match global vars
 #define INVALID_DRIVER	-20
@@ -163,18 +170,24 @@
 #define TASK_SYS	    1 // system call
 #define TASK_HD		    2 // hd driver
 #define TASK_FS	        3 // file system 
-/* #define TASK_MM	4 */
+#define TASK_MM         4
+#define INIT            5
 #define ANY		       (NR_TASKS + NR_PROCS + 10)
 #define NO_TASK		   (NR_TASKS + NR_PROCS + 20)
 
-#define STACK_SIZE_TTY   0x4000  // TODO: consider appropriate stack size
-#define STACK_SIZE_SYS   0x4000
-#define STACK_SIZE_HD    0x4000
+#define	MAX_TICKS	0x7FFFABCD
+
+#define STACK_SIZE_TTY   0x8000  // TODO: consider appropriate stack size
+#define STACK_SIZE_SYS   0x8000
+#define STACK_SIZE_HD    0x8000
 #define STACK_SIZE_FS    0x8000
-#define STACK_SIZE_TESTA 0x4000
-#define STACK_SIZE_TESTB 0x4000
-#define STACK_SIZE_TESTC 0x4000
-#define STACK_SIZE_TOTAL STACK_SIZE_TTY+STACK_SIZE_SYS+STACK_SIZE_HD+STACK_SIZE_FS+STACK_SIZE_TESTA+STACK_SIZE_TESTB+STACK_SIZE_TESTC
+#define STACK_SIZE_MM    0x8000
+#define STACK_SIZE_INIT  0x8000
+#define STACK_SIZE_TESTA 0x8000
+#define STACK_SIZE_TESTB 0x8000
+#define STACK_SIZE_TESTC 0x8000
+#define STACK_SIZE_TOTAL STACK_SIZE_TTY+STACK_SIZE_SYS+STACK_SIZE_HD \
+	+STACK_SIZE_FS+STACK_SIZE_MM+STACK_SIZE_INIT+STACK_SIZE_TESTA+STACK_SIZE_TESTB+STACK_SIZE_TESTC
 
 // ========= memory ===================
 /* Sizes of memory tables. The boot monitor distinguishes three memory areas, 
@@ -282,6 +295,13 @@
 			 (((m) & I_TYPE_MASK) == I_CHAR_SPECIAL))
 
 #define	NR_DEFAULT_FILE_SECTS	2048 /* 2048 * 512 = 1MB */
+
+#define BOOT_PARAM_ADDR  0x900
+#define BOOT_PARAM_MAGIC 0xb007
+#define	BI_MAG			 0
+#define	BI_KERNEL_FILE	 1
+#define	BI_MEM_RANGE_COUNT	 2
+#define	BI_MEM_RANGE_BUF	 3
 
 // some function MICROS
 #define	max(a,b)	((a) > (b) ? (a) : (b))

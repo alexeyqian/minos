@@ -82,6 +82,9 @@ loader.bin loaded into 0x90000 ~ 0x9fc00
 
 ### Load Kernel Image into Memory from Disk 
 kernel.bin loaded to 0x70000 - 0x90000 (128K)
+Another way to avoid loading temp kernel.bin file is to use
+tool to extract all binaray from elf formated kernel.bin file
+and create a pure binary file, so it would not need this tempary step.
 ### Enter Protected Mode
 
 #### Setup GDT and IDT
@@ -128,20 +131,39 @@ In future, might need to find a better solution to remove this 400 thing, to mak
 ### Init Process Table (includes PCB items)
 
 ### Task Switching
+Process switch must be done in a shared area, usally provided by kernel.
+Thread switch can be done in application area.
+
 The TSS is primarily suited for hardware multitasking, where each individual process has its own TSS. In Software multitasking, one or two TSS's are also generally enough, as they allow for entering Ring 0 code after an interrupt.
 
 There are a lot of subtle things with user mode and task switching that you may not realize at first. First: Whenever a system call interrupt happens, the first thing that happens is the CPU changes to ESP0 stack. Then, it will push all the system information. So when you enter the interrupt handler, your working off of the ESP0 stack. This could become a problem with 2 ring 3 tasks going if all you do is merely push context info and change esp. Think about it. you will change the esp, which is the esp0 stack, to the other tasks esp, which is the same esp0 stack. So, what you must do is change the ESP0 stack(along with the interrupt pushed ESP stack) on each task switch, or you'll end up overwriting yourself.
 
 Whenever a system call occurs, the CPU gets the SS0 and ESP0-value in its TSS and assigns the stack-pointer to it. So one or more kernel-stacks need to be set up for processes doing system calls. Be aware that a thread's/process' time-slice may end during a system call, passing control to another thread/process which may as well perform a system call, ending up in the same stack. Solutions are to *create a private kernel-stack for each thread/process* and re-assign esp0 at any task-switch or to disable scheduling during a system-call.
 
+
+instruction iret can detect itself if the switch is involving privillege change or not.
+
 ### Restart: Starting User Processes
 
 ## Exceptions and Interrupts Handling
 
+Inter CPU only has one externel pin: INTR for external interrupt, for accept signal from
+multiple external devices, it use PIC to collect all external requests and filter them, then select one deliver to the pin:INTR.
+
+NMI is not exception, it's a external not maskable interrupt.
+External interrupt and instruction: INT n both will not generate error code.
+
+When exception happens, CR2 will store the linear address, which can be used to locate the page directory table and page table, and the exception handler should save the value of CR2 before the next page fault exception.
 ## Locking
 
 ## Memory Management
 ### Physical Memory Management
+Loader will store memory segmentation info in physical address: 0x500 during loading stage.
+And kernel can read that info out.
+
+The real managable physical memory has to be aligned based on the page size: 4K or 2M.
+
+virt2phys() used to convert virtual address to physical address in kernel 
 
 ### Virtual Memory Management
 
@@ -149,6 +171,7 @@ Whenever a system call occurs, the CPU gets the SS0 and ESP0-value in its TSS an
 # Task Switch
 # Process Schedule
 # Process Structure
+## PCB process control block
 
 
 

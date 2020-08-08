@@ -93,6 +93,7 @@ PRIVATE int msg_send(struct proc* current, int dest, MESSAGE* m){
         assert(sender->p_msg == 0);
         assert(sender->p_recvfrom == NO_TASK);
         assert(sender->p_sendto == NO_TASK);
+        //printl("message sent: dest: %d, type: %d", dest, m->type);
     }else{ // dest is not waiting for the msg
         sender->p_flags |= SENDING;
         assert(sender->p_flags == SENDING);
@@ -116,6 +117,7 @@ PRIVATE int msg_send(struct proc* current, int dest, MESSAGE* m){
         assert(sender->p_msg != 0);
         assert(sender->p_recvfrom == NO_TASK);
         assert(sender->p_sendto == dest);
+        //printl("sender waiting: dest: %d, type: %d", dest, m->type);
     }
 
     return 0;
@@ -386,6 +388,7 @@ PUBLIC void task_sys(){
         int src = msg.source;
         switch(msg.type){
             case GET_TICKS:
+                //printl("get ticks ");
                 msg.RETVAL = ticks;
                 send_recv(SEND, src, &msg);
                 break;
