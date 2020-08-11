@@ -4,18 +4,15 @@
 
 [bits 16]
 %include "constants.inc"
-KERNEL_BIN_SEG_BASE   equ 0x7000 
-KERNEL_BIN_OFFSET     equ 0x0
-KERNEL_BIN_PHYS_ADDR equ KERNEL_BIN_SEG_BASE * 0x10
+KERNEL_BIN_SEG_BASE     equ 0x7000 
+KERNEL_BIN_OFFSET       equ 0x0
+KERNEL_BIN_PHYS_ADDR    equ KERNEL_BIN_SEG_BASE * 0x10
 KERNEL_PHYS_ENTRY_POINT equ 0x1000 ; must match -Ttext in makefile
 
 ; ATTENTION: must match defines in kernel
 BOOT_PARAM_MAGIC                equ 0xb007
-BOOT_PARAM_ADDR                 equ 0x900
-BOOT_PARAM_MAGIC_ADDR           equ BOOT_PARAM_ADDR
-BOOT_PARAM_KERNEL_BIN_ADDR      equ BOOT_PARAM_ADDR + 4
-BOOT_PARAM_MEM_RANGE_COUNT_ADDR equ BOOT_PARAM_KERNEL_BIN_ADDR + 4
-BOOT_PARAM_MEM_RANGE_BUF_ADDR   equ BOOT_PARAM_MEM_RANGE_COUNT_ADDR + 4
+BOOT_PARAM_ADDR                 equ 0x500
+BOOT_PARAM_MEM_RANGE_BUF_SIZE   equ 256
 
 ; ================== entry point =================
 jmp short start       ; fixed position, start execute from first line of this bin file after loading by boot.
@@ -26,32 +23,21 @@ start:
     mov es, ax
     mov ss, ax
 	mov bp, loader_stack_top_rm  
-    mov sp, loader_stack_top_rm  
-       
+    mov sp, loader_stack_top_rm         
+
     mov ax, 'C' ; start running in loader
 	call loader_putax
 
+	call loader_get_memory_map ; has to be here, otherwise is not working, due to some registers are changes somewhere.
+	mov ax, 'D' ; got memory map
+    call loader_putax
+
 	; ========== step 1: load kernel.bin file (ELF format) into memory [BIOS] ==========
 	call loader_load_kernel_bin
-	mov ax, 'E' ; kernel.bin loaded
-    call loader_putax	
-	; ========== step 2: get memory map [BIOS] ==========
-	;call rm_get_memory_map	
-	;mov ax, 'F' ; got memory map
-    call loader_putax
-	; ========== step 3: save boot params for kernel ======
-	mov dword [BOOT_PARAM_ADDR], BOOT_PARAM_MAGIC
+	mov ax, 'F' ; kernel.bin loaded
+    call loader_putax		
 	
-	mov eax, KERNEL_BIN_SEG_BASE
-	shl eax, 4
-	add eax, KERNEL_BIN_OFFSET
-	mov [BOOT_PARAM_KERNEL_BIN_ADDR], eax ; physical address of kernel.bin
-
-	; mem range count and mam range map is set by get_memory_map function
-	;mov eax, 0xB00000 ;[pm_mem_size] ; TODO: HARDCODE FOR TEST
-	;mov [BOOT_PARAM_ADDR + 4], eax
-
-	; ========== step 4: enter protect mode ==========
+	; ========== step 2: enter protect mode ==========
 	lgdt [gdt_ptr]
 	cli
 	
@@ -105,8 +91,16 @@ pm_start: ; entry point for protected mode
 	mov esp, ebp
 
 	mov ax, 'G' ; start running in protect mode
-    call loader_putax_pm	
+    call loader_putax_pm
+
+	call pm_print_mem_ranges
+
 	call loader_parse_elf_kernel_bin	
+
+	mov ax, 'H' ; kernel_bin loaded
+    call loader_putax_pm
+	
+	call pass_boot_params
 
 	; LOADER'S JOB ENDS AFTER THIS JMP
 	; ================ enter kernel code ========================
@@ -115,6 +109,9 @@ pm_start: ; entry point for protected mode
 
 %include "loader_lib_pm.inc"
 %include "loader_parse_elf_kernel_bin.inc"
+%include "_not_used_loader_print_mem_ranges.inc"
+%include "_not_used_loader_lib_pm.inc"
+%include "loader_pass_boot_params.inc"
 
 ; data variables
 ; 1K appended to the end of loader.bin to be used as stack.

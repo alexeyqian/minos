@@ -47,17 +47,19 @@ void restart();
 void kmain();
 
 void kinit(){
-	kclear_screen();
-    //kprint(">>> kinit begin ...\n");
+	kprint(">>> kinit begin ...\n");
+	//kclear_screen();
+    
 	init_new_gdt();  
 	init_idt();
 	init_tss();	
 	init_ldt_descriptors_in_dgt(); 
-	init_proc_table();	 	
-
+	
 	get_boot_params(&g_boot_params);
 	print_boot_params(&g_boot_params);
-
+	
+	init_proc_table();	
+	
 	//pmmgr_init();	
 	//vmmgr_init();kprint(">>> virtual memory initialized and paging enabled.");
 	 

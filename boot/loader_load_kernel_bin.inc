@@ -66,7 +66,7 @@ loader_load_kernel_bin:
     call loader_putax
 	jmp $
 .kernel_found:
-	mov ax, 'D' ; kernel.bin found
+	mov ax, 'E' ; kernel.bin found
     call loader_putax
 	
 .start_loading_kernel:

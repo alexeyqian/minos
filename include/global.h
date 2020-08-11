@@ -32,7 +32,7 @@ EXTERN syscall_t           syscall_table[NR_SYSCALLS];
 // TODO: move
 EXTERN struct dev_drv_map  dd_map[];
 
-EXTERN uint32_t disp_pos; // for screen.c and tty.c
+EXTERN uint32_t g_disp_pos; // for screen.c and tty.c
 
 // fs
 EXTERN	struct inode * root_inode;

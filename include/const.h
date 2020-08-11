@@ -296,12 +296,13 @@
 
 #define	NR_DEFAULT_FILE_SECTS	2048 /* 2048 * 512 = 1MB */
 
-#define BOOT_PARAM_ADDR  0x900
+#define BOOT_PARAM_ADDR  0x500
 #define BOOT_PARAM_MAGIC 0xb007
-#define	BI_MAG			 0
-#define	BI_KERNEL_FILE	 1
-#define	BI_MEM_RANGE_COUNT	 2
-#define	BI_MEM_RANGE_BUF	 3
+#define	BI_MAG			     0
+#define	BI_KERNEL_FILE	     1
+#define BI_MEM_SIZE          2
+#define	BI_MEM_RANGE_COUNT	 3
+#define	BI_MEM_RANGE_BUF	 4
 
 // some function MICROS
 #define	max(a,b)	((a) > (b) ? (a) : (b))

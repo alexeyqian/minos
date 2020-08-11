@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+        "atomic": "c",
+        "cstring": "c",
+        "xlocale": "c",
+        "xlocbuf": "c",
+        "xlocinfo": "c",
+        "xlocmon": "c",
+        "xstring": "c",
+        "xutility": "c",
+        "*.ipp": "c"
+    }
+}

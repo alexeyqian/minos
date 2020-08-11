@@ -31,9 +31,9 @@ since we only have 512 bytes in boot.
 - A: loader.bin file found in boot
 - B: loader.bin is loaded into memory successfully in boot
 - C: start run in loader
-- D: kernel.bin found in loader.
-- E: kernel.bin is loaded in memory
-- F: got memory map
+- D: got memory map
+- E: kernel.bin found in loader.
+- F: kernel.bin is loaded in memory 
 - G: start running in protect mode
 - 1: loader.bin file is not found in boot.
 - 2: kenel.bin not found in loader

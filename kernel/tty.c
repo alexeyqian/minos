@@ -68,8 +68,8 @@ PRIVATE void init_console(CONSOLE *p_console, int idx)
     p_console->cursor = p_console->original_addr;
     if (idx == 0)
     {   // first console use current position
-        p_console->cursor = disp_pos / 2; // disp_pos comes from screen.h TODO: move
-        disp_pos = 0; 
+        p_console->cursor = g_disp_pos / 2; // g_disp_pos comes from screen.h TODO: move
+        g_disp_pos = 0; 
     }
     else
     {
@@ -433,12 +433,13 @@ PUBLIC int sys_printx(int _unused1, int _unused2, char* s, struct proc* p_proc)
 		char * v = (char*)V_MEM_BASE;
 		const char * q = p + 1; /* +1: skip the magic char */
 
+        //TODO: fix duplicated output issue
 		while (v < (char*)(V_MEM_BASE + V_MEM_SIZE)) {
 			*v++ = *q++;
 			*v++ = RED_CHAR;
 			if (!*q) {
 				while (((int)v - V_MEM_BASE) % (SCREEN_WIDTH * 16)) {
-					/* *v++ = ' '; */
+					// *v++ = ' '; 
 					v++;
 					*v++ = GRAY_CHAR;
 				}

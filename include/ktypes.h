@@ -280,7 +280,7 @@ struct dev_drv_map{
 
 #define ADDR_RANGE_MAX_COUNT 10
 
-struct addr_range{
+struct mem_range{
 	uint32_t baseaddr_low;
 	uint32_t baseaddr_high;
 	uint32_t length_low;
@@ -291,8 +291,9 @@ struct addr_range{
 struct boot_params{	
 	uint32_t magic;
 	unsigned char* kernel_file; // addr of kernel file
-	uint32_t addr_range_count;
-	struct addr_range addr_ranges[ADDR_RANGE_MAX_COUNT];
+	uint32_t mem_size;
+	uint32_t mem_range_count;
+	struct mem_range mem_ranges[ADDR_RANGE_MAX_COUNT];
 };
 
 #define	reassembly(high, high_shift, mid, mid_shift, low)	\

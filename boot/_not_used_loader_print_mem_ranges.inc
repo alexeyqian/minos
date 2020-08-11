@@ -59,3 +59,27 @@ pm_print_mem_ranges:
 	mov esp, ebp
 	pop ebp
 	ret
+
+; data section
+; ================ begin of variables for check and display memory range =====================
+
+rm_mem_size_str:          db 'mem size:', 0
+rm_mem_table_title:       db  'addr_low addr_high length_low length_high type', 0
+rm_mem_range_struct: 
+	rm_mr_base_addr_low:  dd 0
+	rm_mr_base_addr_high: dd 0
+	rm_mr_length_low:     dd 0
+	rm_mr_length_high:    dd 0
+	rm_mr_type:           dd 0
+
+
+pm_mem_size_str           equ LOADER_PHYS_ADDR + rm_mem_size_str
+pm_mem_table_title        equ	LOADER_PHYS_ADDR + rm_mem_table_title
+pm_mem_range_struct       equ LOADER_PHYS_ADDR + rm_mem_range_struct
+	pm_mr_base_addr_low   equ LOADER_PHYS_ADDR + rm_mr_base_addr_low
+	pm_mr_base_addr_high  equ LOADER_PHYS_ADDR + rm_mr_base_addr_high
+	pm_mr_length_low      equ LOADER_PHYS_ADDR + rm_mr_length_low
+	pm_mr_length_high     equ LOADER_PHYS_ADDR + rm_mr_length_high
+	pm_mr_type            equ LOADER_PHYS_ADDR + rm_mr_type
+
+; ============= end of variables for check and display memory range =====================

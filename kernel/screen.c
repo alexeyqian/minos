@@ -25,7 +25,7 @@ PRIVATE int get_cursor(){
 }*/
 
 PRIVATE uint32_t get_cursor(){    
-    return disp_pos;
+    return g_disp_pos;
 }
 
 /*
@@ -40,7 +40,7 @@ PRIVATE void set_cursor(int offset){
 }*/
 
 PRIVATE void set_cursor(uint32_t offset){
-    disp_pos = offset;
+    g_disp_pos = offset;
 }
 
 PRIVATE int get_screen_offset(int row, int col){

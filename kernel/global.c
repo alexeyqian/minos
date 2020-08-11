@@ -9,7 +9,7 @@
 struct boot_params g_boot_params;
 int ticks;
 int k_reenter;
-uint32_t disp_pos = 0;
+uint32_t g_disp_pos = 10*80*2;  // start from row:10
 
 uint8_t			    gdt_ptr[6];	               
 struct descriptor   gdt[GDT_SIZE];

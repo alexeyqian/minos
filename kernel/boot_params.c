@@ -6,22 +6,52 @@
 #include "screen.h"
 
 PUBLIC void print_boot_params(struct boot_params* bp){
-	for(int i = 0; i < bp->addr_range_count; i++){
-		struct addr_range* p = &(bp->addr_ranges[i]);
-		printk("baseaddr low: %x, baseaddr high: %x, length low: %x, length high: %x, type: %d\n", 
+	struct mem_range* p;
+	for(int i = 0; i < bp->mem_range_count; i++){
+		p = &(bp->mem_ranges[i]);
+		kprintf("baddr_lo: 0x%x, baddr_hi: 0x%x, len_lo: 0x%x, len_hi: 0x%x, type: %d\n", 
 			p->baseaddr_low, p->baseaddr_high, p->length_low, p->length_high, p->type);
 	}
 }
+/*
+PUBLIC void print_boot_params2(struct boot_params* bp){
+	uint32_t* p = (uint32_t*)(BOOT_PARAM_ADDR + 16);
+	for(int i = 0; i < bp->mem_range_count; i++){
+		for(int j = 0; j < 5; j++){ // 5 fields
+			kprintf("0x%x ", *p++);
+		}
+		kprintf("\n");
+	}
+}
 
+
+PUBLIC void print_boot_params3(struct boot_params* bp){
+	struct mem_range* temp = (uint32_t*)(BOOT_PARAM_ADDR + 16);
+	struct mem_range* p;
+	for(int i = 0; i < bp->mem_range_count; i++){
+		p = &(temp[i]);
+		kprintf("baddr_lo: 0x%x, baddr_hi: 0x%x, len_lo: 0x%x, len_hi: 0x%x, type: %d\n", 
+			p->baseaddr_low, p->baseaddr_high, p->length_low, p->length_high, p->type);
+	}
+}
+*/
 PUBLIC void get_boot_params(struct boot_params* pbp){
 	// boot params should have been saved at BOOT_PARAM_ADDR
 	uint32_t* p = (uint32_t*)BOOT_PARAM_ADDR;
+	kprintf("bp magic: 0x%x at 0x%x\n", p[BI_MAG], BOOT_PARAM_ADDR);	
 	assert(p[BI_MAG] == BOOT_PARAM_MAGIC);	
 	pbp->kernel_file = (unsigned char *)(p[BI_KERNEL_FILE]);
+	kprintf("kernel.bin: 0x%x\n", pbp->kernel_file);		
 	assert(memcmp(pbp->kernel_file, ELFMAG, SELFMAG) == 0);
-	pbp->addr_range_count = p[BI_MEM_RANGE_COUNT];
-	memset(pbp->addr_ranges, 0, sizeof(pbp->addr_ranges));
-	memcpy(pbp->addr_ranges, p[BI_MEM_RANGE_BUF], pbp->addr_range_count*20);
+	pbp->mem_size = p[BI_MEM_SIZE];
+	kprintf("mem size: 0x%x\n", pbp->mem_size);		
+	pbp->mem_range_count = p[BI_MEM_RANGE_COUNT];
+	kprintf("mem range count: %d\n", pbp->mem_range_count);		
+	memset(pbp->mem_ranges, 0, sizeof(pbp->mem_ranges));
+	memcpy(pbp->mem_ranges, &p[BI_MEM_RANGE_BUF], sizeof(pbp->mem_ranges));
+
+	print_boot_params(pbp);
+	while(1){}
 }
 
 /* 
