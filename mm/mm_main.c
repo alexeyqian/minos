@@ -9,10 +9,6 @@
 #include "klib.h"
 
 PUBLIC void init_mm(){
-    struct boot_params bp;
-    get_boot_params(&bp);
-    //g_memory_size = bp.mem_size;
-    //printl("mm memory size: %dMB\n", g_memory_size / (1024*1024));
 }
 
 PUBLIC int alloc_mem(int pid, int memsize){
@@ -36,21 +32,24 @@ PUBLIC int free_mem(int pid){
 }
 
 PUBLIC void task_mm(){
+    printf(">>> 5. task_mm is running\n");
     init_mm();
 
     while(1){
-        send_recv(RECEIVE, ANY, &mm_msg);
-        int src = mm_msg.source;
+        send_recv(RECEIVE, ANY, &g_mm_msg);
+        int src = g_mm_msg.source;
         int reply = 1;
 
-        int msgtype = mm_msg.type;
+        int msgtype = g_mm_msg.type;
 
         switch(msgtype){
             case FORK:
-                mm_msg.RETVAL = do_fork();
+                printf("before do fork\n");
+                g_mm_msg.RETVAL = do_fork();
+                printf("after do fork\n");
                 break;
             case EXIT:
-                do_exit(mm_msg.STATUS);
+                do_exit(g_mm_msg.STATUS);
                 reply = 0;
                 break;
             case WAIT:
@@ -58,32 +57,23 @@ PUBLIC void task_mm(){
                 reply = 0;
                 break;
             default:
-                dump_msg("mm: unknow message", &mm_msg);
+                dump_msg("mm: unknow message", &g_mm_msg);
                 assert(0);
                 break;
         }
 
         if(reply){
-            mm_msg.type = SYSCALL_RET;
-            send_recv(SEND, src, &mm_msg);
+            g_mm_msg.type = SYSCALL_RET;
+            send_recv(SEND, src, &g_mm_msg);
         }
     }
-}
-
-PUBLIC int fork(){
-    MESSAGE msg;
-    msg.type = FORK;
-    send_recv(BOTH, TASK_MM, &msg);
-    assert(msg.type == SYSCALL_RET);
-    assert(msg.RETVAL == 0);
-
-    return msg.PID;
 }
 
 /*
  * @return 0 if success, otherwise -1 * 
  * */
 PUBLIC int do_fork(){
+    printf(">>> do fork\n");
     // find a free slot in proc table
     struct proc* p = proc_table;
     int i;
@@ -98,15 +88,15 @@ PUBLIC int do_fork(){
 
     // duplicate the process table
     
-    int pid = mm_msg.source;
+    int pid = g_mm_msg.source;
     uint16_t child_ldt_sel = p->ldt_sel;
-    *p = proc_table[pid]; // TODO: ?? child_pid
-    p->ldt_sel = child_ldt_sel;
+    *p = proc_table[pid];       // shadow copy struct proc from parent to child pointing by p
+    p->ldt_sel = child_ldt_sel; // restore child ldt selector
     p->p_parent = pid;
     sprintf(p->p_name, "%s_%d", proc_table[pid].p_name, child_pid);
 
     // duplicate the process: TDS
-    struct descriptor* ppd;
+    struct descriptor* ppd;  // parent descriptor
     ppd = &proc_table[pid].ldt[INDEX_LDT_C];
     int caller_t_base = reassembly(ppd->base_high, 24, ppd->base_mid, 16, ppd->base_low);
     // depending on the G bit of descriptor, in 1 or 4096 bytes
@@ -140,15 +130,16 @@ PUBLIC int do_fork(){
         (PROC_IMAGE_SIZE_DEFAULT - 1) >> LIMIT_4K_SHIFT,
         DA_LIMIT_4K | DA_32 | DA_DRW | PRIVILEGE_USER << 5);
 
+    // send message to fs
     MESSAGE msg2fs;
     msg2fs.type = FORK;
     msg2fs.PID = child_pid;
     send_recv(BOTH, TASK_FS, &msg2fs);
 
     // child pid will be returned to the parent proc
-    mm_msg.PID = child_pid;
+    g_mm_msg.PID = child_pid;
 
-    // birth of child 
+    // send msg to child to remove it from pending status copied from parent
     MESSAGE m;
     m.type = SYSCALL_RET;
     m.RETVAL = 0;
@@ -172,7 +163,7 @@ PRIVATE void cleanup(struct proc* proc){
     send_recv(SEND, proc->p_parent, &msg2parent);
 
     proc->p_flags = FREE_SLOT;
-    printl("{mm} cleanup() %s(%d) has been cleand up.\n", proc->p_name, proc2pid(proc));
+    printf("{mm} cleanup() %s(%d) has been cleand up.\n", proc->p_name, proc2pid(proc));
 }
 
 
@@ -208,7 +199,7 @@ PRIVATE void cleanup(struct proc* proc){
  * */
 PUBLIC void do_exit(int status){
     int i;
-    int pid = mm_msg.source; // pid of caller
+    int pid = g_mm_msg.source; // pid of caller
     int parent_pid = proc_table[pid].p_parent;
     struct proc* p = &proc_table[pid];
 
@@ -246,7 +237,7 @@ PUBLIC void do_exit(int status){
 
     // if the proc has any child, make INIT the new parent
     for(i = 0; i < NR_TASKS + NR_PROCS; i++){
-        if(proc_table[i].p_parent == pid){
+        if(proc_table[i].p_parent == pid){ // is a child
             proc_table[i].p_parent == INIT; // FIXME: make sure init always waiting
             printl("{MM} %s (%d) exit(), so %s (%d) is INIT's child now\n",
 			       p->p_name, pid, proc_table[i].p_name, i);
@@ -257,9 +248,7 @@ PUBLIC void do_exit(int status){
                 (proc_table[i].p_flags & HANGING)){
                 proc_table[INIT].p_flags &= ~WAITING;
                 cleanup(&proc_table[i]);
-                assert(0);
-            }else {assert(0);}           
-
+            }
         }
     }
 }
@@ -284,8 +273,8 @@ PUBLIC void do_exit(int status){
  *     <4> return (MM will go on with the next message loop)
  **/
 PUBLIC void do_wait(){
-    printl("{mm} ((--do_wait()--))");
-    int pid = mm_msg.source;
+    printf("{mm} ((--do_wait()--))");
+    int pid = g_mm_msg.source;
     int i;
     int children = 0;
     struct proc* p_proc = proc_table;
@@ -295,7 +284,7 @@ PUBLIC void do_wait(){
             children++;
             if(p_proc->p_flags & HANGING){
                 cleanup(p_proc);
-                return; // TODO: ??
+                return; 
             }
         }
     }

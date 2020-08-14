@@ -3,6 +3,6 @@
 
 void delay(int milli_sec);
 void init_clock();
-void schedule();
+void schedule(); // TODO: move to proc
 
 #endif

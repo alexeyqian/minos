@@ -25,7 +25,7 @@ PRIVATE void init_hd()
 {
 	// get the numbe of drives from the BIOS data area
 	uint8_t *p_nr_drives = (uint8_t *)(0x475);
-	printl("number of drives: %d. \n", *p_nr_drives);
+	//printl("number of drives: %d. \n", *p_nr_drives);
 	assert(*p_nr_drives);
 
 	put_irq_handler(AT_WINI_IRQ, hd_handler);
@@ -334,7 +334,7 @@ PRIVATE void hd_ioctl(MESSAGE *p)
 
 PUBLIC void task_hd()
 {
-	printl(">>> task_hd is running\n");
+	printl(">>> 3. task_hd is running\n");
 	MESSAGE msg;
 	init_hd();
 	while (1)

@@ -1,6 +1,7 @@
 #include "string.h"
 #include "const.h"
 #include "types.h"
+
 // @return pointer to buf
 PUBLIC void* memset(void* buf, int value, size_t size){
     for(size_t i = 0; i < size; i++)

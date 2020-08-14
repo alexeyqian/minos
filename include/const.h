@@ -1,6 +1,7 @@
 #ifndef MINOS_CONST_H
 #define MINOS_CONST_H
 
+// ============ common ====================
 #define EXTERN  extern
 #define PRIVATE static
 #define PUBLIC 
@@ -16,8 +17,10 @@
 // then make type of full expression int, discard result
 #define UNUSED(x) (void)(x) // (void)(sizeof((x), 0))
 
+// ============= GDT/LDT/IDT =======================
 #define GDT_SIZE 128
 #define IDT_SIZE 256
+
 // GDT segments index
 #define	INDEX_NULL		    0	// ┓
 #define	INDEX_CODE		    1	// ┣ Defined in loader
@@ -39,7 +42,7 @@
 #define SELECTOR_KERNEL_VIDEO   SELECTOR_VIDEO
 
 // each task has it's own LDT, each LDT contains 2 descriptors
-#define LDT_SIZE             2
+#define LDT_SIZE                2
 #define INDEX_LDT_C             0
 #define INDEX_LDT_RW            1
 
@@ -52,12 +55,12 @@
 #define RPL_USER SA_RPL3    
 
 // SA: Selector Attribute
-#define SA_RPL_MASK    0xfffc
+#define SA_RPL_MASK    0xfffc // C=0011b
 #define SA_RPL0        0
 #define SA_RPL1        1
 #define SA_RPL2        2
 #define SA_RPL3        3
-#define SA_TI_MASK     0xfffb
+#define SA_TI_MASK     0xfffb // B=1011b
 #define SA_TIG         0
 #define SA_TIL         4
 
@@ -154,10 +157,10 @@
 #define RED_CHAR		(MAKE_COLOR(BLUE, RED) | BRIGHT)
 
 // ========= TASKS ==================
-#define NR_TASKS       5
-#define NR_PROCS       32
+#define NR_TASKS        5
+#define NR_PROCS        32
 #define NR_NATIVE_PROCS 4
-#define NR_SYSCALLS    2
+#define NR_SYSCALLS     2
 
 #define PROCS_BASE 0xa00000 // 10MB
 #define PROC_IMAGE_SIZE_DEFAULT 0x100000 // 1MB
@@ -182,6 +185,7 @@
 #define STACK_SIZE_HD    0x8000
 #define STACK_SIZE_FS    0x8000
 #define STACK_SIZE_MM    0x8000
+
 #define STACK_SIZE_INIT  0x8000
 #define STACK_SIZE_TESTA 0x8000
 #define STACK_SIZE_TESTB 0x8000
@@ -277,11 +281,11 @@
 #define NO_PART	    	0x00	/* unused entry */
 #define EXT_PART    	0x05	/* extended partition */
 
+// =============== file system =================
 #define	NR_FILES	    64 // max files a proc can open at same time
 #define	NR_FILE_DESC	64	/* FIXME */
 #define	NR_INODE	    64	/* FIXME */
 #define	NR_SUPER_BLOCK	8
-
 
 /* INODE::i_mode (octal, lower 32 bits reserved) */
 #define I_TYPE_MASK     0170000
@@ -296,6 +300,25 @@
 
 #define	NR_DEFAULT_FILE_SECTS	2048 /* 2048 * 512 = 1MB */
 
+// =================== IPC messages ==============
+#define	FD		    u.m3.m3i1 
+#define	PATHNAME	u.m3.m3p1 
+#define	FLAGS		u.m3.m3i1 
+#define	NAME_LEN	u.m3.m3i2 
+#define	CNT		    u.m3.m3i2
+#define	REQUEST		u.m3.m3i2
+#define	PROC_NR		u.m3.m3i3
+#define	DEVICE		u.m3.m3i4
+#define	POSITION	u.m3.m3l1
+#define	BUF	    	u.m3.m3p2
+#define	OFFSET		u.m3.m3i2 
+#define	WHENCE		u.m3.m3i3 
+
+#define	PID		    u.m3.m3i2
+#define	STATUS		u.m3.m3i1
+#define	RETVAL		u.m3.m3i1
+
+// =============== boot params =================
 #define BOOT_PARAM_ADDR  0x500
 #define BOOT_PARAM_MAGIC 0xb007
 #define	BI_MAG			     0
@@ -304,7 +327,7 @@
 #define	BI_MEM_RANGE_COUNT	 3
 #define	BI_MEM_RANGE_BUF	 4
 
-// some function MICROS
+// ================== utility macros ================
 #define	max(a,b)	((a) > (b) ? (a) : (b))
 #define	min(a,b)	((a) < (b) ? (a) : (b))
 

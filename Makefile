@@ -30,6 +30,7 @@ kernel/kernel.bin: $(C_SOURCES) $(C_HEADERS) \
 		fs/fs_main.c fs/fs_open.c fs/fs_shared.c fs/fs_shared.h fs/fs_open.h \
 		mm/mm_main.c 
 	nasm kernel/kernel_entry.asm -f elf32 -I 'kernel/' -o kernel/kernel_entry.o	
+	nasm lib/syscalls.asm -f elf32 -I 'lib/' -o lib/syscalls.o	
 	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/boot_params.o kernel/boot_params.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/klib.o      kernel/klib.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/global.o    kernel/global.c
@@ -40,23 +41,31 @@ kernel/kernel.bin: $(C_SOURCES) $(C_HEADERS) \
 	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/phys_mem.o  kernel/phys_mem.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/virt_mem.o  kernel/virt_mem.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/keyboard.o  kernel/keyboard.c
-	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/screen.o    kernel/screen.c
-	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/string.o    kernel/string.c
-	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/assert.o    kernel/assert.c
-	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/vsprintf.o  kernel/vsprintf.c
-	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/kio.o       kernel/kio.c
-	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/tty.o       kernel/tty.c
+	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/screen.o    kernel/screen.c	
 	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/ktest.o     kernel/ktest.c	
-	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/ipc.o       kernel/ipc.c	
-	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/hd.o        kernel/hd.c	
+	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/ipc.o       kernel/ipc.c		
+	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/boot_params.o kernel/boot_params.c	
 	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/kernel.o    kernel/kernel.c
+	$(CROSS_COMPILER) $(C_FLAGS) -o syscall/syscall_main.o    syscall/syscall_main.c
+	$(CROSS_COMPILER) $(C_FLAGS) -o hd/hd_main.o       hd/hd_main.c	
 	$(CROSS_COMPILER) $(C_FLAGS) -o fs/fs_main.o       fs/fs_main.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o fs/fs_open.o       fs/fs_open.c
-	$(CROSS_COMPILER) $(C_FLAGS) -o fs/fs_shared.o     fs/fs_shared.c
+	$(CROSS_COMPILER) $(C_FLAGS) -o fs/fs_shared.o     fs/fs_shared.c	
+	$(CROSS_COMPILER) $(C_FLAGS) -o tty/tty_main.o     tty/tty_main.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o mm/mm_main.o       mm/mm_main.c
+	$(CROSS_COMPILER) $(C_FLAGS) -o lib/vsprintf.o     lib/vsprintf.c
+	$(CROSS_COMPILER) $(C_FLAGS) -o lib/string.o       lib/string.c
+	$(CROSS_COMPILER) $(C_FLAGS) -o lib/assert.o       lib/assert.c		
+	$(CROSS_COMPILER) $(C_FLAGS) -o lib/kio.o          lib/kio.c		
+	$(CROSS_COMPILER) $(C_FLAGS) -o lib/ipclib.o       lib/ipclib.c		
+	$(CROSS_COMPILER) $(C_FLAGS) -o lib/fslib.o        lib/fslib.c		
+	$(CROSS_COMPILER) $(C_FLAGS) -o lib/proclib.o      lib/proclib.c		
 	#$(CROSS_COMPILER) -T linker.ld -o $@ -ffreestanding -nostdlib kernel/kernel_entry.o $(C_OBJS) fs.o -lgcc
 	ld -m elf_i386 -s -Ttext 0x1000 -nostdlib -o $@ kernel/kernel_entry.o $(C_OBJS) \
-		fs/fs_main.o fs/fs_open.o fs/fs_shared.o mm/mm_main.o
+		syscall/syscall_main.o hd/hd_main.o fs/fs_main.o fs/fs_open.o fs/fs_shared.o \
+		tty/tty_main.o mm/mm_main.o lib/vsprintf.o lib/string.o \
+		lib/kio.o lib/assert.o lib/ipclib.o lib/fslib.o lib/proclib.o lib/syscalls.o
+	ar rcs lib/minoscrt.a lib/vsprintf.o lib/string.o lib/assert.o lib/kio.o lib/ipclib.o lib/fslib.o lib/proclib.o
 
 #kernel/kernel.bin: kernel/kernel_entry.o kernel/kernel.o ${OBJ}
 #	ld -m elf_i386 -Ttext 0x1000 --oformat binary -o $@  $^ 
@@ -68,4 +77,4 @@ kernel/kernel.bin: $(C_SOURCES) $(C_HEADERS) \
 #	gcc -m32 -ffreestanding -fno-pie -c $< -o $@
 
 clean:	
-	@rm -rf os.img boot/*.o boot/*.bin kernel/*.o kernel/*.bin fs/*.o mm/*.o
+	@rm -rf os.img boot/*.o boot/*.bin kernel/*.o kernel/*.bin fs/*.o mm/*.o lib/*.o lib/*.a

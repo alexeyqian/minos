@@ -8,7 +8,6 @@
 #include "screen.h"
 #include "vsprintf.h"
 
-
 PUBLIC char* itoa(int num, char* str, int base){
     int i = 0;
     int is_negative = 0;
@@ -63,6 +62,7 @@ PRIVATE int ldt_seg_linear(struct proc* p, int idx){
 	return d->base_high << 24 | d->base_mid << 16 | d->base_low;
 }
 
+// TODO: move to proc
 // ring 0-1, virtual addr -> linear addr
 PUBLIC void* va2la(int pid, void* va){
 	struct proc* p = &proc_table[pid];
@@ -74,17 +74,4 @@ PUBLIC void* va2la(int pid, void* va){
     }
 		
 	return (void*)la;
-}
-
-PUBLIC void reset_msg(MESSAGE* p)
-{
-	memset(p, 0, sizeof(MESSAGE));
-}
-
-
-// ========================== below functions need global variables =========================
-
-PUBLIC void put_irq_handler(int irq, pf_irq_handler_t handler){
-	disable_irq(irq);
-	irq_table[irq] = handler;
 }

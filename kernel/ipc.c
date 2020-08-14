@@ -254,7 +254,7 @@ void disp_color_str(char* info, int color){
     UNUSED(info);
     UNUSED(color);
 }
-// TODO: move
+// TODO: move to proc
 PUBLIC void dump_proc(struct proc* p)
 {
 	char info[STR_DEFAULT_LEN];
@@ -284,7 +284,7 @@ PUBLIC void dump_proc(struct proc* p)
 	sprintf(info, "ldt_sel: 0x%x.  ", p->ldt_sel); disp_color_str(info, text_color);
 	sprintf(info, "ticks: 0x%x.  ", p->ticks); disp_color_str(info, text_color);
 	sprintf(info, "priority: 0x%x.  ", p->priority); disp_color_str(info, text_color);
-	sprintf(info, "pid: 0x%x.  ", p->pid); disp_color_str(info, text_color);
+	//sprintf(info, "pid: 0x%x.  ", p->pid); disp_color_str(info, text_color);
 	sprintf(info, "name: %s.  ", p->p_name); disp_color_str(info, text_color);
 	disp_color_str("\n", text_color);
 	sprintf(info, "p_flags: 0x%x.  ", p->p_flags); disp_color_str(info, text_color);
@@ -317,8 +317,7 @@ PUBLIC void dump_msg(const char * title, MESSAGE* m)
 		);
 }
 
-// <ring 0>
-// sys_sendrec is it's handler/implementation of system call sendrec
+// <ring 0> implementation of system call sendrec
 PUBLIC int sys_sendrec(int function, int src_dest, MESSAGE* p_msg, struct proc* p){
 	assert(k_reenter == 0); // make sure we are not in ring0
 	assert((src_dest >= 0 && src_dest <= NR_TASKS + NR_PROCS) ||
@@ -326,7 +325,7 @@ PUBLIC int sys_sendrec(int function, int src_dest, MESSAGE* p_msg, struct proc* 
 
 	int ret = 0;
 	int caller = proc2pid(p);
-	MESSAGE* mla = (MESSAGE*)va2la(caller, p_msg);
+	MESSAGE* mla = (MESSAGE*)va2la(caller, p_msg); // TODO: ?? va2la
 	mla->source = caller;
 
 	assert(mla->source != src_dest);
@@ -338,67 +337,11 @@ PUBLIC int sys_sendrec(int function, int src_dest, MESSAGE* p_msg, struct proc* 
 		ret = msg_receive(p, src_dest, p_msg);
 		if(ret != 0) return ret;
 	}else{
-		panic("{sys_sendrec} invalid function", "%d, send: %d, receive: %d", function, SEND, RECEIVE);
+		panic("sys_sendrec invalid function", "%d, send: %d, receive: %d", function, SEND, RECEIVE);
 	}
 
 	return 0;
 }
-
-// ring 1-3, a wrapper for system call sendrec
-// use this, diret call to sendrec should be avoided.
-// always return 0;
-PUBLIC int send_recv(int function, int src_dest, MESSAGE* p_msg){
-    int ret = 0;
-
-    if(function == RECEIVE)
-        memset((char*)p_msg, 0, sizeof(MESSAGE));
-
-    switch(function){
-        case BOTH:
-            ret = sendrec(SEND, src_dest, p_msg);
-            if(ret == 0)
-                ret = sendrec(RECEIVE, src_dest, p_msg);
-            break;
-        case SEND:
-        case RECEIVE:            
-            ret = sendrec(function, src_dest, p_msg);
-            break;
-        default:
-            assert((function == BOTH) || 
-                (function == SEND) || (function == RECEIVE));
-            break;
-    }
-
-    return ret;
-}
-
-PUBLIC int get_ticks(){
-    MESSAGE msg;
-    reset_msg(&msg);
-    msg.type = GET_TICKS;
-    send_recv(BOTH, TASK_SYS, &msg);
-    return msg.RETVAL;
-}
-
-// ring 1, the main loop of task sys
-PUBLIC void task_sys(){
-    MESSAGE msg;
-    while(1){
-        send_recv(RECEIVE , ANY, &msg);
-        int src = msg.source;
-        switch(msg.type){
-            case GET_TICKS:
-                //printl("get ticks ");
-                msg.RETVAL = ticks;
-                send_recv(SEND, src, &msg);
-                break;
-            default:
-                panic("unknown msg type");
-                break;
-        }
-    }
-}
-
 
 // <ring 0> inform a proc that an interrupt has occured
 PUBLIC void inform_int(int task_nr){
@@ -422,5 +365,10 @@ PUBLIC void inform_int(int task_nr){
 	{
 		p->has_int_msg = 1;
 	}	
+}
+
+PUBLIC void reset_msg(MESSAGE* p)
+{
+	memset(p, 0, sizeof(MESSAGE));
 }
 

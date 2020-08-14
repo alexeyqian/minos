@@ -77,7 +77,7 @@ PRIVATE void mkfs(){
     assert(dd_map[MAJOR(ROOT_DEV)].driver_nr != INVALID_DRIVER);
     send_recv(BOTH, dd_map[MAJOR(ROOT_DEV)].driver_nr, &driver_msg);
 
-    //printl("dev size: 0x%x sectors\n", geo.size);
+    //printf("dev size: 0x%x sectors\n", geo.size);
 
     //========= super block ============
     struct super_block sb;
@@ -105,7 +105,7 @@ PRIVATE void mkfs(){
     // write the super block to sector 1
     WR_SECT(ROOT_DEV, 1);
     /*
-    printl("dev base:0x%x00, sb:0x%x00, imap:0x%x00, smap:0x%x00\n"
+    printf("dev base:0x%x00, sb:0x%x00, imap:0x%x00, smap:0x%x00\n"
 	       "        inodes:0x%x00, 1st_sector:0x%x00\n", 
 	       geo.base * 2,
 	       (geo.base + 1) * 2,
@@ -243,7 +243,7 @@ PRIVATE int fs_exit(){
 // <ring 1>
 // TODO: move pcaller out
 PUBLIC void task_fs(){
-    printl(">>> task_fs is running\n");
+    printl(">>> 4. task_fs is running\n");
     init_fs();
     while(1){
         send_recv(RECEIVE, ANY, &fs_msg);    // TODO: replace global to local
@@ -294,12 +294,10 @@ PUBLIC void task_fs(){
         // it then notify process P to let it continue.
         if(fs_msg.type != SUSPEND_PROC){
             fs_msg.type = SYSCALL_RET;
-            printl(">>> 2.3 in task_fs()::end before send to:%d, type: %d, flags: %d\n", src, fs_msg.type, pcaller->p_flags);
+            printf(">>> 2.3 in task_fs()::end before send to:%d, type: %d, flags: %d\n", src, fs_msg.type, pcaller->p_flags);
             struct proc* ptaskfs = &proc_table[TASK_FS]; 
-            printl(">>> 2.3 in task_fs()::end, task_fs id:%d, flags: %d\n", ptaskfs->pid, ptaskfs->p_flags);            
             send_recv(SEND, src, &fs_msg);
-            printl(">>> 2.3 in task_fs()::end, task_fs id:%d, flags: %d\n", ptaskfs->pid, ptaskfs->p_flags);
-            printl(">>> 2.3 in task_fs()::end after send to:%d, type: %d\n", src, fs_msg.type);
+            printf(">>> 2.3 in task_fs()::end after send to:%d, type: %d\n", src, fs_msg.type);
         }        
     }
 }

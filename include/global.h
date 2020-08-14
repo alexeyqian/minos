@@ -3,7 +3,7 @@
 
 #include "types.h"
 #include "ktypes.h"
-#include "fs.h"
+#include "fs.h" 
 
 // TODO: EXTERN can be extern in it's c file, so below ifdef is not necessary
 #ifdef GLOBAL_VARIABLES_HERE
@@ -45,12 +45,13 @@ extern	uint8_t* fsbuf;
 extern	const int FSBUF_SIZE;
 EXTERN struct proc* pcaller;
 
-// MM
-EXTERN MESSAGE mm_msg;
+// mm
+EXTERN MESSAGE g_mm_msg;
 extern uint8_t* mmbuf;
 extern const int MMBUF_SIZE;
 EXTERN int g_memory_size;
 
+// tty
 EXTERN int key_pressed; // used for clock_handler to wake up TASK_TTY when a key is pressed
 
 #endif

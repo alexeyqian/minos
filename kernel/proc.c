@@ -4,8 +4,12 @@
 #include "ktypes.h"
 #include "string.h"
 #include "klib.h"
+#include "global.h"
 #include "ipc.h"
 #include "ktest.h"
+#include "assert.h"
+#include "boot_params.h"
+#include "kio.h"
 
 // TODO: replace externs with header inclusion
 extern void task_tty();
@@ -13,8 +17,9 @@ extern void task_sys();
 extern void task_hd();
 extern void task_fs();
 extern void task_mm();
-extern void init();
+void init_proc();
 
+// TODO: move to global
 // task stack is a mem area divided into MAX_TASK_NUM small areas
 // each small area used as stack for a process/task
 char                task_stack[STACK_SIZE_TOTAL];
@@ -26,27 +31,23 @@ struct task         task_table[NR_TASKS]={
 						{task_mm,  STACK_SIZE_MM,    "task_mm"}
 					};
 struct task         user_proc_table[NR_PROCS]={ 	
-						{init,     STACK_SIZE_INIT,  "init"},				
+						{init_proc,STACK_SIZE_INIT,  "init_proc"},		// TODO: hardcode -> const		
 						{test_a,   STACK_SIZE_TESTA, "TestA"},
 						{test_b,   STACK_SIZE_TESTB, "TestB"},
 						{test_c,   STACK_SIZE_TESTC, "TestC"}
 					};	
 
 PUBLIC void init_proc_table(){
-	uint8_t privilege;
-	uint8_t rpl;
-	int eflags;
-	int prio;
+	uint8_t privilege, rpl;
+	int i, j, eflags, prio;
 
 	struct proc* p_proc = proc_table;
-	struct task* p_task = task_table;
+	struct task* p_task; 
 	char* p_task_stack  = task_stack + STACK_SIZE_TOTAL;
-	uint16_t selector_ldt = SELECTOR_LDT_FIRST;
 
 	// initialize proc_table according to task table
 	// each process has a ldt selector points to a ldt descriptor in GDT.
-	int i;
-	for(i = 0; i < NR_TASKS + NR_PROCS; i++){
+	for(i = 0; i < NR_TASKS + NR_PROCS; i++, p_proc++, p_task++){
 		if(i >= NR_TASKS + NR_NATIVE_PROCS){
 			p_proc->p_flags = FREE_SLOT;
 			continue;
@@ -67,37 +68,47 @@ PUBLIC void init_proc_table(){
 		}
 
 		strcpy(p_proc->p_name, p_task->name);
-		p_proc->pid = i;
 		p_proc->p_parent = NO_TASK;
 
-		// init process ldt selector, which points to a ldt descriptor in gdt.
-		p_proc->ldt_sel = selector_ldt;
+		if(strcmp(p_proc->p_name, "init_proc") != 0){ // not init process
+			// init process ldt, which contains two ldt descriptors.
+			memcpy(
+				(char*)&p_proc->ldt[INDEX_LDT_C], 
+				(char*)&gdt[SELECTOR_KERNEL_CODE >> 3], 
+				sizeof(struct descriptor));			
+			memcpy(
+				(char*)&p_proc->ldt[INDEX_LDT_RW], 
+				(char*)&gdt[SELECTOR_KERNEL_DATA >> 3], 
+				sizeof(struct descriptor));
 
-		// init process ldt, which contains two ldt descriptors.
-		memcpy(
-			(char*)&p_proc->ldt[0], 
-			(char*)&gdt[SELECTOR_KERNEL_CODE >> 3], 
-			sizeof(struct descriptor));	
-		// change the DPL to lower privillege
-		p_proc->ldt[0].attr1 = DA_C | privilege << 5;	
-	
-		memcpy(
-			(char*)&p_proc->ldt[1], 
-			(char*)&gdt[SELECTOR_KERNEL_DATA >> 3], 
-			sizeof(struct descriptor));
-		// change the DPL to lower privillege
-		p_proc->ldt[1].attr1 = DA_DRW | privilege << 5;	
+			// change the DPL to lower privillege
+			p_proc->ldt[INDEX_LDT_C].attr1 =  DA_C   | privilege << 5;	
+			p_proc->ldt[INDEX_LDT_RW].attr1 = DA_DRW | privilege << 5;				
+		}else{ // init process
+			uint32_t k_base;
+			uint32_t k_limit;
+			int ret = get_kernel_map(&k_base, &k_limit, &g_boot_params);
+			assert(ret == 0);
+			init_descriptor(&p_proc->ldt[INDEX_LDT_C], 
+				0, // bytes before the entry point are not used
+				(k_base + k_limit) >> LIMIT_4K_SHIFT,
+				DA_32 | DA_LIMIT_4K | DA_C | privilege << 5);
+
+			init_descriptor(&p_proc->ldt[INDEX_LDT_RW], 
+				0, // bytes before the entry point are not used
+				(k_base + k_limit) >> LIMIT_4K_SHIFT,
+				DA_32 | DA_LIMIT_4K | DA_DRW | privilege << 5);
+		}
 
 		// init registers
 		// cs points to first LDT descriptor: code descriptor
 		// ds, es, fs, ss point to sencod LDT descriptor: data descriptor
 		// gs still points to video descroptor in GDT, but with updated lower privillege level
-		p_proc->regs.cs		= ((8 * 0) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | rpl;
-		p_proc->regs.ds		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | rpl;
-		p_proc->regs.es		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | rpl;
-		p_proc->regs.fs		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | rpl;
-		p_proc->regs.ss		= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | rpl;
+		p_proc->regs.cs		= INDEX_LDT_C << 3 | SA_TIL | rpl;
+		p_proc->regs.ds		= p_proc->regs.es = p_proc->regs.fs = p_proc->regs.ss
+							= INDEX_LDT_RW << 3 | SA_TIL | rpl;
 		p_proc->regs.gs		= (SELECTOR_KERNEL_VIDEO & SA_RPL_MASK) | rpl;
+		// TODO: replace p_task to p_proc
 		p_proc->regs.eip	= (uint32_t)p_task->initial_eip; // entry point for procress/task
 		p_proc->regs.esp	= (uint32_t) p_task_stack; // points to seperate stack for process/task 
 		p_proc->regs.eflags	= eflags;
@@ -112,15 +123,42 @@ PUBLIC void init_proc_table(){
 		p_proc->q_sending = 0;
 		p_proc->next_sending = 0;
 
-		for(size_t j = 0; j < NR_FILES; j++)
+		for(j = 0; j < NR_FILES; j++)
 			p_proc->filp[j] = 0;
 
-		p_task_stack -= p_task->stack_size;
-		p_proc++;
-		p_task++;
-		selector_ldt += 1 << 3;			
+		p_task_stack -= p_task->stack_size;		
 	}
+
 	k_reenter = 0;	
 	ticks = 0;
 	p_proc_ready = proc_table; // set default ready process
+}
+
+// first process, parent for all user processes.
+void init_proc(){
+	printf(">>> init proc is running ...\n");
+	//spin("init\n");
+	int fd_stdin = open("/dev_tty0", O_RDWR);
+	assert(fd_stdin == 0);
+	int fd_stdout = open("/dev_tty0", O_RDWR);
+	assert(fd_stdout == 1);
+
+	int pid = fork();
+	if(pid != 0){ // parent process
+		printf(">>> parent is running, child pid: %d\n", pid);
+		int s;
+		int child = wait(&s);
+		printf("child %d exited with status: %d", child, s);
+		spin(">>> parent...\n");
+	}else { // child process
+		printf(">>> child process is running, pid: %d\n", getpid());
+		//execl("/echo", "echo", "hello", "world", 0);
+		exit(123);
+	}	
+
+	while(1){
+		int s;
+		int child = wait(&s);
+		printf("child %d exited with satus: %d\n", child, s);
+	}
 }

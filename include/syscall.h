@@ -1,7 +1,7 @@
 #ifndef MINOS_SYSCALL_H
 #define MINOS_SYSCALL_H
 
-int sys_printx (int _unused1, int _unused2, char* s,             struct proc* p_proc);
-int sys_sendrec(int function, int src_dest, struct s_message* m, struct proc* p_proc);
+void task_sys();
+int get_ticks();
 
 #endif

@@ -434,6 +434,11 @@ PUBLIC int sys_printx(int _unused1, int _unused2, char* s, struct proc* p_proc)
 		const char * q = p + 1; /* +1: skip the magic char */
 
         //TODO: fix duplicated output issue
+        while(*q){
+            *v++ = *q++;
+            *v++ = RED_CHAR;
+        }
+        /*
 		while (v < (char*)(V_MEM_BASE + V_MEM_SIZE)) {
 			*v++ = *q++;
 			*v++ = RED_CHAR;
@@ -445,7 +450,7 @@ PUBLIC int sys_printx(int _unused1, int _unused2, char* s, struct proc* p_proc)
 				}
 				q = p + 1;
 			}
-		}
+		}*/
 
 		//__asm__ __volatile__("hlt");
 		halt();
@@ -461,6 +466,7 @@ PUBLIC int sys_printx(int _unused1, int _unused2, char* s, struct proc* p_proc)
 
 PUBLIC void task_tty()
 {       
+    kprintf(">>> 1. task_tty is running\n"); // cannot use printl or printf here
     TTY* p_tty;
     MESSAGE msg;
     

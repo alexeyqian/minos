@@ -153,7 +153,6 @@ PRIVATE void new_dir_entry(struct inode* dir_inode, int inode_nr, char* filename
 	uint32_t m = 0;
 	struct dir_entry * pde;
 	struct dir_entry * new_de = 0;
-    printl("here 6.1");
 	uint32_t i, j;
 	for (i = 0; i < nr_dir_blks; i++) {
 		RD_SECT(dir_inode->i_dev, dir_blk0_nr + i);
@@ -202,7 +201,6 @@ PRIVATE struct inode* create_file(char* path, int flags){
     int free_sect_nr = alloc_smap_bit(dir_inode->i_dev, NR_DEFAULT_FILE_SECTS);
     struct inode* newino = new_inode(dir_inode->i_dev, inode_nr, free_sect_nr);
     new_dir_entry(dir_inode, newino->i_num, filename);
-    printl("here 5.5");
     return newino;
 }
 
@@ -339,46 +337,6 @@ PUBLIC int do_lseek(){
     return pos;
 }
 
-
-/** 
- * open/create a file
- * 
- * @param flag O_CREATE, O_RDWR
- * 
- * @return file descriptor if successful, otherwise -1
- */
-PUBLIC int open(const char* pathname, int flags){
-    MESSAGE msg;
-    msg.type = OPEN;
-    msg.PATHNAME = (void*)pathname;
-    msg.FLAGS = flags;
-    msg.NAME_LEN = strlen(pathname);
-    printl(">>> 1.1 in open() before send_recv BOTH, to/from: %d, type: %d\n", TASK_FS, msg.type);
-    send_recv(BOTH, TASK_FS, &msg);
-    printl(">>> 1.1 in open() after send_recv BOTH, to/from: %d, type: %d\n", TASK_FS, msg.type);
-    assert(msg.type == SYSCALL_RET);
-
-    return msg.FD;
-}
-
-/**
- * Close a file descriptor.
- * 
- * @param fd  File descriptor.
- * 
- * @return Zero if successful, otherwise -1.
- *****************************************************************************/
-PUBLIC int close(int fd)
-{   
-	MESSAGE msg;
-	msg.type   = CLOSE;
-	msg.FD     = fd;
-
-	send_recv(BOTH, TASK_FS, &msg);
-
-	return msg.RETVAL;
-}
-
 /**
  * Read/write file and return byte count read/written
  * 
@@ -391,7 +349,7 @@ PUBLIC int do_rdwt(){
     int len = fs_msg.CNT;
 
     int src = fs_msg.source;
-
+    printf("pcaller fd: %d", fd);
     assert((pcaller->filp[fd] >= &f_desc_table[0]) 
         && (pcaller->filp[fd] < &f_desc_table[NR_FILE_DESC]));
     
@@ -638,59 +596,4 @@ PUBLIC int do_unlink(){
 	}
 
     return 0;
-}
-
-/**
- * Read from a file descriptor
- * 
- * @param buf buffer to accept the bytes read
- * 
- * @return on success, the number of bytes read are returned
- *         on error, -1 is returned.
- * */
-PUBLIC int read(int fd, void* buf, int count){
-    MESSAGE msg;
-    msg.type = READ;
-    msg.FD = fd;
-    msg.BUF = buf;
-    msg.CNT = count;
-
-    send_recv(BOTH, TASK_FS, &msg);
-
-    return msg.CNT;
-}
-
-/**
- * Write to a file descriptor
- * 
- * @param buf buffer including the bytes to write
- * 
- * @return on success, the number of bytes written are returned
- *         on error, -1 is returned.
- * */
-PUBLIC int write(int fd, const void* buf, int count){
-    MESSAGE msg;
-    msg.type = WRITE;
-    msg.FD = fd;
-    msg.BUF = (void*)buf;
-    msg.CNT = count;
-    printl(">>> 6.1 int write(), before sending message, src: %d", fd);
-    send_recv(BOTH, TASK_FS, &msg);
-    printl(">>> 6.1 int write(), after sending message, src: %d", fd);
-
-    return msg.CNT;
-}
-
-/**
- * Delete a file
- * 
- * @return zero if successful, otherwise -1
- * */
-PUBLIC int unlink(const char* pathname){
-    MESSAGE msg;
-    msg.type = UNLINK;
-    msg.PATHNAME = (void*)pathname;
-    msg.NAME_LEN = strlen(pathname);
-    send_recv(BOTH, TASK_FS, &msg);
-    return msg.RETVAL;
 }

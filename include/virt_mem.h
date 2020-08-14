@@ -2,6 +2,7 @@
 #define MINOS_VIRT_MEM_H
 
 #include "types.h"
+#include "ktypes.h"
 #include "phys_mem.h"
 
 // =========== PTE ===============

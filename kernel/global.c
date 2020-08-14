@@ -3,13 +3,14 @@
 #include "const.h"
 #include "types.h"
 #include "ktypes.h"
-#include "syscall.h"
+#include "ipc.h"
+#include "tty.h"
 #include "fs.h"
 
 struct boot_params g_boot_params;
 int ticks;
 int k_reenter;
-uint32_t g_disp_pos = 10*80*2;  // start from row:10
+uint32_t g_disp_pos = 0; //10*80*2;  // start from row:10
 
 uint8_t			    gdt_ptr[6];	               
 struct descriptor   gdt[GDT_SIZE];

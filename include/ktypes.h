@@ -7,6 +7,12 @@
 typedef int proc_nr_t; // process table entry number
 typedef short sys_id_t; // system process index
 
+typedef unsigned short io_port_t;
+typedef void (*pf_int_handler_t)();
+typedef void (*pf_irq_handler_t)(int irq);
+typedef void (*pf_task_t)();
+typedef void* syscall_t;
+
 typedef struct descriptor{
     uint16_t limit_low;
     uint16_t base_low;
@@ -26,6 +32,7 @@ typedef struct gate{
     uint16_t offset_high;
 } gate_s;
 
+/*
 // tss has a descriptor in GDT, base is the address of tss, limit is the size of the tss.
 // inside tss, ss0 should be set to kernel data segment descriptor.
 // esp0 gets the value the stack-pointer shall get at a system call.
@@ -43,6 +50,7 @@ typedef struct gate{
 // to other architectures, for ex, amd64 does not support hardware task switches.
 // linux only use the io port permission bitmap and inner stack features of the tss;
 // the other reatures are only needed for hardware task switches, whcih the linux kernel does not use.
+*/
 typedef struct tss{
     uint32_t	backlink;
 	uint32_t	esp0;		// stack pointer to use during interrupt
@@ -141,24 +149,6 @@ enum msgtype{
 	DISK_LOG
 };
 
-// macros for messages 
-#define	FD		    u.m3.m3i1 
-#define	PATHNAME	u.m3.m3p1 
-#define	FLAGS		u.m3.m3i1 
-#define	NAME_LEN	u.m3.m3i2 
-#define	CNT		    u.m3.m3i2
-#define	REQUEST		u.m3.m3i2
-#define	PROC_NR		u.m3.m3i3
-#define	DEVICE		u.m3.m3i4
-#define	POSITION	u.m3.m3l1
-#define	BUF	    	u.m3.m3p2
-#define	OFFSET		u.m3.m3i2 
-#define	WHENCE		u.m3.m3i3 
-
-#define	PID		    u.m3.m3i2
-#define	STATUS		u.m3.m3i1
-#define	RETVAL		u.m3.m3i1
-
 typedef struct stack_frame{ // proc_ptr points to here
     uint32_t	gs;		    /* ┓						│Low address*/ 
 	uint32_t	fs;		    /* ┃						│			*/
@@ -180,7 +170,6 @@ typedef struct stack_frame{ // proc_ptr points to here
 	uint32_t	ss;         /*  ┛   	                |High Address */
 }stack_frame_s;
 
-
 struct file_desc;
 
 // here is how it looks like in memory
@@ -201,7 +190,7 @@ typedef struct proc{
     uint16_t            ldt_sel;        // selector in gdt giving the ldt base and limit
 	struct descriptor   ldt[LDT_SIZE]; // local descriptors for code and data
                                         // descriptor 1 for code, descriptor 2 for data
-    uint32_t            pid;
+    //uint32_t            pid;          // pid is passed in from mm
     char                p_name[16];               // process name
 	int                 ticks;
 	int                 priority;
@@ -227,7 +216,7 @@ typedef struct task{
 	char name[32];
 }task_s;
 
-
+// TODO: remove/update mem related ...
 typedef unsigned int  vir_clicks;
 typedef unsigned int  vir_bytes;
 typedef unsigned int  phys_clicks;
@@ -277,7 +266,6 @@ struct dev_drv_map{
 
 #define ADDR_RANGE_MEMORY   1
 #define ADDR_RANGE_RESERVED 2
-
 #define ADDR_RANGE_MAX_COUNT 10
 
 struct mem_range{

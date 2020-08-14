@@ -1,7 +1,3 @@
-INT_VECTOR_SYSCALL  equ 0x90
-IDX_PRINTX          equ 0
-IDX_SENDREC         equ 1
-
 [bits 32]
 [section .text]
 global syscall
@@ -20,20 +16,4 @@ syscall:
     mov  [esi + EAXREG - P_STACKBASE], eax ; save return value to position of eax in proc->regs
 
     cli
-    ret
-
-global printx
-printx:
-    mov eax, IDX_PRINTX
-    mov edx, [esp + 4]
-    int INT_VECTOR_SYSCALL
-    ret
-
-global sendrec
-sendrec:
-    mov eax, IDX_SENDREC
-    mov ebx, [esp + 4]  ; function
-    mov ecx, [esp + 8]  ; src_dest
-    mov edx, [esp + 12] ; p_msg
-    int INT_VECTOR_SYSCALL
     ret

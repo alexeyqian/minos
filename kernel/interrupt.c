@@ -37,6 +37,12 @@
 #define	INT_S_CTL	    0xA0	/* I/O port for second interrupt controller  <Slave>  */
 #define	INT_S_CTLMASK	0xA1	/* setting bits in this port disables ints   <Slave>  */
 
+
+PUBLIC void put_irq_handler(int irq, pf_irq_handler_t handler){
+	disable_irq(irq);
+	irq_table[irq] = handler;
+}
+
 // setup chip 8259A which is a bridge between interrupting devices and CPU
 // ICW: Initialization Command Word
 // there are 4 types of ICW, from ICW1 - ICW4, each has specific format

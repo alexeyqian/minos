@@ -6,7 +6,7 @@
 #include "string.h"
 
 void test_a(){	
-	printl(">>> running in test_a\n");
+	printf(">>> running in test_a\n");
 	spin("spin in test_a()");
 	int fd, n, i;
 	const char filename[] = "blah";
@@ -17,74 +17,74 @@ void test_a(){
 	assert(rd_bytes <= strlen(bufw));
 
 	// create
-	printl("before open");
+	printf("before open");
 	fd = open(filename, O_CREAT | O_RDWR);
-	printl("after open");
+	printf("after open");
 	assert(fd != -1);
-	printl("File created. fd: %d\n", fd);
+	printf("File created. fd: %d\n", fd);
 	
 	// write
-	printl("before write");
+	printf("before write");
 	n = write(fd, bufw, strlen(bufw));
-	printl("after write");
+	printf("after write");
 	assert(n == strlen(bufw));
 
 	close(fd);
-	printl("after close");
+	printf("after close");
 	
 	// open
-	printl("before reopen");
+	printf("before reopen");
 	fd = open(filename, O_RDWR);
-	printl("after reopen");
+	printf("after reopen");
 	assert(fd != -1);
-	printl("file opened. fd: %d\n", fd);
+	printf("file opened. fd: %d\n", fd);
 
 	// read
 	n = read(fd, bufr, rd_bytes);
-	printl("after read");
+	printf("after read");
 	assert(n == rd_bytes);
 	bufr[n] = 0;
-	printl("%d bytes read: %s\n", n, bufr);
+	printf("%d bytes read: %s\n", n, bufr);
 
 	close(fd);
-	printl("after reclose");
+	printf("after reclose");
 
 	char * filenames[] = {"/foo", "/bar", "/baz"};
 	// create files
 	for (i = 0; i < sizeof(filenames) / sizeof(filenames[0]); i++) {
 		fd = open(filenames[i], O_CREAT | O_RDWR);
 		assert(fd != -1);
-		printl("File created: %s (fd %d)\n", filenames[i], fd);
+		printf("File created: %s (fd %d)\n", filenames[i], fd);
 		close(fd);
 	}
-	printl("after create files");
+	printf("after create files");
 	char * rfilenames[] = {"/bar", "/foo", "/baz", "/dev_tty0"};
 
 	// remove files
 	for (i = 0; i < sizeof(rfilenames) / sizeof(rfilenames[0]); i++) {
 		if (unlink(rfilenames[i]) == 0)
-			printl("File removed: %s\n", rfilenames[i]);
+			printf("File removed: %s\n", rfilenames[i]);
 		else
-			printl("Failed to remove file: %s\n", rfilenames[i]);
+			printf("Failed to remove file: %s\n", rfilenames[i]);
 	}
 	
 	spin("test a");	
 }
 
 void test_b(){
-	printl(">>> running in test_b\n");
+	printf(">>> running in test_b\n");
 	
-	//spin("spin in test_b()");
+	spin("spin in test_b()");
 	char tty_name[] = "/dev_tty1";
-	printl("before open\n");	
+	printf("before open\n");	
 	int fd_stdin = open(tty_name, O_RDWR);
-	printl("open tty ok\n");
+	printf("open tty ok\n");
 	assert(fd_stdin == 0);
 	spin("end test b here");
 
 	int fd_stdout = open(tty_name, O_RDWR);
 	assert(fd_stdout == 1);
-	printl("open tty ok2");
+	printf("open tty ok2");
 
 	char rdbuf[128];
 	
@@ -108,8 +108,8 @@ void test_b(){
 void test_c(){
 	int i = 0x2000;
 	while(1){	
-		//printl(".");
-		//printl("<C: %d>", i++);
+		//printf(".");
+		//printf("<C: %d>", i++);
 		delay(5000);
 	}
 }

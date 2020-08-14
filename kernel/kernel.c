@@ -7,6 +7,7 @@
 #include "ke_asm_utils.h"
 #include "syscall.h"
 #include "string.h"
+#include "assert.h"
 #include "klib.h"
 #include "kio.h"
 #include "boot_params.h"
@@ -47,19 +48,16 @@ void restart();
 void kmain();
 
 void kinit(){
-	kprint(">>> kinit begin ...\n");
-	//kclear_screen();
-    
+	kclear_screen();
+	kprint(">>> kinit begin\n");
+	    
 	init_new_gdt();  
 	init_idt();
 	init_tss();	
 	init_ldt_descriptors_in_dgt(); 
-	
 	get_boot_params(&g_boot_params);
-	print_boot_params(&g_boot_params);
-	
 	init_proc_table();	
-	
+	kprintf(">>> arrive a.3\n");
 	//pmmgr_init();	
 	//vmmgr_init();kprint(">>> virtual memory initialized and paging enabled.");
 	 
@@ -111,20 +109,20 @@ void init_tss(){
 
 // each process has one ldt descriptor in gdt.
 void init_ldt_descriptors_in_dgt(){
-	int i;
-	struct proc* p_proc = proc_table;
-	uint16_t selector_ldt = INDEX_LDT_FIRST << 3; 
-	for(i = 0; i < NR_TASKS + NR_PROCS; i++){
+	for(int i = 0; i < NR_TASKS + NR_PROCS; i++){
+		memset(&proc_table[i], 0, sizeof(struct proc));
+
+		proc_table[i].ldt_sel = SELECTOR_LDT_FIRST + (i << 3);
+		assert(INDEX_LDT_FIRST + i < GDT_SIZE);
+
 		// Fill LDT descriptor in GDT
-		init_descriptor((struct descriptor*)&gdt[selector_ldt >> 3],
+		init_descriptor(&gdt[INDEX_LDT_FIRST+i],
 				before_paging_segbase_plus_offset(
 					before_paging_selector_to_segbase(SELECTOR_KERNEL_DATA), // should = 0x0
 					proc_table[i].ldt // physical address of LDT
 				),
 				LDT_SIZE * sizeof(struct descriptor) - 1,
 				DA_LDT); 
-		p_proc++;
-		selector_ldt += 1 << 3;
 	}
 }
 
@@ -146,25 +144,4 @@ void init_descriptor(struct descriptor* p_desc, uint32_t base, uint32_t limit, u
 	p_desc->attr1			= attribute & 0xFF;		     // 属性 1
 	p_desc->limit_high_attr2	= ((limit >> 16) & 0x0F) | (attribute >> 8) & 0xF0; // 段界限 2 + 属性 2
 	p_desc->base_high		= (base >> 24) & 0x0FF;		 // 段基址 3		(1 字节)
-}
-
-void init(){
-	spin("init()");
-	/*
-	int fd_stdin = open("/dev_tty0", O_RDWR);
-	assert(fd_stdin == 0);
-	int fd_stdout = open("/dev_tty0", O_RDWR);
-	assert(fd_stdout == 1);
-
-	printf(">>> init() is running ...\n");
-
-	int pid = fork();
-	if(pid != 0){ // parent process
-		printf(">>> parent is running, child pid: %d\n", pid);
-		spin(">>> parent...\n");
-	}else { // child process
-		printf(">>> child process is running, pid: %d", getpid());
-		spin("child");
-	}
-	*/
 }

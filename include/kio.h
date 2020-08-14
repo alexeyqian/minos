@@ -11,9 +11,10 @@
 #define SEEK_CUR	2
 #define SEEK_END	3
 
-int printf(const char *fmt, ...);
-int printl(const char *fmt, ...);
-int sprintf(char* buf, const char* fmt, ...);
+int sprintf(char* buf, const char* fmt, ...); // print to buf
+int printl(const char *fmt, ...);             // low level print
+int printf(const char *fmt, ...);             // user process print
+
 void panic(const char *fmt, ...);
 void spin(char* func_name);
 
