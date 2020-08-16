@@ -1,4 +1,5 @@
 #include "fs.h"
+#include "./fs_const.h"
 #include "./fs_shared.h"
 #include "const.h"
 #include "types.h"

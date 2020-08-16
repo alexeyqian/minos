@@ -4,6 +4,7 @@
 #include "fs.h"
 #include "assert.h"
 #include "string.h"
+#include "proc.h"
 
 void test_a(){	
 	printf(">>> running in test_a\n");
@@ -106,6 +107,9 @@ void test_b(){
 }
 
 void test_c(){
+	printf(">>> running in test_c\n");
+	printf(">>>getpid: %d\n", getpid());
+	spin(test_c);
 	int i = 0x2000;
 	while(1){	
 		//printf(".");

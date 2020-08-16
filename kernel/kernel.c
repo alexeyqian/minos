@@ -57,7 +57,6 @@ void kinit(){
 	init_ldt_descriptors_in_dgt(); 
 	get_boot_params(&g_boot_params);
 	init_proc_table();	
-	kprintf(">>> arrive a.3\n");
 	//pmmgr_init();	
 	//vmmgr_init();kprint(">>> virtual memory initialized and paging enabled.");
 	 
@@ -65,11 +64,11 @@ void kinit(){
 }
 
 void kmain(){ 
-	//kprint(">>> kmain begin ... \n");	// kprint SHOULD NOT BE USED ANYMORE AFTER THIS
-	
+	kprint(">>> kmain begin ... \n");	// kprint SHOULD NOT BE USED ANYMORE AFTER THIS	
 	init_clock(); 
 	init_keyboard();    	
 	restart(); // pretenting a schedule happend to start a process.
+	// process start scheduling at this point.
 	while(1){}
 }
 

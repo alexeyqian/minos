@@ -126,16 +126,6 @@
 // ============= VGA ==================
 #define NR_CONSOLES                3
 
-#define CRTC_ADDR_REG			    0x3D4	/* CRT Controller Registers - Address Register */
-#define CRTC_DATA_REG			    0x3D5	/* CRT Controller Registers - Data Registers */
-#define CRTC_DATA_IDX_START_ADDR_H	0xC	    /* register index of video mem start address (MSB) */
-#define CRTC_DATA_IDX_START_ADDR_L	0xD  	/* register index of video mem start address (LSB) */
-#define CRTC_DATA_IDX_CURSOR_H		0xE  	/* register index of cursor position (MSB) */
-#define CRTC_DATA_IDX_CURSOR_L		0xF  	/* register index of cursor position (LSB) */
-#define V_MEM_BASE			        0xB8000	/* base of color video memory */
-#define V_MEM_SIZE			        0x8000	/* 32K: B8000H -> BFFFFH */
-
-
 /* Color */
 /*
  * e.g.	MAKE_COLOR(BLUE, RED)
@@ -286,19 +276,6 @@
 #define	NR_FILE_DESC	64	/* FIXME */
 #define	NR_INODE	    64	/* FIXME */
 #define	NR_SUPER_BLOCK	8
-
-/* INODE::i_mode (octal, lower 32 bits reserved) */
-#define I_TYPE_MASK     0170000
-#define I_REGULAR       0100000
-#define I_BLOCK_SPECIAL 0060000
-#define I_DIRECTORY     0040000
-#define I_CHAR_SPECIAL  0020000
-#define I_NAMED_PIPE	0010000
-
-#define	is_special(m)	((((m) & I_TYPE_MASK) == I_BLOCK_SPECIAL) ||	\
-			 (((m) & I_TYPE_MASK) == I_CHAR_SPECIAL))
-
-#define	NR_DEFAULT_FILE_SECTS	2048 /* 2048 * 512 = 1MB */
 
 // =================== IPC messages ==============
 #define	FD		    u.m3.m3i1 

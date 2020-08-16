@@ -334,7 +334,8 @@ PRIVATE void hd_ioctl(MESSAGE *p)
 
 PUBLIC void task_hd()
 {
-	printl(">>> 3. task_hd is running\n");
+	spin("task_hd");
+	//printf(">>> 3. task_hd is running\n");
 	MESSAGE msg;
 	init_hd();
 	while (1)

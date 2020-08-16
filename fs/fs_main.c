@@ -1,4 +1,5 @@
 #include "fs.h"
+#include "./fs_const.h"
 #include "./fs_open.h"
 #include "./fs_shared.h"
 #include "const.h"
@@ -243,7 +244,8 @@ PRIVATE int fs_exit(){
 // <ring 1>
 // TODO: move pcaller out
 PUBLIC void task_fs(){
-    printl(">>> 4. task_fs is running\n");
+    spin("task_fs");
+    printf(">>> 4. task_fs is running\n");
     init_fs();
     while(1){
         send_recv(RECEIVE, ANY, &fs_msg);    // TODO: replace global to local
@@ -253,9 +255,9 @@ PUBLIC void task_fs(){
         pcaller = &proc_table[src]; // TODO: replace global var with function: get_proc(int)
         switch(msgtype){
             case OPEN:
-                printl(">>> 2.2 in task_fs()::OPEN before do_open(), src: %d, type: %d, flags: %d\n", fs_msg.source, fs_msg.type, pcaller->p_flags);
+                //printf(">>> 2.2 in task_fs()::OPEN before do_open(), src: %d, type: %d, flags: %d\n", fs_msg.source, fs_msg.type, pcaller->p_flags);
                 fs_msg.FD = do_open();
-                printl(">>> 2.2 in task_fs()::OPEN after do open(), src: %d, type: %d, flags: %d\n", fs_msg.source, fs_msg.type, pcaller->p_flags);
+                //printf(">>> 2.2 in task_fs()::OPEN after do open(), src: %d, type: %d, flags: %d\n", fs_msg.source, fs_msg.type, pcaller->p_flags);
                 break;
             case CLOSE:
                 fs_msg.RETVAL = do_close();

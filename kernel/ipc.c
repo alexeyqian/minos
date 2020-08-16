@@ -263,11 +263,8 @@ PUBLIC void dump_proc(struct proc* p)
 
 	int dump_len = sizeof(struct proc);
 
-	out_byte(CRTC_ADDR_REG, CRTC_DATA_IDX_START_ADDR_H);
-	out_byte(CRTC_DATA_REG, 0);
-	out_byte(CRTC_ADDR_REG, CRTC_DATA_IDX_START_ADDR_L);
-	out_byte(CRTC_DATA_REG, 0);
-
+    tty_reset_start_addr();
+	
 	sprintf(info, "byte dump of proc_table[%d]:\n", p - proc_table); disp_color_str(info, text_color);
 	for (i = 0; i < dump_len; i++) {
 		sprintf(info, "%x.", ((unsigned char *)p)[i]);

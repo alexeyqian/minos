@@ -31,43 +31,6 @@ PUBLIC int free_mem(int pid){
     return 0;
 }
 
-PUBLIC void task_mm(){
-    printf(">>> 5. task_mm is running\n");
-    init_mm();
-
-    while(1){
-        send_recv(RECEIVE, ANY, &g_mm_msg);
-        int src = g_mm_msg.source;
-        int reply = 1;
-
-        int msgtype = g_mm_msg.type;
-
-        switch(msgtype){
-            case FORK:
-                printf("before do fork\n");
-                g_mm_msg.RETVAL = do_fork();
-                printf("after do fork\n");
-                break;
-            case EXIT:
-                do_exit(g_mm_msg.STATUS);
-                reply = 0;
-                break;
-            case WAIT:
-                do_wait();
-                reply = 0;
-                break;
-            default:
-                dump_msg("mm: unknow message", &g_mm_msg);
-                assert(0);
-                break;
-        }
-
-        if(reply){
-            g_mm_msg.type = SYSCALL_RET;
-            send_recv(SEND, src, &g_mm_msg);
-        }
-    }
-}
 
 /*
  * @return 0 if success, otherwise -1 * 
@@ -296,5 +259,44 @@ PUBLIC void do_wait(){
         msg.type =  SYSCALL_RET;
         msg.PID = NO_TASK;
         send_recv(SEND, pid, &msg);
+    }
+}
+
+PUBLIC void task_mm(){
+    spin("task_mm");
+    //printf(">>> 5. task_mm is running\n");
+    init_mm();
+
+    while(1){
+        send_recv(RECEIVE, ANY, &g_mm_msg);
+        int src = g_mm_msg.source;
+        int reply = 1;
+
+        int msgtype = g_mm_msg.type;
+
+        switch(msgtype){
+            case FORK:
+                printf("before do fork\n");
+                g_mm_msg.RETVAL = do_fork();
+                printf("after do fork\n");
+                break;
+            case EXIT:
+                do_exit(g_mm_msg.STATUS);
+                reply = 0;
+                break;
+            case WAIT:
+                do_wait();
+                reply = 0;
+                break;
+            default:
+                dump_msg("mm: unknow message", &g_mm_msg);
+                assert(0);
+                break;
+        }
+
+        if(reply){
+            g_mm_msg.type = SYSCALL_RET;
+            send_recv(SEND, src, &g_mm_msg);
+        }
     }
 }

@@ -1,4 +1,5 @@
 #include "tty.h"
+#include "./tty_const.h"
 #include "const.h"
 #include "types.h"
 #include "ktypes.h"
@@ -18,6 +19,8 @@ PRIVATE TTY tty_table[NR_CONSOLES];
 PRIVATE CONSOLE console_table[NR_CONSOLES];
 PRIVATE int current_console_idx = 0;
 
+PUBLIC void tty_output_char(CONSOLE *p_con, char ch);
+
 /**
  * Copy data in WORDS.
  *
@@ -34,8 +37,6 @@ PRIVATE	void w_copy(unsigned int dst, const unsigned int src, int size)
 		  (void*)(V_MEM_BASE + (src << 1)),
 		  size << 1);
 }
-
-PUBLIC void tty_output_char(CONSOLE *p_con, char ch);
 
 PRIVATE void tty_output_str(TTY* p_tty, char* buf, int len){
 	char* p = buf;
@@ -55,7 +56,6 @@ PRIVATE void tty_set_cursor(unsigned int position)
     out_byte(CRTC_DATA_REG, position & 0xFF);
     enable_int();
 }
-
 
 PRIVATE void init_console(CONSOLE *p_console, int idx)
 {    
@@ -92,7 +92,6 @@ PRIVATE void tty_set_video_start_addr(uint32_t addr)
     out_byte(CRTC_DATA_REG, addr & 0xFF);
     enable_int();
 }
-
 
 PRIVATE bool_t is_current_console(CONSOLE *con)
 {
@@ -163,7 +162,6 @@ PUBLIC void clear_screen(int pos, int len)
 		*pch++ = DEFAULT_CHAR_COLOR;
 	}
 }
-
 
 PUBLIC void tty_output_char(CONSOLE *con, char ch)
 {
@@ -326,7 +324,6 @@ PRIVATE void init_tty(TTY *p_tty)
     init_console(p_tty->p_console, idx);
 }
 
-
 PRIVATE void append_combined_key_to_tty_buf(TTY *p_tty, uint32_t key)
 {   
     if (p_tty->inbuf_count < TTY_IN_BYTES)
@@ -466,7 +463,9 @@ PUBLIC int sys_printx(int _unused1, int _unused2, char* s, struct proc* p_proc)
 
 PUBLIC void task_tty()
 {       
-    kprintf(">>> 1. task_tty is running\n"); // cannot use printl or printf here
+    // CANNOT use printl or printf here
+    // since tty is not ready yet
+    kprint(">>> 1. task_tty is running\n"); 
     TTY* p_tty;
     MESSAGE msg;
     
@@ -495,9 +494,9 @@ PUBLIC void task_tty()
             case DEV_OPEN: // nothing need to open, just return
                 reset_msg(&msg);
                 msg.type = SYSCALL_RET;
-                printl(">>> 4.1 in task_tty()::DEVOPEN before send, to: %d, type: %d\n", src, msg.type);
+                printf(">>> 4.1 in task_tty()::DEVOPEN before send, to: %d, type: %d\n", src, msg.type);
                 send_recv(SEND, src, &msg);
-                printl(">>> 4.1 in task_tty()::DEVOPEN after send, to: %d, type: %d\n", src, msg.type);
+                printf(">>> 4.1 in task_tty()::DEVOPEN after send, to: %d, type: %d\n", src, msg.type);
                 break;
             case DEV_READ:
                 tty_do_read(ptty2, &msg);
@@ -513,4 +512,11 @@ PUBLIC void task_tty()
                 break;
         }
     }
+}
+
+PUBLIC void tty_reset_start_addr(){
+    out_byte(CRTC_ADDR_REG, CRTC_DATA_IDX_START_ADDR_H);
+	out_byte(CRTC_DATA_REG, 0);
+	out_byte(CRTC_ADDR_REG, CRTC_DATA_IDX_START_ADDR_L);
+	out_byte(CRTC_DATA_REG, 0);
 }

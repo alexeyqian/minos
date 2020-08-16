@@ -320,7 +320,6 @@ PUBLIC void kb_read(TTY* p_tty)
 	hand_over_key_to_tty(p_tty, combinded_key);
 }
 
-// TODO: move out of tty, add it in kmain?
 PUBLIC void init_keyboard(){
 	kb_in.count = 0;
 	kb_in.p_head = kb_in.p_tail = kb_in.buf;
