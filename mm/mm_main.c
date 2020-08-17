@@ -36,7 +36,7 @@ PUBLIC int free_mem(int pid){
  * @return 0 if success, otherwise -1 * 
  * */
 PUBLIC int do_fork(){
-    printf(">>> do fork\n");
+    kprintf(">>> do fork\n");
     // find a free slot in proc table
     struct proc* p = proc_table;
     int i;
@@ -79,7 +79,7 @@ PUBLIC int do_fork(){
         && (caller_t_size == caller_ds_size));
 
     int child_base = alloc_mem(child_pid, caller_t_size);
-    printl("{mm} 0x%x <- 0x%x (0x%x bytes)\n", child_base, caller_t_base, caller_t_size);
+    kprintf("{mm} 0x%x <- 0x%x (0x%x bytes)\n", child_base, caller_t_base, caller_t_size);
     // child is a copy of parent
     phys_copy((void*)child_base, (void*)caller_t_base, caller_t_size);
 
@@ -126,7 +126,7 @@ PRIVATE void cleanup(struct proc* proc){
     send_recv(SEND, proc->p_parent, &msg2parent);
 
     proc->p_flags = FREE_SLOT;
-    printf("{mm} cleanup() %s(%d) has been cleand up.\n", proc->p_name, proc2pid(proc));
+    kprintf("{mm} cleanup() %s(%d) has been cleand up.\n", proc->p_name, proc2pid(proc));
 }
 
 
@@ -184,15 +184,15 @@ PUBLIC void do_exit(int status){
     p->exit_status = status;
 
     if(proc_table[parent_pid].p_flags & WAITING){ // parent is waiting
-        printl("{MM} ((--do_exit():: %s (%d) is WAITING, %s (%d) will be cleaned up.--))\n",
+        kprintf("{MM} ((--do_exit():: %s (%d) is WAITING, %s (%d) will be cleaned up.--))\n",
 		       proc_table[parent_pid].p_name, parent_pid,
 		       p->p_name, pid);
-		printl("{MM} ((--do_exit():1: proc_table[parent_pid].p_flags: 0x%x--))\n",
+		kprintf("{MM} ((--do_exit():1: proc_table[parent_pid].p_flags: 0x%x--))\n",
 		       proc_table[parent_pid].p_flags);
         proc_table[parent_pid].p_flags &= ~WAITING;
         cleanup(&proc_table[pid]);
     }else{ // parent is not waiting
-        printl("{MM} ((--do_exit():: %s (%d) is not WAITING, %s (%d) will be HANGING--))\n",
+        kprintf("{MM} ((--do_exit():: %s (%d) is not WAITING, %s (%d) will be HANGING--))\n",
 		       proc_table[parent_pid].p_name, parent_pid,
 		       p->p_name, pid);
         proc_table[pid].p_flags |= HANGING;
@@ -202,9 +202,9 @@ PUBLIC void do_exit(int status){
     for(i = 0; i < NR_TASKS + NR_PROCS; i++){
         if(proc_table[i].p_parent == pid){ // is a child
             proc_table[i].p_parent == INIT; // FIXME: make sure init always waiting
-            printl("{MM} %s (%d) exit(), so %s (%d) is INIT's child now\n",
+            kprintf("{MM} %s (%d) exit(), so %s (%d) is INIT's child now\n",
 			       p->p_name, pid, proc_table[i].p_name, i);
-			printl("{MM} ((--do_exit():2: proc_table[INIT].p_flags: 0x%x--))\n",
+			kprintf("{MM} ((--do_exit():2: proc_table[INIT].p_flags: 0x%x--))\n",
 			       proc_table[INIT].p_flags);
 
             if((proc_table[INIT].p_flags & WAITING) &&
@@ -236,7 +236,7 @@ PUBLIC void do_exit(int status){
  *     <4> return (MM will go on with the next message loop)
  **/
 PUBLIC void do_wait(){
-    printf("{mm} ((--do_wait()--))");
+    kprintf("{mm} ((--do_wait()--))");
     int pid = g_mm_msg.source;
     int i;
     int children = 0;
@@ -263,8 +263,8 @@ PUBLIC void do_wait(){
 }
 
 PUBLIC void task_mm(){
-    spin("task_mm");
-    //printf(">>> 5. task_mm is running\n");
+    kspin("task_mm");
+    //kprintf(">>> 5. task_mm is running\n");
     init_mm();
 
     while(1){
@@ -276,9 +276,9 @@ PUBLIC void task_mm(){
 
         switch(msgtype){
             case FORK:
-                printf("before do fork\n");
+                kprintf("before do fork\n");
                 g_mm_msg.RETVAL = do_fork();
-                printf("after do fork\n");
+                kprintf("after do fork\n");
                 break;
             case EXIT:
                 do_exit(g_mm_msg.STATUS);

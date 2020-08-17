@@ -94,9 +94,9 @@ PUBLIC int write(int fd, const void* buf, int count){
     msg.FD = fd;
     msg.BUF = (void*)buf;
     msg.CNT = count;
-    printf(">>> 6.1 int write(), before sending message, fd: %d\n", fd);
+    kprintf(">>> 6.1 int write(), before sending message, fd: %d\n", fd);
     send_recv(BOTH, TASK_FS, &msg);
-    printf(">>> 6.1 int write(), after sending message, fd: %d\n", fd);
+    kprintf(">>> 6.1 int write(), after sending message, fd: %d\n", fd);
 
     return msg.CNT;
 }

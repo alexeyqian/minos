@@ -78,7 +78,7 @@ PRIVATE void mkfs(){
     assert(dd_map[MAJOR(ROOT_DEV)].driver_nr != INVALID_DRIVER);
     send_recv(BOTH, dd_map[MAJOR(ROOT_DEV)].driver_nr, &driver_msg);
 
-    //printf("dev size: 0x%x sectors\n", geo.size);
+    //kprintf("dev size: 0x%x sectors\n", geo.size);
 
     //========= super block ============
     struct super_block sb;
@@ -106,7 +106,7 @@ PRIVATE void mkfs(){
     // write the super block to sector 1
     WR_SECT(ROOT_DEV, 1);
     /*
-    printf("dev base:0x%x00, sb:0x%x00, imap:0x%x00, smap:0x%x00\n"
+    kprintf("dev base:0x%x00, sb:0x%x00, imap:0x%x00, smap:0x%x00\n"
 	       "        inodes:0x%x00, 1st_sector:0x%x00\n", 
 	       geo.base * 2,
 	       (geo.base + 1) * 2,
@@ -244,8 +244,8 @@ PRIVATE int fs_exit(){
 // <ring 1>
 // TODO: move pcaller out
 PUBLIC void task_fs(){
-    spin("task_fs");
-    printf(">>> 4. task_fs is running\n");
+    kspin("task_fs");
+    kprintf(">>> 4. task_fs is running\n");
     init_fs();
     while(1){
         send_recv(RECEIVE, ANY, &fs_msg);    // TODO: replace global to local
@@ -255,9 +255,9 @@ PUBLIC void task_fs(){
         pcaller = &proc_table[src]; // TODO: replace global var with function: get_proc(int)
         switch(msgtype){
             case OPEN:
-                //printf(">>> 2.2 in task_fs()::OPEN before do_open(), src: %d, type: %d, flags: %d\n", fs_msg.source, fs_msg.type, pcaller->p_flags);
+                //kprintf(">>> 2.2 in task_fs()::OPEN before do_open(), src: %d, type: %d, flags: %d\n", fs_msg.source, fs_msg.type, pcaller->p_flags);
                 fs_msg.FD = do_open();
-                //printf(">>> 2.2 in task_fs()::OPEN after do open(), src: %d, type: %d, flags: %d\n", fs_msg.source, fs_msg.type, pcaller->p_flags);
+                //kprintf">>> 2.2 in task_fs()::OPEN after do open(), src: %d, type: %d, flags: %d\n", fs_msg.source, fs_msg.type, pcaller->p_flags);
                 break;
             case CLOSE:
                 fs_msg.RETVAL = do_close();
@@ -296,10 +296,10 @@ PUBLIC void task_fs(){
         // it then notify process P to let it continue.
         if(fs_msg.type != SUSPEND_PROC){
             fs_msg.type = SYSCALL_RET;
-            printf(">>> 2.3 in task_fs()::end before send to:%d, type: %d, flags: %d\n", src, fs_msg.type, pcaller->p_flags);
+            kprintf(">>> 2.3 in task_fs()::end before send to:%d, type: %d, flags: %d\n", src, fs_msg.type, pcaller->p_flags);
             struct proc* ptaskfs = &proc_table[TASK_FS]; 
             send_recv(SEND, src, &fs_msg);
-            printf(">>> 2.3 in task_fs()::end after send to:%d, type: %d\n", src, fs_msg.type);
+            kprintf(">>> 2.3 in task_fs()::end after send to:%d, type: %d\n", src, fs_msg.type);
         }        
     }
 }

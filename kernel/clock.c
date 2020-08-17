@@ -4,7 +4,7 @@
 #include "global.h"
 #include "ke_asm_utils.h"
 #include "klib.h"
-#include "screen.h" // kprint
+#include "screen.h"
 #include "ipc.h"
 
 PUBLIC void delay(int milli_sec){
@@ -15,8 +15,6 @@ PUBLIC void delay(int milli_sec){
 PRIVATE void clock_handler(int irq){
 	UNUSED(irq);
 	
-	//kprint("[");
-
 	if(++ticks >= MAX_TICKS) ticks = 0;
 
 	if(p_proc_ready->ticks)
@@ -26,14 +24,11 @@ PRIVATE void clock_handler(int irq){
 		inform_int(TASK_TTY);
 		
 	if(k_reenter != 0){ // interrupt re-enter
-		//kprint("!]");
 		return;
 	}
 
 	if (p_proc_ready->ticks > 0) return;
 	schedule(); 
-
-	//kprint("]");
 }
 
 PUBLIC void init_clock(){ // init 8253 PIT
@@ -69,11 +64,8 @@ PUBLIC void schedule(){
 /*
 // round robin version of scheduler
 PRIVATE void clock_handler_not_used(int irq){
-	kprint("[");
-
 	ticks++;
 	if(k_reenter != 0){
-		//kprint("!");
 		return;
 	}
 
@@ -81,7 +73,5 @@ PRIVATE void clock_handler_not_used(int irq){
 	p_proc_ready++;
 	if(p_proc_ready >= proc_table + NR_TASKS + NR_PROCS)
 		p_proc_ready = proc_table;
-
-	kprint("]");
 }*/
 

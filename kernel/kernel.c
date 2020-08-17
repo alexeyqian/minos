@@ -19,7 +19,7 @@
 #include "phys_mem.h"
 #include "virt_mem.h"
 #include "ipc.h"
-#include "screen.h" // kprint
+#include "screen.h" 
 #include "proc.h"
 #include "ktest.h"
 
@@ -47,9 +47,9 @@ uint32_t before_paging_selector_to_segbase(uint16_t selector);
 void restart();
 void kmain();
 
-void kinit(){
+void kstart(){
 	kclear_screen();
-	kprint(">>> kinit begin\n");
+	kprintf(">>> kstart\n");
 	    
 	init_new_gdt();  
 	init_idt();
@@ -57,14 +57,15 @@ void kinit(){
 	init_ldt_descriptors_in_dgt(); 
 	get_boot_params(&g_boot_params);
 	init_proc_table();	
+	
 	//pmmgr_init();	
-	//vmmgr_init();kprint(">>> virtual memory initialized and paging enabled.");
+	//vmmgr_init();kprintf(">>> virtual memory initialized and paging enabled.");
 	 
 	kmain();
 }
 
 void kmain(){ 
-	kprint(">>> kmain begin ... \n");	// kprint SHOULD NOT BE USED ANYMORE AFTER THIS	
+	kprintf(">>> kmain\n");	// kprintf SHOULD NOT BE USED ANYMORE AFTER THIS	
 	init_clock(); 
 	init_keyboard();    	
 	restart(); // pretenting a schedule happend to start a process.

@@ -4,7 +4,6 @@
 #include "vsprintf.h"
 #include "global.h"
 #include "klib.h"
-//#include "ke_asm_utils.h"
 
 #define VIDEO_ADDRESS 0xb8000
 #define MAX_ROWS 25
@@ -24,6 +23,7 @@ PRIVATE int get_cursor(){
     return offset * 2;
 }*/
 
+// use var to replace cursor enables uer privillege task/proc to call kprintf
 PRIVATE uint32_t get_cursor(){    
     return g_disp_pos;
 }
@@ -71,8 +71,7 @@ PRIVATE int scroll(int cursor_offset){
 
 PRIVATE void kprint_char(unsigned char c, int row, int col, char attribute){
     unsigned char* vidmem = (unsigned char *) VIDEO_ADDRESS;
-    if(!attribute)
-        attribute = WHITE_ON_BLACK;
+    if(!attribute) attribute = WHITE_ON_BLACK;
 
     int offset;
     if(col >= 0 && row >= 0)
@@ -95,8 +94,6 @@ PRIVATE void kprint_char(unsigned char c, int row, int col, char attribute){
     set_cursor(offset);
 }
 
-// ------- public ---------------
-
 PUBLIC void kclear_screen(){
     for(int row = 0; row < MAX_ROWS; row++)
         for(int col = 0; col < MAX_COLS; col++)
@@ -105,25 +102,34 @@ PUBLIC void kclear_screen(){
     set_cursor(get_screen_offset(0, 0));
 }
 
-
-PUBLIC void kprint(char* str){
-    for(int i=0; str[i]!='\0'; i++)
-		kprint_char(str[i], -1, -1, 0);
-}
-
-PUBLIC void kprint_int_as_hex(int num){
-	char str[16];
-    itoa(num, str, 16);
-    kprint(str);
+PUBLIC void kspin(char* func_name){
+    kprintf(">>> kspinning in %s ... \n", func_name);
+    while(1){}
 }
 
 PUBLIC void kprintf(const char *fmt, ...){
     int i;
     char buf[256];
-    va_list args = (va_list)((char*)(&fmt) + 4); // points to next params after fmt
+    va_list args = (va_list)((char*)(&fmt) + 4); 
+    // points to next params after fmt
     // now args is actually the addr of arg1 just behind fmt
     // args is actually a char*
     i = vsprintf(buf, fmt, args); 
     buf[i] = 0;
-	kprint(buf);
+	
+    for(i=0; buf[i]!='\0'; i++)
+		kprint_char(buf[i], -1, -1, 0);
 }
+
+/*
+PUBLIC void kprint_int_as_hex(int num){
+	char str[16];
+    itoa(num, str, 16);
+    kprintf(str);
+}
+
+PUBLIC void kprint(char* str){
+    for(int i=0; str[i]!='\0'; i++)
+		kprint_char(str[i], -1, -1, 0);
+}
+*/

@@ -462,10 +462,9 @@ PUBLIC int sys_printx(int _unused1, int _unused2, char* s, struct proc* p_proc)
 }
 
 PUBLIC void task_tty()
-{       
-    // CANNOT use printl or printf here
-    // since tty is not ready yet
-    kprint(">>> 1. task_tty is running\n"); 
+{  
+    kspin("task_tty");     
+    kprintf(">>> 1. task_tty is running\n"); 
     TTY* p_tty;
     MESSAGE msg;
     
@@ -494,9 +493,9 @@ PUBLIC void task_tty()
             case DEV_OPEN: // nothing need to open, just return
                 reset_msg(&msg);
                 msg.type = SYSCALL_RET;
-                printf(">>> 4.1 in task_tty()::DEVOPEN before send, to: %d, type: %d\n", src, msg.type);
+                //kprintf(">>> 4.1 in task_tty()::DEVOPEN before send, to: %d, type: %d\n", src, msg.type);
                 send_recv(SEND, src, &msg);
-                printf(">>> 4.1 in task_tty()::DEVOPEN after send, to: %d, type: %d\n", src, msg.type);
+                //kprintf(">>> 4.1 in task_tty()::DEVOPEN after send, to: %d, type: %d\n", src, msg.type);
                 break;
             case DEV_READ:
                 tty_do_read(ptty2, &msg);

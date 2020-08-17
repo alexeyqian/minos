@@ -170,18 +170,19 @@
 
 #define	MAX_TICKS	0x7FFFABCD
 
-#define STACK_SIZE_TTY   0x8000  // TODO: consider appropriate stack size
-#define STACK_SIZE_SYS   0x8000
-#define STACK_SIZE_HD    0x8000
-#define STACK_SIZE_FS    0x8000
-#define STACK_SIZE_MM    0x8000
+#define STACK_SIZE_TTY   0x4000  // TODO: consider appropriate stack size
+#define STACK_SIZE_SYS   0x4000
+#define STACK_SIZE_HD    0x4000
+#define STACK_SIZE_FS    0x4000
+#define STACK_SIZE_MM    0x4000
 
-#define STACK_SIZE_INIT  0x8000
-#define STACK_SIZE_TESTA 0x8000
-#define STACK_SIZE_TESTB 0x8000
-#define STACK_SIZE_TESTC 0x8000
+#define STACK_SIZE_INIT  0x4000
+#define STACK_SIZE_TESTA 0x4000
+#define STACK_SIZE_TESTB 0x4000
+#define STACK_SIZE_TESTC 0x4000
 #define STACK_SIZE_TOTAL STACK_SIZE_TTY+STACK_SIZE_SYS+STACK_SIZE_HD \
-	+STACK_SIZE_FS+STACK_SIZE_MM+STACK_SIZE_INIT+STACK_SIZE_TESTA+STACK_SIZE_TESTB+STACK_SIZE_TESTC
+	+STACK_SIZE_FS+STACK_SIZE_MM+STACK_SIZE_INIT+STACK_SIZE_TESTA \
+	+STACK_SIZE_TESTB+STACK_SIZE_TESTC
 
 // ========= memory ===================
 /* Sizes of memory tables. The boot monitor distinguishes three memory areas, 

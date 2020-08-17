@@ -5,7 +5,7 @@
 #include "global.h"
 #include "klib.h"
 #include "ke_asm_utils.h"
-#include "screen.h" // kprint
+#include "screen.h" 
 
 // exceptions 
 #define	INT_VECTOR_DIVIDE		    0x0
@@ -149,22 +149,13 @@ PUBLIC void exception_handler(int vec_no, int err_code, int eip, int cs, int efl
         "#XF SIMD Floating-Point Exception"
     };
 
-    kprint("Exception handler:");
-    kprint(err_description[vec_no]);
-    kprint("\nEFLAGS: ");
-    kprint_int_as_hex(eflags);
-    kprint(" CS: ");
-    kprint_int_as_hex(cs);
-    kprint(" EIP: ");
-    kprint_int_as_hex(eip);
+    kprintf("Exception handler: %d\n", err_description[vec_no]);
+    kprintf("EFLAGS: 0x%x, CS: 0x%x, EIP: 0x%x\n", eflags, cs, eip);
 
-    if(err_code != 0xffffffff){
-        kprint(" Error Code: ");
-        kprint_int_as_hex(err_code);
-    }    
+    if(err_code != 0xffffffff)
+        kprintf(" Error Code: 0x%x\n", err_code);    
 }
 
 PUBLIC void irq_handler(int irq){
-    kprint("IRQ handler: ");
-	kprint_int_as_hex(irq);
+    kprintf("IRQ handler: 0x%x\n", irq);
 }

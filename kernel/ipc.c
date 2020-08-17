@@ -40,13 +40,13 @@ PRIVATE int deadlock(int src, int dest)
 			if (p->p_sendto == src) {
 				/* print the chain */
 				p = proc_table + dest;
-				printl("=_=%s", p->p_name);
+				kprintf("=_=%s", p->p_name);
 				do {
 					assert(p->p_msg);
 					p = proc_table + p->p_sendto;
-					printl("->%s", p->p_name);
+					kprintf("->%s", p->p_name);
 				} while (p != proc_table + src);
-				printl("=_=");
+				kprintf("=_=");
 
 				return 1;
 			}
@@ -93,7 +93,7 @@ PRIVATE int msg_send(struct proc* current, int dest, MESSAGE* m){
         assert(sender->p_msg == 0);
         assert(sender->p_recvfrom == NO_TASK);
         assert(sender->p_sendto == NO_TASK);
-        //printl("message sent: dest: %d, type: %d", dest, m->type);
+        //kprintf("message sent: dest: %d, type: %d", dest, m->type);
     }else{ // dest is not waiting for the msg
         sender->p_flags |= SENDING;
         assert(sender->p_flags == SENDING);
@@ -117,7 +117,7 @@ PRIVATE int msg_send(struct proc* current, int dest, MESSAGE* m){
         assert(sender->p_msg != 0);
         assert(sender->p_recvfrom == NO_TASK);
         assert(sender->p_sendto == dest);
-        //printl("sender waiting: dest: %d, type: %d", dest, m->type);
+        //kprintf("sender waiting: dest: %d, type: %d", dest, m->type);
     }
 
     return 0;
@@ -271,7 +271,7 @@ PUBLIC void dump_proc(struct proc* p)
 		disp_color_str(info, text_color);
 	}
 
-	/* printl("^^"); */
+	/* kprintf("^^"); */
 
 	disp_color_str("\n\n", text_color);
 	sprintf(info, "ANY: 0x%x.\n", ANY); disp_color_str(info, text_color);
@@ -294,7 +294,7 @@ PUBLIC void dump_proc(struct proc* p)
 PUBLIC void dump_msg(const char * title, MESSAGE* m)
 {
 	int packed = 0;
-	printl("{%s}<0x%x>{%ssrc:%s(%d),%stype:%d,%s(0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x)%s}%s",  //, (0x%x, 0x%x, 0x%x)}",
+	kprintf("{%s}<0x%x>{%ssrc:%s(%d),%stype:%d,%s(0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x)%s}%s",  //, (0x%x, 0x%x, 0x%x)}",
 	       title,
 	       (int)m,
 	       packed ? "" : "\n        ",

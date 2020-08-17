@@ -9,7 +9,7 @@ global _start
 _start:  
 	mov ebp, kernel_stack_top ; setup kernel stack
 	mov esp, kernel_stack_top 
-	call kinit                 ; never return
+	call kstart                 ; never return
 	
 %include "ke_interrupts.inc"
 %include "ke_syscalls.inc"

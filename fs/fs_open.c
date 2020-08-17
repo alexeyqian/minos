@@ -182,7 +182,7 @@ PRIVATE void new_dir_entry(struct inode* dir_inode, int inode_nr, char* filename
 	WR_SECT(dir_inode->i_dev, dir_blk0_nr + i);
 	/* update dir inode */
 	sync_inode(dir_inode);
-    printl("here 6.5");
+    kprintf("here 6.5");
 
 }
 
@@ -247,7 +247,7 @@ PUBLIC int do_open(){
     struct inode* pin = 0;
     if(flags & O_CREAT){
         if(inode_nr){
-            printl("file exists.\n");
+            kprintf("file exists.\n");
             return -1;
         }else{
             pin = create_file(pathname, flags);
@@ -279,9 +279,9 @@ PUBLIC int do_open(){
             driver_msg.DEVICE = MINOR(dev);
             assert(MAJOR(dev) == 4);
             assert(dd_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
-            printl(">>> 3.3 in do_open(), before send, src: %d, type: %d\n", dd_map[MAJOR(dev)].driver_nr, driver_msg.type);
+            kprintf(">>> 3.3 in do_open(), before send, src: %d, type: %d\n", dd_map[MAJOR(dev)].driver_nr, driver_msg.type);
             send_recv(BOTH, dd_map[MAJOR(dev)].driver_nr, &driver_msg);
-            printl(">>> 3.3 in do_open(), after send, src: %d, type: %d\n", dd_map[MAJOR(dev)].driver_nr, driver_msg.type);
+            kprintf(">>> 3.3 in do_open(), after send, src: %d, type: %d\n", dd_map[MAJOR(dev)].driver_nr, driver_msg.type);
         }else if(imode == I_DIRECTORY){
             assert(pin->i_num == ROOT_INODE);
         }else{
@@ -350,7 +350,7 @@ PUBLIC int do_rdwt(){
     int len = fs_msg.CNT;
 
     int src = fs_msg.source;
-    printf("pcaller fd: %d", fd);
+    kprintf("pcaller fd: %d", fd);
     assert((pcaller->filp[fd] >= &f_desc_table[0]) 
         && (pcaller->filp[fd] < &f_desc_table[NR_FILE_DESC]));
     
@@ -365,7 +365,7 @@ PUBLIC int do_rdwt(){
     int imode = pin->i_mode & I_TYPE_MASK;
     // TODO: wrap into do_rdwt_special
     if(imode == I_CHAR_SPECIAL){ // special file, such as tty
-        printl("write to I CHAR SPECIAL");
+        kprintf("write to I CHAR SPECIAL");
         int t = fs_msg.type == READ? DEV_READ : DEV_WRITE;
         fs_msg.type = t;
 
@@ -414,9 +414,9 @@ PUBLIC int do_rdwt(){
             }else { // WRITE
                 phys_copy((void*)va2la(TASK_FS, fsbuf + off),
                     (void*)va2la(src, buf + bytes_rw), bytes);
-                printl(">>> 8.2 in do_rwrt(), before rw_sector()\n");
+                kprintf(">>> 8.2 in do_rwrt(), before rw_sector()\n");
                 rw_sector(DEV_WRITE, pin->i_dev, i*SECTOR_SIZE, chunk*SECTOR_SIZE, TASK_FS, fsbuf);                
-                printl(">>> 8.2 in do_rwrt(), after rw_sector()\n");
+                kprintf(">>> 8.2 in do_rwrt(), after rw_sector()\n");
             }
             off = 0;
             bytes_rw += bytes;
@@ -449,32 +449,32 @@ PUBLIC int do_unlink(){
     pathname[name_len] = 0;
 
     if(strcmp(pathname, "/") == 0){
-        printl("fs::do_unlink cannot unlink the root\n");
+        kprintf("fs::do_unlink cannot unlink the root\n");
         return -1;
     }
 
     int inode_nr = search_file(pathname);
     if(inode_nr == INVALID_INODE){
-        printl("fs::unlink search file:%s returns invalid inode\n", pathname);
+        kprintf("fs::unlink search file:%s returns invalid inode\n", pathname);
         return -1;
     }
 
     char filename[MAX_PATH];
     struct inode* dir_inode;
     if(strip_path(filename, pathname, &dir_inode) != 0){
-        printl("fs::unlink strip path:%s failed\n", pathname);
+        kprintf("fs::unlink strip path:%s failed\n", pathname);
         return -1;
     }
 
     struct inode* pin = get_inode(dir_inode->i_dev, inode_nr);
 
     if(pin->i_mode != I_REGULAR){ // can only remove regular files
-        printl("cannot move non regular file.");
+        kprintf("cannot move non regular file.");
         return -1;
     }
 
     if(pin->i_cnt > 1){ 
-        printl("cannot remove file:%s, pin->i_cnt is %d\n", pathname, pin->i_cnt);
+        kprintf("cannot remove file:%s, pin->i_cnt is %d\n", pathname, pin->i_cnt);
         return -1;
     }
 

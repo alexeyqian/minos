@@ -22,7 +22,7 @@ PUBLIC int printl(const char* fmt, ...){
 }
 
 /**
- * User space print
+ * User space print, cannot be used in kernel or tasks.
  * make sure the caller process has already opened console file, and set to 1.
  * C calling convension is caller clear the params in stack
  *  since for this type of variable params,

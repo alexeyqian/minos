@@ -10,7 +10,7 @@ PUBLIC void assertion_failure(char* exp, char* file, char* base_file, int line){
     // if it happens in a user proccess, printl will return like a common routine.
     
     // use a for ever loop to prevent the proc from going on.
-    spin("assertion_failure()");
+    kspin("assertion_failure()");
     // should never arrive here
     //__asm__ __volatile("ud2");
 }

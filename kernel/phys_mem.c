@@ -180,7 +180,7 @@ PUBLIC void pmmgr_init(){
 	//pmmgr_init_bitmap(mem_size, KERNEL_BIN_SEG_BASE + kernel_size);
 	uint32_t mem_map_ptr = 0x500;
 	pmmgr_init_bitmap(mem_size, mem_map_ptr);
-	//kprint("physical memory manager initilized with %i\n", mem_size);
+	//kprintf("physical memory manager initilized with %i\n", mem_size);
 	// TODO: replace hard code
 	//mem_region* regions = (memory_region*)0x1000; // get region map from loader
 	
@@ -220,12 +220,12 @@ PUBLIC void pmmgr_init(){
 	/*
 	// TODO: test code
 	uint32_t* p1 = (uint32_t*) pmmgr_alloc_block();
-	kprint("p1 allocated at: ");
-	kprint_int_as_hex((int)p1);
+	kprintf("p1 allocated at: ");
+	kprintf((int)p1);
 	
 	uint32_t* p2 = (uint32_t*)pmmgr_alloc_block();
-	kprint("p2 allocated at: ");
-	kprint_int_as_hex((int)p2);	
+	kprintf("p2 allocated at: ");
+	kprintf((int)p2);	
 
 	pmmgr_free_block(p1);
 	pmmgr_free_block(p2);*/

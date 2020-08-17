@@ -17,7 +17,7 @@ extern void task_sys();
 extern void task_hd();
 extern void task_fs();
 extern void task_mm();
-void init_proc();
+void init();
 
 // TODO: move to global
 // task stack is a mem area divided into MAX_TASK_NUM small areas
@@ -31,10 +31,10 @@ struct task         task_table[NR_TASKS]={
 						{task_mm,  STACK_SIZE_MM,    "task_mm"}
 					};
 struct task         user_proc_table[NR_PROCS]={ 	
-						{init_proc,STACK_SIZE_INIT,  "init_proc"},		// TODO: hardcode -> const		
-						{test_a,   STACK_SIZE_TESTA, "TestA"},
-						{test_b,   STACK_SIZE_TESTB, "TestB"},
-						{test_c,   STACK_SIZE_TESTC, "TestC"}
+						{init,     STACK_SIZE_INIT,  "init"},		// TODO: hardcode -> const		
+						{test_a,   STACK_SIZE_TESTA, "test_a"},
+						{test_b,   STACK_SIZE_TESTB, "test_b"},
+						{test_c,   STACK_SIZE_TESTC, "test_c"}
 					};	
 
 PUBLIC void init_proc_table(){
@@ -70,8 +70,12 @@ PUBLIC void init_proc_table(){
 		strcpy(p_proc->p_name, p_task->name);
 		p_proc->p_parent = NO_TASK;
 
-		if(strcmp(p_proc->p_name, "init_proc") != 0){ // not init process
+		if(strcmp(p_proc->p_name, "init") != 0){ // not init process
+			kprintf("i: %d, pname: %s\n", i, p_proc->p_name);
 			// init process ldt, which contains two ldt descriptors.
+			p_proc->ldt[INDEX_LDT_C]  = gdt[SELECTOR_KERNEL_CODE >> 3];
+			p_proc->ldt[INDEX_LDT_RW] = gdt[SELECTOR_KERNEL_DATA >> 3];
+			/*
 			memcpy(
 				(char*)&p_proc->ldt[INDEX_LDT_C], 
 				(char*)&gdt[SELECTOR_KERNEL_CODE >> 3], 
@@ -80,15 +84,17 @@ PUBLIC void init_proc_table(){
 				(char*)&p_proc->ldt[INDEX_LDT_RW], 
 				(char*)&gdt[SELECTOR_KERNEL_DATA >> 3], 
 				sizeof(struct descriptor));
-
+			*/
 			// change the DPL to lower privillege
 			p_proc->ldt[INDEX_LDT_C].attr1 =  DA_C   | privilege << 5;	
 			p_proc->ldt[INDEX_LDT_RW].attr1 = DA_DRW | privilege << 5;				
 		}else{ // init process
+			kprintf("i: %d, pname: %s\n", i, p_proc->p_name);
 			uint32_t k_base;
 			uint32_t k_limit;
 			int ret = get_kernel_map(&k_base, &k_limit, &g_boot_params);
 			assert(ret == 0);
+			//kprintf("k_base: 0x%x, k_limit: 0x%x\n", k_base, k_limit);
 			init_descriptor(&p_proc->ldt[INDEX_LDT_C], 
 				0, // bytes before the entry point are not used
 				(k_base + k_limit) >> LIMIT_4K_SHIFT,
@@ -135,9 +141,9 @@ PUBLIC void init_proc_table(){
 }
 
 // first process, parent for all user processes.
-void init_proc(){
-	printf(">>> init proc is running ...\n");
-	//spin("init\n");
+void init(){while(1){}
+	//kprintf(">>> init proc is running ...\n");
+	kspin("init");
 	int fd_stdin = open("/dev_tty0", O_RDWR);
 	assert(fd_stdin == 0);
 	int fd_stdout = open("/dev_tty0", O_RDWR);
@@ -145,13 +151,13 @@ void init_proc(){
 
 	int pid = fork();
 	if(pid != 0){ // parent process
-		printf(">>> parent is running, child pid: %d\n", pid);
+		//kprintf(">>> parent is running, child pid: %d\n", pid);
 		int s;
 		int child = wait(&s);
-		printf("child %d exited with status: %d", child, s);
-		spin(">>> parent...\n");
+		//kprintf("child %d exited with status: %d", child, s);
+		kspin(">>> parent...\n");
 	}else { // child process
-		printf(">>> child process is running, pid: %d\n", getpid());
+		//kprintf(">>> child process is running, pid: %d\n", getpid());
 		//execl("/echo", "echo", "hello", "world", 0);
 		exit(123);
 	}	
@@ -159,6 +165,6 @@ void init_proc(){
 	while(1){
 		int s;
 		int child = wait(&s);
-		printf("child %d exited with satus: %d\n", child, s);
+		//kprintf("child %d exited with satus: %d\n", child, s);
 	}
 }

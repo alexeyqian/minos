@@ -8,5 +8,5 @@ extern k_reenter ; reenter for the same interrupt
 extern irq_table
 extern syscall_table
 ; extern functions
-extern kinit
+extern kstart
 extern exception_handler

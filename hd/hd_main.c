@@ -25,7 +25,7 @@ PRIVATE void init_hd()
 {
 	// get the numbe of drives from the BIOS data area
 	uint8_t *p_nr_drives = (uint8_t *)(0x475);
-	//printl("number of drives: %d. \n", *p_nr_drives);
+	//kprintf("number of drives: %d. \n", *p_nr_drives);
 	assert(*p_nr_drives);
 
 	put_irq_handler(AT_WINI_IRQ, hd_handler);
@@ -101,19 +101,19 @@ PRIVATE void print_identify_info(uint16_t *hdinfo)
 			s[i * 2] = *p++;
 		}
 		s[i * 2] = 0;
-		printl("%s: %s\n", iinfo[k].desc, s);
+		kprintf("%s: %s\n", iinfo[k].desc, s);
 	}
 
 	int capabilities = hdinfo[49];
-	printl("LBA supported: %s\n",
+	kprintf("LBA supported: %s\n",
 		   (capabilities & 0x0200) ? "Yes" : "No");
 
 	int cmd_set_supported = hdinfo[83];
-	printl("LBA48 supported: %s\n",
+	kprintf("LBA48 supported: %s\n",
 		   (cmd_set_supported & 0x0400) ? "Yes" : "No");
 
 	int sectors = ((int)hdinfo[61] << 16) + hdinfo[60];
-	printl("HD size: %dMB\n", sectors * 512 / 1000000);
+	kprintf("HD size: %dMB\n", sectors * 512 / 1000000);
 }
 
 PRIVATE void print_hdinfo(struct hd_info *hdi)
@@ -121,7 +121,7 @@ PRIVATE void print_hdinfo(struct hd_info *hdi)
 	int i;
 	for (i = 0; i < NR_PART_PER_DRIVE + 1; i++)
 	{
-		printl("%sPART_%d: base %d(0x%x), size %d(0x%x) (in sector)\n",
+		kprintf("%sPART_%d: base %d(0x%x), size %d(0x%x) (in sector)\n",
 			   i == 0 ? " " : "     ",
 			   i,
 			   hdi->primary[i].base,
@@ -133,7 +133,7 @@ PRIVATE void print_hdinfo(struct hd_info *hdi)
 	{
 		if (hdi->logical[i].size == 0)
 			continue;
-		printl("         "
+		kprintf("         "
 			   "%d: base %d(0x%x), size %d(0x%x) (in sector)\n",
 			   i,
 			   hdi->logical[i].base,
@@ -296,9 +296,9 @@ PRIVATE void hd_rdwt(MESSAGE *p)
 				panic("hd writing error.");
 
 			port_write(REG_DATA, la, bytes);
-			//printl("here before interrupt wait");
+			//kprintf("here before interrupt wait");
 			interrupt_wait(); // wait after port_write
-			//printl("after interrupt wait");
+			//kprintf("after interrupt wait");
 		}
 
 		bytes_left -= SECTOR_SIZE;
@@ -334,8 +334,8 @@ PRIVATE void hd_ioctl(MESSAGE *p)
 
 PUBLIC void task_hd()
 {
-	spin("task_hd");
-	//printf(">>> 3. task_hd is running\n");
+	kspin("task_hd");
+	kprintf(">>> 3. task_hd is running\n");
 	MESSAGE msg;
 	init_hd();
 	while (1)
@@ -353,7 +353,7 @@ PUBLIC void task_hd()
 			break;
 		case DEV_READ:
 		case DEV_WRITE:
-			//printl("here dev write");
+			//kprintf("here dev write");
 			hd_rdwt(&msg);
 			break;
 		case DEV_IOCTL:
@@ -361,7 +361,7 @@ PUBLIC void task_hd()
 			break;
 		default:
 			dump_msg("hd driver: unknown msg", &msg);
-			spin("fs: main loop invalid message type.");
+			kspin("fs: main loop invalid message type.");
 			break;
 		}
 

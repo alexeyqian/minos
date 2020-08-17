@@ -15,9 +15,7 @@
 #define SCREEN_WIDTH		80
 
 typedef struct s_tty{
-    // TODO: wrap fields into p_tty_buf
-    // so it looks like tty_buff_s* p_tty_buff
-    uint32_t  in_buf[TTY_IN_BYTES];
+    uint32_t  in_buf[TTY_IN_BYTES];   // TODO: rename to inbuf
     int       inbuf_count;            // how many keys are in buffer
     uint32_t* p_inbuf_head;           // point to next available space
     uint32_t* p_inbuf_tail;           // point to next should be processed value    
@@ -38,7 +36,7 @@ typedef struct s_console // CONSOLE is a video memory region
 	unsigned int	size_in_word; // how many words does the console have
 	unsigned int	cursor;			
     int is_full;
-}CONSOLE;
+} CONSOLE;
 
 void task_tty();
 void clear_screen(int pos, int len);
