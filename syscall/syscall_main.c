@@ -19,7 +19,6 @@ PUBLIC int get_ticks(){
 
 // <ring 1>, "system calls" via IPC message
 PUBLIC void task_sys(){
-    kspin("task_sys");
     kprintf(">>> 2. task_sys is running ... ...\n"); 
     MESSAGE msg;
     while(1){

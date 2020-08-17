@@ -463,7 +463,6 @@ PUBLIC int sys_printx(int _unused1, int _unused2, char* s, struct proc* p_proc)
 
 PUBLIC void task_tty()
 {  
-    kspin("task_tty");     
     kprintf(">>> 1. task_tty is running\n"); 
     TTY* p_tty;
     MESSAGE msg;

@@ -182,7 +182,6 @@ PRIVATE void new_dir_entry(struct inode* dir_inode, int inode_nr, char* filename
 	WR_SECT(dir_inode->i_dev, dir_blk0_nr + i);
 	/* update dir inode */
 	sync_inode(dir_inode);
-    kprintf("here 6.5");
 
 }
 
@@ -350,7 +349,6 @@ PUBLIC int do_rdwt(){
     int len = fs_msg.CNT;
 
     int src = fs_msg.source;
-    kprintf("pcaller fd: %d", fd);
     assert((pcaller->filp[fd] >= &f_desc_table[0]) 
         && (pcaller->filp[fd] < &f_desc_table[NR_FILE_DESC]));
     
@@ -414,9 +412,7 @@ PUBLIC int do_rdwt(){
             }else { // WRITE
                 phys_copy((void*)va2la(TASK_FS, fsbuf + off),
                     (void*)va2la(src, buf + bytes_rw), bytes);
-                kprintf(">>> 8.2 in do_rwrt(), before rw_sector()\n");
                 rw_sector(DEV_WRITE, pin->i_dev, i*SECTOR_SIZE, chunk*SECTOR_SIZE, TASK_FS, fsbuf);                
-                kprintf(">>> 8.2 in do_rwrt(), after rw_sector()\n");
             }
             off = 0;
             bytes_rw += bytes;

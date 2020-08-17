@@ -334,7 +334,6 @@ PRIVATE void hd_ioctl(MESSAGE *p)
 
 PUBLIC void task_hd()
 {
-	kspin("task_hd");
 	kprintf(">>> 3. task_hd is running\n");
 	MESSAGE msg;
 	init_hd();

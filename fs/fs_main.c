@@ -244,7 +244,7 @@ PRIVATE int fs_exit(){
 // <ring 1>
 // TODO: move pcaller out
 PUBLIC void task_fs(){
-    kspin("task_fs");
+    //kspin("task_fs");
     kprintf(">>> 4. task_fs is running\n");
     init_fs();
     while(1){
@@ -296,10 +296,8 @@ PUBLIC void task_fs(){
         // it then notify process P to let it continue.
         if(fs_msg.type != SUSPEND_PROC){
             fs_msg.type = SYSCALL_RET;
-            kprintf(">>> 2.3 in task_fs()::end before send to:%d, type: %d, flags: %d\n", src, fs_msg.type, pcaller->p_flags);
             struct proc* ptaskfs = &proc_table[TASK_FS]; 
             send_recv(SEND, src, &fs_msg);
-            kprintf(">>> 2.3 in task_fs()::end after send to:%d, type: %d\n", src, fs_msg.type);
         }        
     }
 }

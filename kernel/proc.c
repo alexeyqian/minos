@@ -71,7 +71,7 @@ PUBLIC void init_proc_table(){
 		p_proc->p_parent = NO_TASK;
 
 		if(strcmp(p_proc->p_name, "init") != 0){ // not init process
-			kprintf("i: %d, pname: %s\n", i, p_proc->p_name);
+			//kprintf("i: %d, pname: %s\n", i, p_proc->p_name);
 			// init process ldt, which contains two ldt descriptors.
 			p_proc->ldt[INDEX_LDT_C]  = gdt[SELECTOR_KERNEL_CODE >> 3];
 			p_proc->ldt[INDEX_LDT_RW] = gdt[SELECTOR_KERNEL_DATA >> 3];
@@ -89,7 +89,7 @@ PUBLIC void init_proc_table(){
 			p_proc->ldt[INDEX_LDT_C].attr1 =  DA_C   | privilege << 5;	
 			p_proc->ldt[INDEX_LDT_RW].attr1 = DA_DRW | privilege << 5;				
 		}else{ // init process
-			kprintf("i: %d, pname: %s\n", i, p_proc->p_name);
+			//kprintf("i: %d, pname: %s\n", i, p_proc->p_name);
 			uint32_t k_base;
 			uint32_t k_limit;
 			int ret = get_kernel_map(&k_base, &k_limit, &g_boot_params);

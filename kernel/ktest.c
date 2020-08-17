@@ -7,7 +7,7 @@
 #include "proc.h"
 
 void test_a(){	
-	kspin("test_a");
+	//kspin("test_a");
 	int fd, n, i;
 	const char filename[] = "blah";
 	const char bufw[] = "abcde";
