@@ -12,9 +12,9 @@
 #include "ipc.h"
 #include "hd.h"
 
-PRIVATE int fs_fork(){
+PRIVATE int fs_fork(struct s_message* msg){
     int i;
-    struct proc* child = &proc_table[fs_msg.PID];
+    struct proc* child = &proc_table[msg->PID];
     for(i = 0; i < NR_FILES; i++){
         if(child->filp[i]){
             child->filp[i]->fd_cnt++;
@@ -225,8 +225,8 @@ PRIVATE void init_fs(){
     root_inode = get_inode(ROOT_DEV, ROOT_INODE);
 }
 
-PRIVATE int fs_exit(){
-    struct proc* p = &proc_table[fs_msg.PID];
+PRIVATE int fs_exit(struct s_message* msg){
+    struct proc* p = &proc_table[msg->PID];
     for(int i = 0; i < NR_FILES; i++){
         if(p->filp[i]){
             // release inode
@@ -241,45 +241,42 @@ PRIVATE int fs_exit(){
     return 0;
 }
 
-// <ring 1>
-// TODO: move pcaller out
 PUBLIC void task_fs(){
-    //kspin("task_fs");
     kprintf(">>> 4. task_fs is running\n");
     init_fs();
+    MESSAGE fs_msg; 
+    struct proc* pcaller;
     while(1){
-        send_recv(RECEIVE, ANY, &fs_msg);    // TODO: replace global to local
+        send_recv(RECEIVE, ANY, &fs_msg);    
 
         int msgtype = fs_msg.type;
         int src = fs_msg.source;
-        pcaller = &proc_table[src]; // TODO: replace global var with function: get_proc(int)
+        pcaller = &proc_table[src]; 
         switch(msgtype){
             case OPEN:
-                //kprintf(">>> 2.2 in task_fs()::OPEN before do_open(), src: %d, type: %d, flags: %d\n", fs_msg.source, fs_msg.type, pcaller->p_flags);
-                fs_msg.FD = do_open();
-                //kprintf">>> 2.2 in task_fs()::OPEN after do open(), src: %d, type: %d, flags: %d\n", fs_msg.source, fs_msg.type, pcaller->p_flags);
+                fs_msg.FD = do_open(&fs_msg, pcaller);
                 break;
             case CLOSE:
-                fs_msg.RETVAL = do_close();
+                fs_msg.RETVAL = do_close(&fs_msg, pcaller);
                 break;
             case READ:
             case WRITE:
-                fs_msg.CNT = do_rdwt();
+                fs_msg.CNT = do_rdwt(&fs_msg, pcaller);
                 break;
             case UNLINK:
-                fs_msg.RETVAL = do_unlink();
+                fs_msg.RETVAL = do_unlink(&fs_msg);
                 break;
-            /* case LSEEK: */
-            /* 	fs_msg.OFFSET = do_lseek(); */
-            /* 	break; */
+            case LSEEK: 
+                fs_msg.OFFSET = do_lseek(&fs_msg, pcaller);
+                break; 
             case RESUME_PROC:
                 src = fs_msg.PROC_NR;
              	break;
             case FORK:
-             	fs_msg.RETVAL = fs_fork(); 
+             	fs_msg.RETVAL = fs_fork(&fs_msg); 
              	break; 
             case EXIT: 
-             	fs_msg.RETVAL = fs_exit(); 
+             	fs_msg.RETVAL = fs_exit(&fs_msg); 
              	break; 
             /* case STAT: */
             /* 	fs_msg.RETVAL = do_stat(); */

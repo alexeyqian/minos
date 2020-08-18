@@ -40,16 +40,15 @@ EXTERN struct file_desc f_desc_table[NR_FILE_DESC];
 EXTERN struct inode inode_table[NR_INODE];
 EXTERN struct super_block super_block[NR_SUPER_BLOCK]; // TODO: rename to super_block_table
 
-EXTERN MESSAGE fs_msg; 
+// TODO: move to private members in fs module
+
 extern	uint8_t* fsbuf;
 extern	const int FSBUF_SIZE;
-EXTERN struct proc* pcaller;
-
 // mm
 EXTERN MESSAGE g_mm_msg;
 extern uint8_t* mmbuf;
 extern const int MMBUF_SIZE;
-EXTERN int g_memory_size;
+EXTERN int g_memory_size; // TODO: remove, since we already have g_boot_params
 
 // tty
 EXTERN int key_pressed; // used for clock_handler to wake up TASK_TTY when a key is pressed

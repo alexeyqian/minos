@@ -206,7 +206,7 @@ typedef struct proc{
 	int p_parent;    // the pid of parrent process
 	int exit_status; // for parent
 	struct file_desc* filp[NR_FILES];
-}proc_s;
+}PROC;
 
 // The paging has made LDT almost obsolete, and there is no longer need for multiple LDT descriptors.
 
@@ -214,7 +214,7 @@ typedef struct task{
 	pf_task_t initial_eip;
 	int stack_size;
 	char name[32];
-}task_s;
+}TASK;
 
 // TODO: remove/update mem related ...
 typedef unsigned int  vir_clicks;

@@ -25,7 +25,7 @@ PRIVATE void init_hd()
 {
 	// get the numbe of drives from the BIOS data area
 	uint8_t *p_nr_drives = (uint8_t *)(0x475);
-	//kprintf("number of drives: %d. \n", *p_nr_drives);
+	kprintf("number of drives: %d. \n", *p_nr_drives);
 	assert(*p_nr_drives);
 
 	put_irq_handler(AT_WINI_IRQ, hd_handler);
@@ -152,7 +152,7 @@ PRIVATE void hd_identify(int drive)
 	hd_cmd_out(&cmd);
 	interrupt_wait();
 	port_read(REG_DATA, hdbuf, SECTOR_SIZE);
-	//print_identify_info((uint16_t *)hdbuf);
+	print_identify_info((uint16_t *)hdbuf);
 
 	uint16_t *hdinfo = (uint16_t *)hdbuf;
 	hd_info[drive].primary[0].base = 0;
@@ -252,7 +252,7 @@ PRIVATE void hd_open(int device)
 	if (hd_info[drive].open_cnt++ == 0)
 	{
 		partition(drive * (NR_PART_PER_DRIVE + 1), P_PRIMARY);
-		//print_hdinfo(&hd_info[drive]);
+		print_hdinfo(&hd_info[drive]);
 	}
 }
 
@@ -344,24 +344,23 @@ PUBLIC void task_hd()
 		int src = msg.source;
 		switch (msg.type)
 		{
-		case DEV_OPEN:
-			hd_open(msg.DEVICE);
-			break;
-		case DEV_CLOSE:
-			hd_close(msg.DEVICE);
-			break;
-		case DEV_READ:
-		case DEV_WRITE:
-			//kprintf("here dev write");
-			hd_rdwt(&msg);
-			break;
-		case DEV_IOCTL:
-			hd_ioctl(&msg);
-			break;
-		default:
-			dump_msg("hd driver: unknown msg", &msg);
-			kspin("fs: main loop invalid message type.");
-			break;
+			case DEV_OPEN:
+				hd_open(msg.DEVICE);
+				break;
+			case DEV_CLOSE:
+				hd_close(msg.DEVICE);
+				break;
+			case DEV_READ:
+			case DEV_WRITE:
+				hd_rdwt(&msg);
+				break;
+			case DEV_IOCTL:
+				hd_ioctl(&msg);
+				break;
+			default:
+				dump_msg("hd driver: unknown msg", &msg);
+				kspin("fs: main loop invalid message type.");
+				break;
 		}
 
 		send_recv(SEND, src, &msg);

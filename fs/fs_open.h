@@ -1,9 +1,12 @@
 #ifndef MINOS_FS_OPEN_H
 #define MINOS_FS_OPEN_H
 
-int do_open();
-int do_close();
-int do_lseek();
-int do_rdwt();
-int do_unlink();
+struct s_message;
+struct proc;
+
+int   do_open(struct s_message* msg, struct proc* caller);
+int  do_close(struct s_message* msg, struct proc* caller);
+int  do_lseek(struct s_message* msg, struct proc* caller);
+int   do_rdwt(struct s_message* msg, struct proc* caller);
+int do_unlink(struct s_message* msg);
 #endif

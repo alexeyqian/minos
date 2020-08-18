@@ -204,32 +204,32 @@ PRIVATE struct inode* create_file(char* path, int flags){
     return newino;
 }
 
-// TODO: refactory to do_open(MESSAGE* msg, struct proc* pcaller)
 // open a file and return the file descriptor
-PUBLIC int do_open(){
+// return -1 if failed
+PUBLIC int do_open(MESSAGE* msg, struct proc* caller){
     int fd = -1;
     char pathname[MAX_PATH];
 
-    int flags = fs_msg.FLAGS;
-    int name_len = fs_msg.NAME_LEN;
-    int src = fs_msg.source; // collar proc number
+    int flags = msg->FLAGS;
+    int name_len = msg->NAME_LEN;
+    int src = msg->source; // collar proc number
     assert(name_len < MAX_PATH);
     phys_copy((void*)va2la(TASK_FS, pathname),
-        (void*)va2la(src, fs_msg.PATHNAME),
+        (void*)va2la(src, msg->PATHNAME),
         name_len);
     pathname[name_len] = 0;
 
     // find a free slot in proc::filp[]
     int i;
     for(i = 0; i < NR_FILES; i++){
-        if(pcaller->filp[i] == 0){
+        if(caller->filp[i] == 0){
             fd = i;
             break;
         }
     }
 
     if((fd < 0) || (fd >= NR_FILES)){
-        panic("filp[] is full (pid: %d)", proc2pid(pcaller));
+        panic("filp[] is full (pid: %d)", proc2pid(caller));
     }
         
 
@@ -240,7 +240,7 @@ PUBLIC int do_open(){
     }
     
     if(i >= NR_FILE_DESC)
-        panic("f_desc_table[] is full, pid: %d", proc2pid(pcaller));
+        panic("f_desc_table[] is full, pid: %d", proc2pid(caller));
 
     int inode_nr = search_file(pathname);
     struct inode* pin = 0;
@@ -263,7 +263,7 @@ PUBLIC int do_open(){
 
     if(pin){
         // connects proc with file_descriptor
-        pcaller->filp[fd] = &f_desc_table[i];
+        caller->filp[fd] = &f_desc_table[i];
         // connects file_descriptor with inode
         f_desc_table[i].fd_inode = pin;
         f_desc_table[i].fd_mode = flags;
@@ -278,9 +278,7 @@ PUBLIC int do_open(){
             driver_msg.DEVICE = MINOR(dev);
             assert(MAJOR(dev) == 4);
             assert(dd_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
-            kprintf(">>> 3.3 in do_open(), before send, src: %d, type: %d\n", dd_map[MAJOR(dev)].driver_nr, driver_msg.type);
             send_recv(BOTH, dd_map[MAJOR(dev)].driver_nr, &driver_msg);
-            kprintf(">>> 3.3 in do_open(), after send, src: %d, type: %d\n", dd_map[MAJOR(dev)].driver_nr, driver_msg.type);
         }else if(imode == I_DIRECTORY){
             assert(pin->i_num == ROOT_INODE);
         }else{
@@ -294,26 +292,25 @@ PUBLIC int do_open(){
     return fd;
 }
 
-// TODO: refactory to do_close(int fd)
-PUBLIC int do_close(){
-    int fd = fs_msg.FD;
-    put_inode(pcaller->filp[fd]->fd_inode); // inode->cnt--
-    if(--pcaller->filp[fd]->fd_cnt == 0)
-        pcaller->filp[fd]->fd_inode = 0; // disconnect file descriptor from inode 
-    pcaller->filp[fd] = 0;           // disconnect fd from file descriptors
+PUBLIC int do_close(struct s_message* msg, struct proc* caller){
+    int fd = msg->FD;
+    put_inode(caller->filp[fd]->fd_inode); // inode->cnt--
+    if(--caller->filp[fd]->fd_cnt == 0)
+        caller->filp[fd]->fd_inode = 0;    // disconnect file descriptor from inode 
+    caller->filp[fd] = 0;                  // disconnect fd from file descriptors
 
     return 0;
 }
 
 // the new offset in bytes from the beginning of the file if succesfully
 // otherwise a negative number.
-PUBLIC int do_lseek(){
-    int fd = fs_msg.FD;
-    int off = fs_msg.OFFSET;
-    int whence = fs_msg.WHENCE;
+PUBLIC int do_lseek(struct s_message* msg, struct proc* caller){
+    int fd = msg->FD;
+    int off = msg->OFFSET;
+    int whence = msg->WHENCE;
 
-    int pos = pcaller->filp[fd]->fd_pos;
-    int f_size = pcaller->filp[fd]->fd_inode->i_size;
+    int pos = caller->filp[fd]->fd_pos;
+    int f_size = caller->filp[fd]->fd_inode->i_size;
 
     switch(whence){
         case SEEK_SET:
@@ -333,7 +330,7 @@ PUBLIC int do_lseek(){
     if((pos > f_size) || (pos < 0))
         return -1;
 
-    pcaller->filp[fd]->fd_pos = pos;
+    caller->filp[fd]->fd_pos = pos;
     return pos;
 }
 
@@ -343,50 +340,51 @@ PUBLIC int do_lseek(){
  * @return On success: How many bytes have been read/written. 
  * On error: -1
  * */
-PUBLIC int do_rdwt(){
-    int fd = fs_msg.FD;
-    void* buf = fs_msg.BUF;
-    int len = fs_msg.CNT;
+PUBLIC int do_rdwt(struct s_message* msg, struct proc* caller){
+    int fd = msg->FD;
+    void* buf = msg->BUF;
+    int len = msg->CNT;
 
-    int src = fs_msg.source;
-    assert((pcaller->filp[fd] >= &f_desc_table[0]) 
-        && (pcaller->filp[fd] < &f_desc_table[NR_FILE_DESC]));
+    int src = msg->source;
+    assert((caller->filp[fd] >= &f_desc_table[0]) 
+        && (caller->filp[fd] < &f_desc_table[NR_FILE_DESC]));
     
-    if(!(pcaller->filp[fd]->fd_mode & O_RDWR))
+    if(!(caller->filp[fd]->fd_mode & O_RDWR))
         return -1;
 
-    int pos = pcaller->filp[fd]->fd_pos;
-    struct inode* pin = pcaller->filp[fd]->fd_inode;
+    int pos = caller->filp[fd]->fd_pos;
+    struct inode* pin = caller->filp[fd]->fd_inode;
 
     assert(pin >= &inode_table[0] && pin < &inode_table[NR_INODE]);
 
     int imode = pin->i_mode & I_TYPE_MASK;
     // TODO: wrap into do_rdwt_special
     if(imode == I_CHAR_SPECIAL){ // special file, such as tty
-        kprintf("write to I CHAR SPECIAL");
-        int t = fs_msg.type == READ? DEV_READ : DEV_WRITE;
-        fs_msg.type = t;
+        //kprintf("write to I CHAR SPECIAL");
+        // TODO: create a new msg
+        int t = msg->type == READ? DEV_READ : DEV_WRITE;
+        msg->type = t;
 
         int dev = pin->i_start_sect; // this field means different for special file/device
         assert(MAJOR(dev) == 4);
 
-        fs_msg.DEVICE = MINOR(dev);
-        fs_msg.BUF = buf;
-        fs_msg.CNT = len;
-        fs_msg.PROC_NR = src;
+        msg->DEVICE = MINOR(dev);
+        msg->BUF = buf;
+        msg->CNT = len;
+        msg->PROC_NR = src;
         assert(dd_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
 
-        send_recv(BOTH, dd_map[MAJOR(dev)].driver_nr, &fs_msg);
-        assert(fs_msg.CNT == len);
+        send_recv(BOTH, dd_map[MAJOR(dev)].driver_nr, &msg);
+        assert(msg->CNT == len);
 
-        return fs_msg.CNT;
+        return msg->CNT;
 
     }else{ // regular file // TODO: wrap into do_rdwt_regular()
         assert(pin->i_mode == I_REGULAR || pin->i_mode == I_DIRECTORY);
-        assert(fs_msg.type == READ || fs_msg.type == WRITE);
+        assert(msg->type == READ || msg->type == WRITE);
 
         int pos_end;
-        if(fs_msg.type == READ)
+        if(msg->type == READ)
             pos_end = min(pos + len, pin->i_size);
         else //WRITE
             pos_end = min(pos + len, pin->i_nr_sects * SECTOR_SIZE);
@@ -406,7 +404,7 @@ PUBLIC int do_rdwt(){
 
             rw_sector(DEV_READ, pin->i_dev, i*SECTOR_SIZE, chunk*SECTOR_SIZE, TASK_FS, fsbuf);
 
-            if(fs_msg.type == READ){
+            if(msg->type == READ){
                 phys_copy((void*)va2la(src, buf + bytes_rw),
                     (void*)va2la(TASK_FS, fsbuf + off), bytes);
             }else { // WRITE
@@ -416,13 +414,13 @@ PUBLIC int do_rdwt(){
             }
             off = 0;
             bytes_rw += bytes;
-            pcaller->filp[fd]->fd_pos += bytes;
+            caller->filp[fd]->fd_pos += bytes;
             bytes_left -= bytes;
         }
 
-        if(pcaller->filp[fd]->fd_pos > pin->i_size){
+        if(caller->filp[fd]->fd_pos > pin->i_size){
             // update inode size
-            pin->i_size = pcaller->filp[fd]->fd_pos;
+            pin->i_size = caller->filp[fd]->fd_pos;
             sync_inode(pin);
         }
 
@@ -433,14 +431,14 @@ PUBLIC int do_rdwt(){
 /**
  * @return on success zero is returned, on error, -1 is returned.
  * */
-PUBLIC int do_unlink(){
+PUBLIC int do_unlink(struct s_message* msg){
     char pathname[MAX_PATH];
-    int name_len = fs_msg.NAME_LEN;
-    int src = fs_msg.source;
+    int name_len = msg->NAME_LEN;
+    int src = msg->source;
 
     assert(name_len < MAX_PATH);
     phys_copy((void*)va2la(TASK_FS, pathname),
-        (void*)va2la(src, fs_msg.PATHNAME),
+        (void*)va2la(src, msg->PATHNAME),
         name_len);
     pathname[name_len] = 0;
 
