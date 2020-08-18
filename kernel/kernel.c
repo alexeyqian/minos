@@ -113,7 +113,7 @@ void init_ldt_descriptors_in_dgt(){
 		memset(&proc_table[i], 0, sizeof(struct proc));
 
 		proc_table[i].ldt_sel = SELECTOR_LDT_FIRST + (i << 3);
-		assert(INDEX_LDT_FIRST + i < GDT_SIZE);
+		kassert(INDEX_LDT_FIRST + i < GDT_SIZE);
 
 		// Fill LDT descriptor in GDT
 		init_descriptor(&gdt[INDEX_LDT_FIRST+i],

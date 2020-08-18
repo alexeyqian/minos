@@ -34,7 +34,7 @@ PRIVATE void read_super_block(int dev){
     driver_msg.CNT = SECTOR_SIZE;
     driver_msg.PROC_NR = TASK_FS;
 
-    assert(dd_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
+    kassert(dd_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
     send_recv(BOTH, dd_map[MAJOR(dev)].driver_nr, &driver_msg);
 
     // find a free slot in super_block[]
@@ -43,9 +43,9 @@ PRIVATE void read_super_block(int dev){
     }
 
     if(i == NR_SUPER_BLOCK) 
-        panic("super_block slots used up.\n");
+        kpanic("super_block slots used up.\n");
     
-    assert(i == 0); // currently we only use the 1st slot
+    kassert(i == 0); // currently we only use the 1st slot
 
     struct super_block* psb = (struct super_block*)fsbuf;
     super_block[i] = *psb; // TODO: copy data over ??
@@ -75,7 +75,7 @@ PRIVATE void mkfs(){
     driver_msg.BUF = &geo;
     driver_msg.PROC_NR = TASK_FS;
 
-    assert(dd_map[MAJOR(ROOT_DEV)].driver_nr != INVALID_DRIVER);
+    kassert(dd_map[MAJOR(ROOT_DEV)].driver_nr != INVALID_DRIVER);
     send_recv(BOTH, dd_map[MAJOR(ROOT_DEV)].driver_nr, &driver_msg);
 
     //kprintf("dev size: 0x%x sectors\n", geo.size);
@@ -125,7 +125,7 @@ PRIVATE void mkfs(){
     // bit 2: /dev_tty0
     // bit 3: /dev_tty1
     // bit 4: /dev_tty2
-    assert(fsbuf[0] == 0x1F); // 0001 1111
+    kassert(fsbuf[0] == 0x1F); // 0001 1111
 
     // write inode map to sector 2
     WR_SECT(ROOT_DEV, 2);
@@ -212,7 +212,7 @@ PRIVATE void init_fs(){
     MESSAGE driver_msg;
     driver_msg.type = DEV_OPEN;
     driver_msg.DEVICE = MINOR(ROOT_DEV);
-    assert(dd_map[MAJOR(ROOT_DEV)].driver_nr != INVALID_DRIVER);
+    kassert(dd_map[MAJOR(ROOT_DEV)].driver_nr != INVALID_DRIVER);
     send_recv(BOTH, dd_map[MAJOR(ROOT_DEV)].driver_nr, &driver_msg);
 
     mkfs();
@@ -220,7 +220,7 @@ PRIVATE void init_fs(){
     // load super block of ROOT
     read_super_block(ROOT_DEV);
     sb = get_super_block(ROOT_DEV);
-    assert(sb->magic == MAGIC_V1);
+    kassert(sb->magic == MAGIC_V1);
 
     root_inode = get_inode(ROOT_DEV, ROOT_INODE);
 }
@@ -242,7 +242,7 @@ PRIVATE int fs_exit(struct s_message* msg){
 }
 
 PUBLIC void task_fs(){
-    kprintf(">>> 4. task_fs is running\n");
+    kprintf(">>> 2. task_fs is running\n");
     init_fs();
     MESSAGE fs_msg; 
     struct proc* pcaller;
@@ -254,6 +254,8 @@ PUBLIC void task_fs(){
         pcaller = &proc_table[src]; 
         switch(msgtype){
             case OPEN:
+                // TODO: very wierd bug, cannot remove below kprintf
+                //kprintf(" do_open() begin: flags: %d, recv from: %d\n", pcaller->p_flags, pcaller->p_recvfrom);
                 fs_msg.FD = do_open(&fs_msg, pcaller);
                 break;
             case CLOSE:
@@ -283,7 +285,7 @@ PUBLIC void task_fs(){
             /* 	break; */
             default:
                 dump_msg("fs: unknow message: ", &fs_msg);
-                assert(0);
+                kassert(0);
                 break;
         }   
 
@@ -292,8 +294,7 @@ PUBLIC void task_fs(){
         // so the requesting process P (= fs_msg.PROC_NR) will wait, until fs receives RESUME_PROC message
         // it then notify process P to let it continue.
         if(fs_msg.type != SUSPEND_PROC){
-            fs_msg.type = SYSCALL_RET;
-            struct proc* ptaskfs = &proc_table[TASK_FS]; 
+            fs_msg.type = SYSCALL_RET;            
             send_recv(SEND, src, &fs_msg);
         }        
     }

@@ -1,5 +1,5 @@
 #TODO:
-- seperate kassert/kpanic and assert/panic
+- seperate kassert/kpanic and kassert/kpanic
 - kassert depend on kprintf?
 
 # minos

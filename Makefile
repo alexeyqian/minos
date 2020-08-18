@@ -53,6 +53,7 @@ kernel/kernel.bin: $(C_SOURCES) $(C_HEADERS) \
 	$(CROSS_COMPILER) $(C_FLAGS) -o fs/fs_shared.o     fs/fs_shared.c	
 	$(CROSS_COMPILER) $(C_FLAGS) -o tty/tty_main.o     tty/tty_main.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o mm/mm_main.o       mm/mm_main.c
+	$(CROSS_COMPILER) $(C_FLAGS) -o test/test_main.o   test/test_main.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o lib/vsprintf.o     lib/vsprintf.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o lib/string.o       lib/string.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o lib/assert.o       lib/assert.c		
@@ -63,7 +64,7 @@ kernel/kernel.bin: $(C_SOURCES) $(C_HEADERS) \
 	#$(CROSS_COMPILER) -T linker.ld -o $@ -ffreestanding -nostdlib kernel/kernel_entry.o $(C_OBJS) fs.o -lgcc
 	ld -m elf_i386 -s -Ttext 0x1000 -nostdlib -o $@ kernel/kernel_entry.o $(C_OBJS) \
 		syscall/syscall_main.o hd/hd_main.o fs/fs_main.o fs/fs_open.o fs/fs_shared.o \
-		tty/tty_main.o mm/mm_main.o lib/vsprintf.o lib/string.o \
+		tty/tty_main.o mm/mm_main.o test/test_main.o lib/vsprintf.o lib/string.o \
 		lib/kio.o lib/assert.o lib/ipclib.o lib/fslib.o lib/proclib.o lib/syscalls.o
 	ar rcs lib/minoscrt.a lib/vsprintf.o lib/string.o lib/assert.o lib/kio.o lib/ipclib.o lib/fslib.o lib/proclib.o
 

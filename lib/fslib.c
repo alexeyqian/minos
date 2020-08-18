@@ -20,7 +20,7 @@ PUBLIC int open(const char* pathname, int flags){
     msg.FLAGS = flags;
     msg.NAME_LEN = strlen(pathname);
     send_recv(BOTH, TASK_FS, &msg);
-    assert(msg.type == SYSCALL_RET);
+    kassert(msg.type == SYSCALL_RET);
 
     return msg.FD;
 }

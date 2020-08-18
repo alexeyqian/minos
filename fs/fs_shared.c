@@ -17,7 +17,7 @@ PUBLIC struct super_block* get_super_block(int dev){
         if(sb->sb_dev == dev) return sb;
     }
 
-    panic("super block of device %d not found.\n", dev);
+    kpanic("super block of device %d not found.\n", dev);
     return 0;
 }
 
@@ -30,7 +30,7 @@ PUBLIC struct super_block* get_super_block(int dev){
  * @param proc_nr to whom the buffer belongs
  * @param buf r/w buffer
  * 
- * @return zero if success, otherwise panic
+ * @return zero if success, otherwise kpanic
  */
 PUBLIC int rw_sector(int io_type, int dev, uint64_t pos, int bytes, int proc_nr, void* buf){
     MESSAGE driver_msg;
@@ -40,7 +40,7 @@ PUBLIC int rw_sector(int io_type, int dev, uint64_t pos, int bytes, int proc_nr,
     driver_msg.BUF = buf;
     driver_msg.CNT = bytes;
     driver_msg.PROC_NR = proc_nr;
-    assert(dd_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
+    kassert(dd_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
     send_recv(BOTH, dd_map[MAJOR(dev)].driver_nr, &driver_msg);
     return 0;
 }
@@ -71,7 +71,7 @@ PUBLIC struct inode* get_inode(int dev, int num){
         }
     }
 
-    if(!q) panic("the inode table is full.");
+    if(!q) kpanic("the inode table is full.");
 
     // read inode from disk and assgin to the free slot
     q->i_dev = dev;

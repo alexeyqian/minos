@@ -10,25 +10,27 @@
 #include "assert.h"
 #include "boot_params.h"
 #include "kio.h"
+#include "syscall.h"
+#include "hd.h"
+#include "fs.h"
+#include "tty.h"
+#include "mm.h"
+#include "test.h"
 
-// TODO: replace externs with header inclusion
-extern void task_tty();
-extern void task_sys();
-extern void task_hd();
-extern void task_fs();
-extern void task_mm();
 void init();
 
 // TODO: move to global
 // task stack is a mem area divided into MAX_TASK_NUM small areas
 // each small area used as stack for a process/task
+// kernel/tasks run in ring 0, should only use tty0, kprintf, kassert, kpanic etc...
 char                task_stack[STACK_SIZE_TOTAL];
-struct task         task_table[NR_TASKS]={ 
-						{task_tty, STACK_SIZE_TTY,   "task_tty"  },
+struct task         task_table[NR_TASKS]={  						
 						{task_sys, STACK_SIZE_SYS,   "task_sys"  },
 						{task_hd,  STACK_SIZE_HD,    "task_hd"   },
 						{task_fs,  STACK_SIZE_FS,    "task_fs"   },
-						{task_mm,  STACK_SIZE_MM,    "task_mm"}
+						{task_tty, STACK_SIZE_TTY,   "task_tty"  },
+						{task_mm,  STACK_SIZE_MM,    "task_mm"},
+						{task_test,STACK_SIZE_MM,    "task_test"}
 					};
 struct task         user_proc_table[NR_PROCS]={ 	
 						{init,     STACK_SIZE_INIT,  "init"},		// TODO: hardcode -> const		
@@ -58,7 +60,7 @@ PUBLIC void init_proc_table(){
 			privilege = PRIVILEGE_TASK; // apply system task permission
 			rpl = RPL_TASK;
 			eflags = 0x1202; // IF=1, IOPL=1, bit2 = 1
-			prio = 15;
+			prio = 30;
 		}else{ // user processes
 			p_task = user_proc_table + (i - NR_TASKS);
 			privilege = PRIVILEGE_USER; // apply user process permission
@@ -93,7 +95,7 @@ PUBLIC void init_proc_table(){
 			uint32_t k_base;
 			uint32_t k_limit;
 			int ret = get_kernel_map(&k_base, &k_limit, &g_boot_params);
-			assert(ret == 0);
+			kassert(ret == 0);
 			//kprintf("k_base: 0x%x, k_limit: 0x%x\n", k_base, k_limit);
 			init_descriptor(&p_proc->ldt[INDEX_LDT_C], 
 				0, // bytes before the entry point are not used
@@ -141,13 +143,12 @@ PUBLIC void init_proc_table(){
 }
 
 // first process, parent for all user processes.
-void init(){while(1){}
-	//kprintf(">>> init proc is running ...\n");
-	kspin("init");
+void init(){
+	while(1){}
 	int fd_stdin = open("/dev_tty0", O_RDWR);
-	assert(fd_stdin == 0);
+	kassert(fd_stdin == 0);
 	int fd_stdout = open("/dev_tty0", O_RDWR);
-	assert(fd_stdout == 1);
+	kassert(fd_stdout == 1);
 
 	int pid = fork();
 	if(pid != 0){ // parent process

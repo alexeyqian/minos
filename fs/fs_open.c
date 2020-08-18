@@ -18,7 +18,7 @@
  * TODO: rename to decrease_inode_count
  * */
 PRIVATE void put_inode(struct inode* pinode){
-    assert(pinode->i_cnt > 0);
+    kassert(pinode->i_cnt > 0);
     pinode->i_cnt--;
 }
 
@@ -72,7 +72,7 @@ PRIVATE int alloc_imap_bit(int dev){
         return inode_nr;
     }
 
-    panic("inode map is probably full.\n");
+    kpanic("inode map is probably full.\n");
     return 0;
 }
 
@@ -102,7 +102,7 @@ PRIVATE int alloc_smap_bit(int dev, int nr_sects_to_alloc){
 			}
 
             for(; k < 8; k++){ // repeat until enough bits are set
-                assert(((fsbuf[j] >> k) & 1) == 0);
+                kassert(((fsbuf[j] >> k) & 1) == 0);
 				fsbuf[j] |= (1 << k);
 				if (--nr_sects_to_alloc == 0)
 					break;
@@ -117,7 +117,7 @@ PRIVATE int alloc_smap_bit(int dev, int nr_sects_to_alloc){
     }
 
 
-    assert(nr_sects_to_alloc == 0);
+    kassert(nr_sects_to_alloc == 0);
     return free_sect_nr;
 }
 
@@ -212,8 +212,8 @@ PUBLIC int do_open(MESSAGE* msg, struct proc* caller){
 
     int flags = msg->FLAGS;
     int name_len = msg->NAME_LEN;
-    int src = msg->source; // collar proc number
-    assert(name_len < MAX_PATH);
+    int src = msg->source; // caller proc number
+    kassert(name_len < MAX_PATH);
     phys_copy((void*)va2la(TASK_FS, pathname),
         (void*)va2la(src, msg->PATHNAME),
         name_len);
@@ -229,7 +229,7 @@ PUBLIC int do_open(MESSAGE* msg, struct proc* caller){
     }
 
     if((fd < 0) || (fd >= NR_FILES)){
-        panic("filp[] is full (pid: %d)", proc2pid(caller));
+        kpanic("filp[] is full (pid: %d)", proc2pid(caller));
     }
         
 
@@ -240,7 +240,7 @@ PUBLIC int do_open(MESSAGE* msg, struct proc* caller){
     }
     
     if(i >= NR_FILE_DESC)
-        panic("f_desc_table[] is full, pid: %d", proc2pid(caller));
+        kpanic("f_desc_table[] is full, pid: %d", proc2pid(caller));
 
     int inode_nr = search_file(pathname);
     struct inode* pin = 0;
@@ -252,7 +252,7 @@ PUBLIC int do_open(MESSAGE* msg, struct proc* caller){
             pin = create_file(pathname, flags);
         }
     }else{
-        assert(flags & O_RDWR);
+        kassert(flags & O_RDWR);
         
         char filename[MAX_PATH];
         struct inode* dir_inode;
@@ -276,13 +276,13 @@ PUBLIC int do_open(MESSAGE* msg, struct proc* caller){
             driver_msg.type = DEV_OPEN;
             int dev = pin->i_start_sect;
             driver_msg.DEVICE = MINOR(dev);
-            assert(MAJOR(dev) == 4);
-            assert(dd_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
+            kassert(MAJOR(dev) == 4);
+            kassert(dd_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
             send_recv(BOTH, dd_map[MAJOR(dev)].driver_nr, &driver_msg);
         }else if(imode == I_DIRECTORY){
-            assert(pin->i_num == ROOT_INODE);
+            kassert(pin->i_num == ROOT_INODE);
         }else{
-            assert(pin->i_mode == I_REGULAR);
+            kassert(pin->i_mode == I_REGULAR);
         }
 
     }else{
@@ -346,7 +346,7 @@ PUBLIC int do_rdwt(struct s_message* msg, struct proc* caller){
     int len = msg->CNT;
 
     int src = msg->source;
-    assert((caller->filp[fd] >= &f_desc_table[0]) 
+    kassert((caller->filp[fd] >= &f_desc_table[0]) 
         && (caller->filp[fd] < &f_desc_table[NR_FILE_DESC]));
     
     if(!(caller->filp[fd]->fd_mode & O_RDWR))
@@ -355,7 +355,7 @@ PUBLIC int do_rdwt(struct s_message* msg, struct proc* caller){
     int pos = caller->filp[fd]->fd_pos;
     struct inode* pin = caller->filp[fd]->fd_inode;
 
-    assert(pin >= &inode_table[0] && pin < &inode_table[NR_INODE]);
+    kassert(pin >= &inode_table[0] && pin < &inode_table[NR_INODE]);
 
     int imode = pin->i_mode & I_TYPE_MASK;
     // TODO: wrap into do_rdwt_special
@@ -366,22 +366,22 @@ PUBLIC int do_rdwt(struct s_message* msg, struct proc* caller){
         msg->type = t;
 
         int dev = pin->i_start_sect; // this field means different for special file/device
-        assert(MAJOR(dev) == 4);
+        kassert(MAJOR(dev) == 4);
 
         msg->DEVICE = MINOR(dev);
         msg->BUF = buf;
         msg->CNT = len;
         msg->PROC_NR = src;
-        assert(dd_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
+        kassert(dd_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
 
         send_recv(BOTH, dd_map[MAJOR(dev)].driver_nr, &msg);
-        assert(msg->CNT == len);
+        kassert(msg->CNT == len);
 
         return msg->CNT;
 
     }else{ // regular file // TODO: wrap into do_rdwt_regular()
-        assert(pin->i_mode == I_REGULAR || pin->i_mode == I_DIRECTORY);
-        assert(msg->type == READ || msg->type == WRITE);
+        kassert(pin->i_mode == I_REGULAR || pin->i_mode == I_DIRECTORY);
+        kassert(msg->type == READ || msg->type == WRITE);
 
         int pos_end;
         if(msg->type == READ)
@@ -436,7 +436,7 @@ PUBLIC int do_unlink(struct s_message* msg){
     int name_len = msg->NAME_LEN;
     int src = msg->source;
 
-    assert(name_len < MAX_PATH);
+    kassert(name_len < MAX_PATH);
     phys_copy((void*)va2la(TASK_FS, pathname),
         (void*)va2la(src, msg->PATHNAME),
         name_len);
@@ -477,10 +477,10 @@ PUBLIC int do_unlink(struct s_message* msg){
     // ============= free the bit in i-map
     int byte_idx = inode_nr / 8;
     int bit_idx = inode_nr % 8;
-    assert(byte_idx < SECTOR_SIZE); // we have only one i-map sector
+    kassert(byte_idx < SECTOR_SIZE); // we have only one i-map sector
     // read sector 2, skip boot sector and superblock sector
     RD_SECT(pin->i_dev, 2);
-    assert(fsbuf[byte_idx % SECTOR_SIZE] & (1 << bit_idx));
+    kassert(fsbuf[byte_idx % SECTOR_SIZE] & (1 << bit_idx));
     fsbuf[byte_idx % SECTOR_SIZE] &= ~(1 << bit_idx);
     WR_SECT(pin->i_dev, 2);
     
@@ -509,7 +509,7 @@ PUBLIC int do_unlink(struct s_message* msg){
     int i;
 	/* clear the first byte */
 	for (i = bit_idx % 8; (i < 8) && bits_left; i++,bits_left--) {
-		assert((fsbuf[byte_idx % SECTOR_SIZE] >> i & 1) == 1);
+		kassert((fsbuf[byte_idx % SECTOR_SIZE] >> i & 1) == 1);
 		fsbuf[byte_idx % SECTOR_SIZE] &= ~(1 << i);
 	}
 
@@ -522,7 +522,7 @@ PUBLIC int do_unlink(struct s_message* msg){
 			WR_SECT(pin->i_dev, s);
 			RD_SECT(pin->i_dev, ++s);
 		}
-		assert(fsbuf[i] == 0xFF);
+		kassert(fsbuf[i] == 0xFF);
 		fsbuf[i] = 0;
 	}
 
@@ -533,7 +533,7 @@ PUBLIC int do_unlink(struct s_message* msg){
 		RD_SECT(pin->i_dev, ++s);
 	}
 	unsigned char mask = ~((unsigned char)(~0) << bits_left);
-	assert((fsbuf[i] & mask) == mask);
+	kassert((fsbuf[i] & mask) == mask);
 	fsbuf[i] &= (~0) << bits_left;
 	WR_SECT(pin->i_dev, s);
 
@@ -584,7 +584,7 @@ PUBLIC int do_unlink(struct s_message* msg){
 		    flg) /* file is found */
 			break;
 	}
-	assert(flg);
+	kassert(flg);
 	if (m == nr_dir_entries) { /* the file is the last one in the dir */
 		dir_inode->i_size = dir_size;
 		sync_inode(dir_inode);

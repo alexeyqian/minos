@@ -25,8 +25,8 @@ PRIVATE void init_hd()
 {
 	// get the numbe of drives from the BIOS data area
 	uint8_t *p_nr_drives = (uint8_t *)(0x475);
-	kprintf("number of drives: %d. \n", *p_nr_drives);
-	assert(*p_nr_drives);
+	//kprintf("number of drives: %d. \n", *p_nr_drives);
+	kassert(*p_nr_drives);
 
 	put_irq_handler(AT_WINI_IRQ, hd_handler);
 	enable_irq(CASCADE_IRQ);
@@ -54,7 +54,7 @@ PRIVATE void hd_cmd_out(struct hd_cmd *cmd)
 	// for all commands, the host must first check if BSY=1
 	// and should proceed no further unless and until BSY = 0
 	if (!waitfor(STATUS_BSY, 0, HD_TIMEOUT))
-		panic("hd error.");
+		kpanic("hd error.");
 
 	/* Activate the Interrupt Enable (nIEN) bit */
 	out_byte(REG_DEV_CTRL, 0);
@@ -131,8 +131,7 @@ PRIVATE void print_hdinfo(struct hd_info *hdi)
 	}
 	for (i = 0; i < NR_SUB_PER_DRIVE; i++)
 	{
-		if (hdi->logical[i].size == 0)
-			continue;
+		if (hdi->logical[i].size == 0) continue;
 		kprintf("         "
 			   "%d: base %d(0x%x), size %d(0x%x) (in sector)\n",
 			   i,
@@ -152,7 +151,7 @@ PRIVATE void hd_identify(int drive)
 	hd_cmd_out(&cmd);
 	interrupt_wait();
 	port_read(REG_DATA, hdbuf, SECTOR_SIZE);
-	print_identify_info((uint16_t *)hdbuf);
+	//print_identify_info((uint16_t *)hdbuf);
 
 	uint16_t *hdinfo = (uint16_t *)hdbuf;
 	hd_info[drive].primary[0].base = 0;
@@ -210,7 +209,7 @@ PRIVATE void partition(int device, int style)
 			if (part_tbl[i].sys_id == EXT_PART) // EXTENDED
 				partition(device + dev_nr, P_EXTENDED);
 		}
-		assert(nr_prim_parts != 0);
+		kassert(nr_prim_parts != 0);
 	}
 	else if (style == P_EXTENDED)
 	{
@@ -238,7 +237,7 @@ PRIVATE void partition(int device, int style)
 	}
 	else
 	{
-		assert(0);
+		kassert(0);
 	}
 }
 
@@ -246,13 +245,13 @@ PRIVATE void partition(int device, int style)
 PRIVATE void hd_open(int device)
 {
 	int drive = DRV_OF_DEV(device);
-	assert(drive == 0); // only one drive
+	kassert(drive == 0); // only one drive
 
 	hd_identify(drive);
 	if (hd_info[drive].open_cnt++ == 0)
 	{
 		partition(drive * (NR_PART_PER_DRIVE + 1), P_PRIMARY);
-		print_hdinfo(&hd_info[drive]);
+		//print_hdinfo(&hd_info[drive]);
 	}
 }
 
@@ -261,10 +260,10 @@ PRIVATE void hd_rdwt(MESSAGE *p)
 {
 	int drive = DRV_OF_DEV(p->DEVICE);
 	uint64_t pos = p->POSITION;
-	assert((pos>>SECTOR_SIZE_SHIFT) < (uint64_t)(1 << 31)); // TODO:?
+	kassert((pos>>SECTOR_SIZE_SHIFT) < (uint64_t)(1 << 31)); // TODO:?
 
 	// only allow to R/W from a sector boundary
-	assert((pos & 0x1FF) == 0);
+	kassert((pos & 0x1FF) == 0);
 	
 	uint32_t sect_nr = (uint32_t)(pos >> SECTOR_SIZE_SHIFT); //pos/SECTOR_SIZE
 	int logidx = (p->DEVICE - MINOR_hd1a) % NR_SUB_PER_DRIVE;
@@ -293,7 +292,7 @@ PRIVATE void hd_rdwt(MESSAGE *p)
 			phys_copy(la, (void*)va2la(TASK_HD, hdbuf), bytes);
 		}else{
 			if(!waitfor(STATUS_DRQ, STATUS_DRQ, HD_TIMEOUT))
-				panic("hd writing error.");
+				kpanic("hd writing error.");
 
 			port_write(REG_DATA, la, bytes);
 			//kprintf("here before interrupt wait");
@@ -309,7 +308,7 @@ PRIVATE void hd_rdwt(MESSAGE *p)
 PRIVATE void hd_close(int device)
 {
 	int drive = DRV_OF_DEV(device);
-	assert(drive == 0);
+	kassert(drive == 0);
 	hd_info[drive].open_cnt--;
 }
 
@@ -328,13 +327,13 @@ PRIVATE void hd_ioctl(MESSAGE *p)
 	}
 	else
 	{
-		assert(0);
+		kassert(0);
 	}
 }
 
 PUBLIC void task_hd()
 {
-	kprintf(">>> 3. task_hd is running\n");
+	kprintf(">>> 1. task_hd is running\n");
 	MESSAGE msg;
 	init_hd();
 	while (1)

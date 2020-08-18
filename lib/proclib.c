@@ -9,7 +9,7 @@ PUBLIC int getpid(){
 	MESSAGE msg;
 	msg.type = GET_PID;
 	send_recv(BOTH, TASK_SYS, &msg);
-	assert(msg.type == SYSCALL_RET);
+	kassert(msg.type == SYSCALL_RET);
 	return msg.PID;
 }
 
@@ -20,7 +20,7 @@ PUBLIC void exit(int status){
 	msg.type = EXIT;
 	msg.STATUS = status;
 	send_recv(BOTH, TASK_MM, &msg);
-	assert(msg.type == SYSCALL_RET);
+	kassert(msg.type == SYSCALL_RET);
 }
 
 /**
@@ -37,8 +37,8 @@ PUBLIC int fork(){
     MESSAGE msg;
     msg.type = FORK;
     send_recv(BOTH, TASK_MM, &msg);
-    assert(msg.type == SYSCALL_RET);
-    assert(msg.RETVAL == 0);
+    kassert(msg.type == SYSCALL_RET);
+    kassert(msg.RETVAL == 0);
 
     return msg.PID;
 }

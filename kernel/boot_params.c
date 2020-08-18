@@ -21,10 +21,10 @@ PUBLIC void get_boot_params(struct boot_params* pbp){
 	// boot params should have been saved at BOOT_PARAM_ADDR
 	uint32_t* p = (uint32_t*)BOOT_PARAM_ADDR;
 	kprintf("bp magic: 0x%x at 0x%x\n", p[BI_MAG], BOOT_PARAM_ADDR);	
-	assert(p[BI_MAG] == BOOT_PARAM_MAGIC);	
+	kassert(p[BI_MAG] == BOOT_PARAM_MAGIC);	
 	pbp->kernel_file = (unsigned char *)(p[BI_KERNEL_FILE]);
 	kprintf("kernel.bin: 0x%x\n", pbp->kernel_file);		
-	assert(memcmp(pbp->kernel_file, ELFMAG, SELFMAG) == 0);
+	kassert(memcmp(pbp->kernel_file, ELFMAG, SELFMAG) == 0);
 	pbp->mem_size = p[BI_MEM_SIZE];
 	kprintf("mem size: 0x%x\n", pbp->mem_size);		
 	pbp->mem_range_count = p[BI_MEM_RANGE_COUNT];
@@ -58,7 +58,7 @@ PUBLIC int get_kernel_map(unsigned int* base, unsigned int* limit, struct boot_p
 		}
 	}
 
-	assert(*base < temp);
+	kassert(*base < temp);
 	*limit = temp - (*base) - 1;
 	kprintf("kernel base: 0x%x, limit: 0x%x\n", *base, *limit);
 

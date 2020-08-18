@@ -16,14 +16,14 @@
 // it calls schedule to choose another proc as the proc_ready
 // this routing doesnot change the p_flags.
 PRIVATE void block(struct proc* p){
-    assert(p->p_flags);
+    kassert(p->p_flags);
     schedule();
 }
 
 // ring 0, this is a dummy routing. it does nothing actually.
 // when it is called, the p_flags should have been cleared (==0)
 PRIVATE void unblock(struct proc* p){
-    assert(p->p_flags == 0);
+    kassert(p->p_flags == 0);
 }
 
 // ring 0, check where it is safe to send a message from src to dest.
@@ -42,7 +42,7 @@ PRIVATE int deadlock(int src, int dest)
 				p = proc_table + dest;
 				kprintf("=_=%s", p->p_name);
 				do {
-					assert(p->p_msg);
+					kassert(p->p_msg);
 					p = proc_table + p->p_sendto;
 					kprintf("->%s", p->p_name);
 				} while (p != proc_table + src);
@@ -65,15 +65,15 @@ PRIVATE int deadlock(int src, int dest)
 PRIVATE int msg_send(struct proc* current, int dest, MESSAGE* m){
     struct proc* sender = current;
     struct proc* p_dest = proc_table + dest;
-    assert(proc2pid(sender) != dest);
+    kassert(proc2pid(sender) != dest);
 
     if(deadlock(proc2pid(sender), dest))
-        panic(">>> DEADLOCK %s -> %s", sender->p_name, p_dest->p_name);
+        kpanic(">>> DEADLOCK %s -> %s", sender->p_name, p_dest->p_name);
 
     if((p_dest->p_flags & RECEIVING) && // dest is waiting for the msg
         (p_dest->p_recvfrom == proc2pid(sender) || p_dest->p_recvfrom == ANY)){
-        assert(p_dest->p_msg);
-        assert(m);
+        kassert(p_dest->p_msg);
+        kassert(m);
 
         phys_copy( va2la(dest, p_dest->p_msg), 
                     va2la(proc2pid(sender), m),
@@ -84,19 +84,19 @@ PRIVATE int msg_send(struct proc* current, int dest, MESSAGE* m){
         p_dest->p_recvfrom = NO_TASK;
         unblock(p_dest);
 
-        assert(p_dest->p_flags == 0);
-        assert(p_dest->p_msg == 0);
-        assert(p_dest->p_recvfrom == NO_TASK);
-        assert(p_dest->p_sendto == NO_TASK);
+        kassert(p_dest->p_flags == 0);
+        kassert(p_dest->p_msg == 0);
+        kassert(p_dest->p_recvfrom == NO_TASK);
+        kassert(p_dest->p_sendto == NO_TASK);
         
-        assert(sender->p_flags == 0);
-        assert(sender->p_msg == 0);
-        assert(sender->p_recvfrom == NO_TASK);
-        assert(sender->p_sendto == NO_TASK);
+        kassert(sender->p_flags == 0);
+        kassert(sender->p_msg == 0);
+        kassert(sender->p_recvfrom == NO_TASK);
+        kassert(sender->p_sendto == NO_TASK);
         //kprintf("message sent: dest: %d, type: %d", dest, m->type);
     }else{ // dest is not waiting for the msg
         sender->p_flags |= SENDING;
-        assert(sender->p_flags == SENDING);
+        kassert(sender->p_flags == SENDING);
         sender->p_sendto = dest;
         sender->p_msg = m;
 
@@ -113,10 +113,10 @@ PRIVATE int msg_send(struct proc* current, int dest, MESSAGE* m){
         sender->next_sending = 0;
         block(sender);
 
-        assert(sender->p_flags == SENDING);
-        assert(sender->p_msg != 0);
-        assert(sender->p_recvfrom == NO_TASK);
-        assert(sender->p_sendto == dest);
+        kassert(sender->p_flags == SENDING);
+        kassert(sender->p_msg != 0);
+        kassert(sender->p_recvfrom == NO_TASK);
+        kassert(sender->p_sendto == dest);
         //kprintf("sender waiting: dest: %d, type: %d", dest, m->type);
     }
 
@@ -133,7 +133,7 @@ PRIVATE int msg_receive(struct proc* current, int src, MESSAGE* m){
     struct proc* prev = 0;
     int copyok = 0;
 
-    assert(proc2pid(p_who_wanna_recv) != src);
+    kassert(proc2pid(p_who_wanna_recv) != src);
 
     if((p_who_wanna_recv->has_int_msg) && 
         ((src == ANY) || (src == INTERRUPT))){
@@ -145,15 +145,15 @@ PRIVATE int msg_receive(struct proc* current, int src, MESSAGE* m){
         msg.source = INTERRUPT;
         msg.type = HARD_INT;
         
-        assert(m);
+        kassert(m);
 
         phys_copy(va2la(proc2pid(p_who_wanna_recv), m), (char*)&msg, sizeof(MESSAGE));
 
         p_who_wanna_recv->has_int_msg = 0;
-        assert(p_who_wanna_recv->p_flags == 0);
-		assert(p_who_wanna_recv->p_msg == 0);
-		assert(p_who_wanna_recv->p_sendto == NO_TASK);
-		assert(p_who_wanna_recv->has_int_msg == 0);
+        kassert(p_who_wanna_recv->p_flags == 0);
+		kassert(p_who_wanna_recv->p_msg == 0);
+		kassert(p_who_wanna_recv->p_sendto == NO_TASK);
+		kassert(p_who_wanna_recv->has_int_msg == 0);
 
         return 0;
     }
@@ -164,16 +164,16 @@ PRIVATE int msg_receive(struct proc* current, int src, MESSAGE* m){
             p_from = p_who_wanna_recv->q_sending;
             copyok = 1;
 
-            assert(p_who_wanna_recv->p_flags == 0);
-			assert(p_who_wanna_recv->p_msg == 0);
-			assert(p_who_wanna_recv->p_recvfrom == NO_TASK);
-			assert(p_who_wanna_recv->p_sendto == NO_TASK);
-			assert(p_who_wanna_recv->q_sending != 0);
+            kassert(p_who_wanna_recv->p_flags == 0);
+			kassert(p_who_wanna_recv->p_msg == 0);
+			kassert(p_who_wanna_recv->p_recvfrom == NO_TASK);
+			kassert(p_who_wanna_recv->p_sendto == NO_TASK);
+			kassert(p_who_wanna_recv->q_sending != 0);
 
-			assert(p_from->p_flags == SENDING);
-			assert(p_from->p_msg != 0);
-			assert(p_from->p_recvfrom == NO_TASK);
-			assert(p_from->p_sendto == proc2pid(p_who_wanna_recv));
+			kassert(p_from->p_flags == SENDING);
+			kassert(p_from->p_msg != 0);
+			kassert(p_from->p_recvfrom == NO_TASK);
+			kassert(p_from->p_sendto == proc2pid(p_who_wanna_recv));
         }
     }else if(src >= 0 && src < NR_TASKS + NR_PROCS){
         // receive from a certain proc
@@ -183,9 +183,9 @@ PRIVATE int msg_receive(struct proc* current, int src, MESSAGE* m){
             copyok = 0;
 
             struct proc* p = p_who_wanna_recv->q_sending;
-            assert(p);
+            kassert(p);
             while(p){
-                assert(p_from->p_flags & SENDING);
+                kassert(p_from->p_flags & SENDING);
                 if(proc2pid(p) == src)
                     break;
                 
@@ -193,16 +193,16 @@ PRIVATE int msg_receive(struct proc* current, int src, MESSAGE* m){
                 p = p->next_sending;
             }
 
-            assert(p_who_wanna_recv->p_flags == 0);
-			assert(p_who_wanna_recv->p_msg == 0);
-			assert(p_who_wanna_recv->p_recvfrom == NO_TASK);
-			assert(p_who_wanna_recv->p_sendto == NO_TASK);
-			assert(p_who_wanna_recv->q_sending != 0);
+            kassert(p_who_wanna_recv->p_flags == 0);
+			kassert(p_who_wanna_recv->p_msg == 0);
+			kassert(p_who_wanna_recv->p_recvfrom == NO_TASK);
+			kassert(p_who_wanna_recv->p_sendto == NO_TASK);
+			kassert(p_who_wanna_recv->q_sending != 0);
 
-			assert(p_from->p_flags == SENDING);
-			assert(p_from->p_msg != 0);
-			assert(p_from->p_recvfrom == NO_TASK);
-			assert(p_from->p_sendto == proc2pid(p_who_wanna_recv));
+			kassert(p_from->p_flags == SENDING);
+			kassert(p_from->p_msg != 0);
+			kassert(p_from->p_recvfrom == NO_TASK);
+			kassert(p_from->p_sendto == proc2pid(p_who_wanna_recv));
         }
     }
 
@@ -210,19 +210,19 @@ PRIVATE int msg_receive(struct proc* current, int src, MESSAGE* m){
         // this porc must have been waiting for this moment in the queue,
         // so we should remove it from the queue.
         if(p_from == p_who_wanna_recv->q_sending){// the 1st one
-            assert(prev == 0);
+            kassert(prev == 0);
             // receive -> b ->c => receive -> c
             p_who_wanna_recv->q_sending = p_from->next_sending;
             p_from->next_sending = 0;
         }else{
-            assert(prev);
+            kassert(prev);
             // A->B->C => A->C
             prev->next_sending = p_from->next_sending;
             p_from->next_sending = 0;
         }
 
-        assert(m);
-        assert(p_from->p_msg);
+        kassert(m);
+        kassert(p_from->p_msg);
         
         phys_copy(va2la(proc2pid(p_who_wanna_recv), m),
             va2la(proc2pid(p_from), p_from->p_msg),
@@ -240,21 +240,16 @@ PRIVATE int msg_receive(struct proc* current, int src, MESSAGE* m){
         p_who_wanna_recv->p_recvfrom = src;
         block(p_who_wanna_recv);
 
-        assert(p_who_wanna_recv->p_flags == RECEIVING);
-		assert(p_who_wanna_recv->p_msg != 0);
-		assert(p_who_wanna_recv->p_recvfrom != NO_TASK);
-		assert(p_who_wanna_recv->p_sendto == NO_TASK);
-		assert(p_who_wanna_recv->has_int_msg == 0);
+        kassert(p_who_wanna_recv->p_flags == RECEIVING);
+		kassert(p_who_wanna_recv->p_msg != 0);
+		kassert(p_who_wanna_recv->p_recvfrom != NO_TASK);
+		kassert(p_who_wanna_recv->p_sendto == NO_TASK);
+		kassert(p_who_wanna_recv->has_int_msg == 0);
     }
 
     return 0;
 }
 
-void disp_color_str(char* info, int color){
-    UNUSED(info);
-    UNUSED(color);
-}
-// TODO: move to proc
 PUBLIC void dump_proc(struct proc* p)
 {
 	char info[STR_DEFAULT_LEN];
@@ -265,30 +260,25 @@ PUBLIC void dump_proc(struct proc* p)
 
     tty_reset_start_addr();
 	
-	sprintf(info, "byte dump of proc_table[%d]:\n", p - proc_table); disp_color_str(info, text_color);
+	sprintf(info, "byte dump of proc_table[%d]:\n", p - proc_table); 
+    kprintf("%s", info);
 	for (i = 0; i < dump_len; i++) {
 		sprintf(info, "%x.", ((unsigned char *)p)[i]);
-		disp_color_str(info, text_color);
+		kprintf("%s", info);
 	}
 
-	/* kprintf("^^"); */
+	sprintf(info, "ANY: 0x%x.\n", ANY); kprintf("%s", info);
+	sprintf(info, "NO_TASK: 0x%x.\n", NO_TASK); kprintf("%s", info);
+	kprintf("%s", info);
 
-	disp_color_str("\n\n", text_color);
-	sprintf(info, "ANY: 0x%x.\n", ANY); disp_color_str(info, text_color);
-	sprintf(info, "NO_TASK: 0x%x.\n", NO_TASK); disp_color_str(info, text_color);
-	disp_color_str("\n", text_color);
-
-	sprintf(info, "ldt_sel: 0x%x.  ", p->ldt_sel); disp_color_str(info, text_color);
-	sprintf(info, "ticks: 0x%x.  ", p->ticks); disp_color_str(info, text_color);
-	sprintf(info, "priority: 0x%x.  ", p->priority); disp_color_str(info, text_color);
-	//sprintf(info, "pid: 0x%x.  ", p->pid); disp_color_str(info, text_color);
-	sprintf(info, "name: %s.  ", p->p_name); disp_color_str(info, text_color);
-	disp_color_str("\n", text_color);
-	sprintf(info, "p_flags: 0x%x.  ", p->p_flags); disp_color_str(info, text_color);
-	sprintf(info, "p_recvfrom: 0x%x.  ", p->p_recvfrom); disp_color_str(info, text_color);
-	sprintf(info, "p_sendto: 0x%x.  ", p->p_sendto); disp_color_str(info, text_color);
-	disp_color_str("\n", text_color);
-	sprintf(info, "has_int_msg: 0x%x.  ", p->has_int_msg); disp_color_str(info, text_color);
+	sprintf(info, "ldt_sel: 0x%x.  ", p->ldt_sel); kprintf("%s", info);
+	sprintf(info, "ticks: 0x%x.  ", p->ticks); kprintf("%s", info);;
+	sprintf(info, "priority: 0x%x.  ", p->priority); kprintf("%s", info);;
+	sprintf(info, "name: %s.  \n", p->p_name); kprintf("%s", info);;
+	sprintf(info, "p_flags: 0x%x.  ", p->p_flags); kprintf("%s", info);;
+	sprintf(info, "p_recvfrom: 0x%x.  ", p->p_recvfrom); kprintf("%s", info);;
+	sprintf(info, "p_sendto: 0x%x.  \n", p->p_sendto); kprintf("%s", info);;
+	sprintf(info, "has_int_msg: 0x%x.  ", p->has_int_msg); kprintf("%s", info);;
 }
 
 PUBLIC void dump_msg(const char * title, MESSAGE* m)
@@ -316,16 +306,16 @@ PUBLIC void dump_msg(const char * title, MESSAGE* m)
 
 // <ring 0> implementation of system call sendrec
 PUBLIC int sys_sendrec(int function, int src_dest, MESSAGE* p_msg, struct proc* p){
-	assert(k_reenter == 0); // make sure we are not in ring0
-	assert((src_dest >= 0 && src_dest <= NR_TASKS + NR_PROCS) ||
+	kassert(k_reenter == 0); // make sure we are not in ring0
+	kassert((src_dest >= 0 && src_dest <= NR_TASKS + NR_PROCS) ||
 		src_dest == ANY || src_dest == INTERRUPT);
 
 	int ret = 0;
 	int caller = proc2pid(p);
-	MESSAGE* mla = (MESSAGE*)va2la(caller, p_msg); // TODO: ?? va2la
+	MESSAGE* mla = (MESSAGE*)va2la(caller, p_msg); 
 	mla->source = caller;
 
-	assert(mla->source != src_dest);
+	kassert(mla->source != src_dest);
 
 	if(function == SEND){
 		ret = msg_send(p, src_dest, p_msg);
@@ -334,7 +324,7 @@ PUBLIC int sys_sendrec(int function, int src_dest, MESSAGE* p_msg, struct proc* 
 		ret = msg_receive(p, src_dest, p_msg);
 		if(ret != 0) return ret;
 	}else{
-		panic("sys_sendrec invalid function", "%d, send: %d, receive: %d", function, SEND, RECEIVE);
+		kpanic("sys_sendrec invalid function", "%d, send: %d, receive: %d", function, SEND, RECEIVE);
 	}
 
 	return 0;
@@ -351,13 +341,13 @@ PUBLIC void inform_int(int task_nr){
 		p->has_int_msg = 0; 
 		p->p_flags &= ~RECEIVING; 
 		p->p_recvfrom = NO_TASK;
-		assert(p->p_flags == 0);
+		kassert(p->p_flags == 0);
 		unblock(p);
 
-		assert(p->p_flags == 0);
-		assert(p->p_msg == 0);
-		assert(p->p_recvfrom == NO_TASK);
-		assert(p->p_sendto == NO_TASK);
+		kassert(p->p_flags == 0);
+		kassert(p->p_msg == 0);
+		kassert(p->p_recvfrom == NO_TASK);
+		kassert(p->p_sendto == NO_TASK);
 	}else
 	{
 		p->has_int_msg = 1;

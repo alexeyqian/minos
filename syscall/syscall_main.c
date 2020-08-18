@@ -19,7 +19,7 @@ PUBLIC int get_ticks(){
 
 // <ring 1>, "system calls" via IPC message
 PUBLIC void task_sys(){
-    kprintf(">>> 2. task_sys is running ... ...\n"); 
+    kprintf(">>> 0. task_sys is running\n"); 
     MESSAGE msg;
     while(1){
         send_recv(RECEIVE , ANY, &msg);
@@ -29,13 +29,14 @@ PUBLIC void task_sys(){
                 msg.RETVAL = ticks;
                 send_recv(SEND, src, &msg);
                 break;
+            /*
             case GET_PID:
                 msg.type = SYSCALL_RET;
                 msg.PID = src;
-                send_recv(SEND, src, &msg); // TODO: ??
-                break;
+                send_recv(SEND, src, &msg); 
+                break;*/
             default:
-                panic("unknown msg type");
+                kpanic("unknown msg type");
                 break;
         }
     }

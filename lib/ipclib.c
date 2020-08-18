@@ -24,7 +24,7 @@ PUBLIC int send_recv(int function, int src_dest, MESSAGE* p_msg){
             ret = sendrec(function, src_dest, p_msg);
             break;
         default:
-            assert((function == BOTH) || 
+            kassert((function == BOTH) || 
                 (function == SEND) || (function == RECEIVE));
             break;
     }

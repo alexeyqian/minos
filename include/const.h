@@ -147,7 +147,7 @@
 #define RED_CHAR		(MAKE_COLOR(BLUE, RED) | BRIGHT)
 
 // ========= TASKS ==================
-#define NR_TASKS        5
+#define NR_TASKS        6
 #define NR_PROCS        32
 #define NR_NATIVE_PROCS 4
 #define NR_SYSCALLS     2
@@ -156,15 +156,17 @@
 #define PROC_IMAGE_SIZE_DEFAULT 0x100000 // 1MB
 #define PROC_ORIGIN_STACK 0x400 // 1KB
 
-// task types should match global vars
+// task types should match global vars: task_table
 #define INVALID_DRIVER	-20
 #define INTERRUPT	    -10
-#define TASK_TTY	    0 // terminal
-#define TASK_SYS	    1 // system call
-#define TASK_HD		    2 // hd driver
-#define TASK_FS	        3 // file system 
-#define TASK_MM         4
-#define INIT            5
+
+#define TASK_SYS	    0 // system call
+#define TASK_HD		    1 // hardisk driver, depend on sys
+#define TASK_FS	        2 // file system, depend on hd
+#define TASK_TTY	    3 // terminal, depend on fs
+#define TASK_MM         4 // memory management
+#define TASK_TEST       5
+#define INIT            6 // first user proc
 #define ANY		       (NR_TASKS + NR_PROCS + 10)
 #define NO_TASK		   (NR_TASKS + NR_PROCS + 20)
 

@@ -69,7 +69,7 @@ PRIVATE void init_console(CONSOLE *p_console, int idx)
     if (idx == 0)
     {   // first console use current position
         p_console->cursor = g_disp_pos / 2; // g_disp_pos comes from screen.h TODO: move
-        g_disp_pos = 0; 
+        //g_disp_pos = 0; 
     }
     else
     {
@@ -148,7 +148,7 @@ PRIVATE void scroll_screen(CONSOLE* con, int dir)
 		}
 	}
 	else {
-		assert(dir == SCROLL_SCREEN_DOWN || dir == SCROLL_SCREEN_UP);
+		kassert(dir == SCROLL_SCREEN_DOWN || dir == SCROLL_SCREEN_UP);
 	}
 
 	flush(con);
@@ -166,7 +166,7 @@ PUBLIC void clear_screen(int pos, int len)
 PUBLIC void tty_output_char(CONSOLE *con, char ch)
 {
     uint8_t *p_vmem = (uint8_t *)(V_MEM_BASE + con->cursor * 2);
-    assert(con->cursor - con->original_addr < con->size_in_word);
+    kassert(con->cursor - con->original_addr < con->size_in_word);
 
     int cursor_x = (con->cursor - con->original_addr) % SCREEN_WIDTH;
     int cursor_y = (con->cursor - con->original_addr) / SCREEN_WIDTH;
@@ -204,7 +204,7 @@ PUBLIC void tty_output_char(CONSOLE *con, char ch)
 			con->is_full = 1;
     }
 
-    assert(con->cursor - con->original_addr < con->size_in_word);
+    kassert(con->cursor - con->original_addr < con->size_in_word);
 
     if (con->cursor >= con->current_start_addr + SCREEN_SIZE
         || con->cursor < con->current_start_addr){ // TODO: if <-> while?
@@ -462,8 +462,9 @@ PUBLIC int sys_printx(int _unused1, int _unused2, char* s, struct proc* p_proc)
 }
 
 PUBLIC void task_tty()
-{  
-    kprintf(">>> 1. task_tty is running\n"); 
+{  while(1){}
+    //kspin("task_tty");
+    kprintf(">>> 3. task_tty is running\n"); 
     TTY* p_tty;
     MESSAGE msg;
     
@@ -473,10 +474,10 @@ PUBLIC void task_tty()
     select_console(0);
     
     while (1)
-    {
+    {        
         for (p_tty = TTY_FIRST; p_tty < TTY_END; p_tty++)
         {
-            do{
+            do{                
                 tty_dev_read(p_tty);
                 tty_dev_write(p_tty);
             }while(p_tty->inbuf_count);            
@@ -485,16 +486,16 @@ PUBLIC void task_tty()
         send_recv(RECEIVE, ANY, &msg);
 
         int src = msg.source;
-        assert(src != TASK_TTY);
+        kassert(src != TASK_TTY);
 
         TTY* ptty2 = &tty_table[msg.DEVICE];
         switch(msg.type){
             case DEV_OPEN: // nothing need to open, just return
                 reset_msg(&msg);
                 msg.type = SYSCALL_RET;
-                //kprintf(">>> 4.1 in task_tty()::DEVOPEN before send, to: %d, type: %d\n", src, msg.type);
+                kprintf(">>> 4.1 in task_tty()::DEVOPEN before send, to: %d, type: %d\n", src, msg.type);
                 send_recv(SEND, src, &msg);
-                //kprintf(">>> 4.1 in task_tty()::DEVOPEN after send, to: %d, type: %d\n", src, msg.type);
+                kprintf(">>> 4.1 in task_tty()::DEVOPEN after send, to: %d, type: %d\n", src, msg.type);
                 break;
             case DEV_READ:
                 tty_do_read(ptty2, &msg);
@@ -503,6 +504,7 @@ PUBLIC void task_tty()
                 tty_do_write(ptty2, &msg);
                 break;
             case HARD_INT: // waked up by clock_handler
+                kprintf(">>>key pressed : %d\n", src);
                 key_pressed = 0;
                 continue;
             default:

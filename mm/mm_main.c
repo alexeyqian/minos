@@ -1,3 +1,4 @@
+#include "mm.h"
 #include "const.h"
 #include "types.h"
 #include "ktypes.h"
@@ -12,13 +13,13 @@ PUBLIC void init_mm(){
 }
 
 PUBLIC int alloc_mem(int pid, int memsize){
-    assert(pid >= (NR_TASKS + NR_NATIVE_PROCS));
+    kassert(pid >= (NR_TASKS + NR_NATIVE_PROCS));
     if(memsize > PROC_IMAGE_SIZE_DEFAULT)
-        panic("unsupported memory request: %d, should be less than %d", memsize, PROC_IMAGE_SIZE_DEFAULT);
+        kpanic("unsupported memory request: %d, should be less than %d", memsize, PROC_IMAGE_SIZE_DEFAULT);
 
     int base = PROCS_BASE + (pid - (NR_TASKS + NR_NATIVE_PROCS)) * PROC_IMAGE_SIZE_DEFAULT;
     if(base + memsize >= g_memory_size)
-        panic("memory allocation failed, pid: %d", pid);
+        kpanic("memory allocation failed, pid: %d", pid);
 
     return base;
 }
@@ -45,8 +46,8 @@ PUBLIC int do_fork(){
     }
 
     int child_pid = i;
-    assert(p == &proc_table[child_pid]);
-    assert(child_pid >= NR_TASKS + NR_NATIVE_PROCS);
+    kassert(p == &proc_table[child_pid]);
+    kassert(child_pid >= NR_TASKS + NR_NATIVE_PROCS);
     if(i >= NR_TASKS + NR_PROCS) return -1;
 
     // duplicate the process table
@@ -74,7 +75,7 @@ PUBLIC int do_fork(){
     int caller_ds_size = ((caller_t_limit+1) * ((ppd->limit_high_attr2 & (DA_LIMIT_4K >> 8))? 4096 : 1));
 
     // we don't seperate t, d and s segments, so we have:
-    assert((caller_t_base == caller_ds_base) 
+    kassert((caller_t_base == caller_ds_base) 
         && (caller_t_limit == caller_ds_limit)
         && (caller_t_size == caller_ds_size));
 
@@ -263,8 +264,9 @@ PUBLIC void do_wait(){
 }
 
 PUBLIC void task_mm(){
-    kspin("task_mm");
-    //kprintf(">>> 5. task_mm is running\n");
+    while(1){}
+    //kspin("task_mm");
+    kprintf(">>> 4. task_mm is running\n");
     init_mm();
 
     while(1){
@@ -290,7 +292,7 @@ PUBLIC void task_mm(){
                 break;
             default:
                 dump_msg("mm: unknow message", &g_mm_msg);
-                assert(0);
+                kassert(0);
                 break;
         }
 

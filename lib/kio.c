@@ -40,7 +40,7 @@ PUBLIC int printf(const char *fmt, ...){
     i = vsprintf(buf, fmt, args); 
     
     int c = write(1, buf, i);
-    assert(c == i);
+    kassert(c == i);
     
     return i;
 }
@@ -60,16 +60,14 @@ PUBLIC void spin(char* func_name){
     while(1){}
 }
 
-PUBLIC void panic(const char *fmt, ...)
+PUBLIC void kpanic(const char *fmt, ...)
 {
 	char buf[256];
-	/* 4 is the size of fmt in the stack */
 	va_list arg = (va_list)((char*)&fmt + 4);
 	vsprintf(buf, fmt, arg);
-	printl("%c !!panic!! %s", MAG_CH_PANIC, buf);
-
-	/* should never arrive here */
-	//__asm__ __volatile__("ud2");
+	//printl("%c !!kpanic!! %s", MAG_CH_PANIC, buf);
+    kprintf("!!kpanic!! %s", buf);
+    halt();
 }
 
 /******************************************************************************************

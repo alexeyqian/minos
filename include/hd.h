@@ -263,4 +263,6 @@ struct hd_info
 
 
 
+void task_hd();
+
 #endif 

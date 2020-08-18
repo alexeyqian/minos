@@ -1,8 +1,17 @@
 #include "assert.h"
 #include "const.h"
 #include "types.h"
+#include "ke_asm_utils.h"
 #include "kio.h"
 
+
+PUBLIC void kassertion_failure(char* exp, char* file, char* base_file, int line){
+    kprintf("!!kassert(%s)!! failed. file: %s, base_file: %s, ln: %d",
+        exp, file, base_file, line);
+    halt();
+}
+
+/*
 PUBLIC void assertion_failure(char* exp, char* file, char* base_file, int line){
     printl("%c  assert(%s) failed. file: %s, base_file: %s, ln: %d",
         MAG_CH_ASSERT, exp, file, base_file, line);
@@ -10,7 +19,7 @@ PUBLIC void assertion_failure(char* exp, char* file, char* base_file, int line){
     // if it happens in a user proccess, printl will return like a common routine.
     
     // use a for ever loop to prevent the proc from going on.
-    kspin("assertion_failure()");
+    spin("assertion_failure()");
     // should never arrive here
     //__asm__ __volatile("ud2");
-}
+}*/
