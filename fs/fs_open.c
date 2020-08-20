@@ -206,16 +206,16 @@ PRIVATE struct inode* create_file(char* path, int flags){
 
 // open a file and return the file descriptor
 // return -1 if failed
-PUBLIC int do_open(MESSAGE* msg, struct proc* caller){
+PUBLIC int do_open(MESSAGE* pmsg, struct proc* caller){
     int fd = -1;
     char pathname[MAX_PATH];
 
-    int flags = msg->FLAGS;
-    int name_len = msg->NAME_LEN;
-    int src = msg->source; // caller proc number
+    int flags = pmsg->FLAGS;
+    int name_len = pmsg->NAME_LEN;
+    int src = pmsg->source; // caller proc number
     kassert(name_len < MAX_PATH);
     phys_copy((void*)va2la(TASK_FS, pathname),
-        (void*)va2la(src, msg->PATHNAME),
+        (void*)va2la(src, pmsg->PATHNAME),
         name_len);
     pathname[name_len] = 0;
 
@@ -261,7 +261,7 @@ PUBLIC int do_open(MESSAGE* msg, struct proc* caller){
         pin = get_inode(dir_inode->i_dev, inode_nr);
     }
 
-    if(pin){
+    if(pin){        
         // connects proc with file_descriptor
         caller->filp[fd] = &f_desc_table[i];
         // connects file_descriptor with inode
@@ -292,8 +292,8 @@ PUBLIC int do_open(MESSAGE* msg, struct proc* caller){
     return fd;
 }
 
-PUBLIC int do_close(struct s_message* msg, struct proc* caller){
-    int fd = msg->FD;
+PUBLIC int do_close(struct s_message* pmsg, struct proc* caller){
+    int fd = pmsg->FD;
     put_inode(caller->filp[fd]->fd_inode); // inode->cnt--
     if(--caller->filp[fd]->fd_cnt == 0)
         caller->filp[fd]->fd_inode = 0;    // disconnect file descriptor from inode 
@@ -304,10 +304,10 @@ PUBLIC int do_close(struct s_message* msg, struct proc* caller){
 
 // the new offset in bytes from the beginning of the file if succesfully
 // otherwise a negative number.
-PUBLIC int do_lseek(struct s_message* msg, struct proc* caller){
-    int fd = msg->FD;
-    int off = msg->OFFSET;
-    int whence = msg->WHENCE;
+PUBLIC int do_lseek(struct s_message* pmsg, struct proc* caller){
+    int fd = pmsg->FD;
+    int off = pmsg->OFFSET;
+    int whence = pmsg->WHENCE;
 
     int pos = caller->filp[fd]->fd_pos;
     int f_size = caller->filp[fd]->fd_inode->i_size;
@@ -340,12 +340,12 @@ PUBLIC int do_lseek(struct s_message* msg, struct proc* caller){
  * @return On success: How many bytes have been read/written. 
  * On error: -1
  * */
-PUBLIC int do_rdwt(struct s_message* msg, struct proc* caller){
-    int fd = msg->FD;
-    void* buf = msg->BUF;
-    int len = msg->CNT;
+PUBLIC int do_rdwt(struct s_message* pmsg, struct proc* caller){
+    int fd = pmsg->FD;
+    void* buf = pmsg->BUF;
+    int len = pmsg->CNT;
 
-    int src = msg->source;
+    int src = pmsg->source;
     kassert((caller->filp[fd] >= &f_desc_table[0]) 
         && (caller->filp[fd] < &f_desc_table[NR_FILE_DESC]));
     
@@ -356,35 +356,32 @@ PUBLIC int do_rdwt(struct s_message* msg, struct proc* caller){
     struct inode* pin = caller->filp[fd]->fd_inode;
 
     kassert(pin >= &inode_table[0] && pin < &inode_table[NR_INODE]);
-
     int imode = pin->i_mode & I_TYPE_MASK;
     // TODO: wrap into do_rdwt_special
     if(imode == I_CHAR_SPECIAL){ // special file, such as tty
-        //kprintf("write to I CHAR SPECIAL");
         // TODO: create a new msg
-        int t = msg->type == READ? DEV_READ : DEV_WRITE;
-        msg->type = t;
-
+        int t = pmsg->type == READ? DEV_READ : DEV_WRITE;
+        pmsg->type = t;
+        //kprintf("new msg type: %d", msg->type);
         int dev = pin->i_start_sect; // this field means different for special file/device
         kassert(MAJOR(dev) == 4);
 
-        msg->DEVICE = MINOR(dev);
-        msg->BUF = buf;
-        msg->CNT = len;
-        msg->PROC_NR = src;
+        pmsg->DEVICE = MINOR(dev);
+        pmsg->BUF = buf;
+        pmsg->CNT = len;
+        pmsg->PROC_NR = src;
         kassert(dd_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
+        send_recv(BOTH, dd_map[MAJOR(dev)].driver_nr, pmsg);
+        kassert(pmsg->CNT == len);
 
-        send_recv(BOTH, dd_map[MAJOR(dev)].driver_nr, &msg);
-        kassert(msg->CNT == len);
-
-        return msg->CNT;
+        return pmsg->CNT;
 
     }else{ // regular file // TODO: wrap into do_rdwt_regular()
         kassert(pin->i_mode == I_REGULAR || pin->i_mode == I_DIRECTORY);
-        kassert(msg->type == READ || msg->type == WRITE);
+        kassert(pmsg->type == READ || pmsg->type == WRITE);
 
         int pos_end;
-        if(msg->type == READ)
+        if(pmsg->type == READ)
             pos_end = min(pos + len, pin->i_size);
         else //WRITE
             pos_end = min(pos + len, pin->i_nr_sects * SECTOR_SIZE);
@@ -401,10 +398,9 @@ PUBLIC int do_rdwt(struct s_message* msg, struct proc* caller){
         for(i = rw_sect_min; i<= rw_sect_max; i += chunk){
             // read/write this amount of bytes each loop
             int bytes = min(bytes_left, chunk*SECTOR_SIZE - off); // TODO:??
-
             rw_sector(DEV_READ, pin->i_dev, i*SECTOR_SIZE, chunk*SECTOR_SIZE, TASK_FS, fsbuf);
 
-            if(msg->type == READ){
+            if(pmsg->type == READ){
                 phys_copy((void*)va2la(src, buf + bytes_rw),
                     (void*)va2la(TASK_FS, fsbuf + off), bytes);
             }else { // WRITE
@@ -423,7 +419,6 @@ PUBLIC int do_rdwt(struct s_message* msg, struct proc* caller){
             pin->i_size = caller->filp[fd]->fd_pos;
             sync_inode(pin);
         }
-
         return bytes_rw;
     }
 }

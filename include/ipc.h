@@ -15,7 +15,7 @@
 struct s_message;
 struct proc;
 
-int send_recv(int function, int src_dest, struct s_message* msg);
+int send_recv(int function, int src_dest, struct s_message* pmsg);
 int sys_sendrec(int function, int src_dest, struct s_message* m, struct proc* p_proc);
 void inform_int(int task_nr);
 void dump_msg(const char * title, struct s_message* m);

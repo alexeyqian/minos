@@ -6,7 +6,7 @@
 #include "string.h"
 #include "proc.h"
 
-void test_a(){	
+void test_a(){		
 	kspin("test a");	
 }
 

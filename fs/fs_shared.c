@@ -68,6 +68,7 @@ PUBLIC struct inode* get_inode(int dev, int num){
             }
         }else{ // a free slot
             if(!q) q = p; // q hasn't been assigned yet
+            // TODO: break here?
         }
     }
 

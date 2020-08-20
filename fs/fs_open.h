@@ -4,9 +4,9 @@
 struct s_message;
 struct proc;
 
-int   do_open(struct s_message* msg, struct proc* caller);
-int  do_close(struct s_message* msg, struct proc* caller);
-int  do_lseek(struct s_message* msg, struct proc* caller);
-int   do_rdwt(struct s_message* msg, struct proc* caller);
-int do_unlink(struct s_message* msg);
+int   do_open(struct s_message* pmsg, struct proc* caller);
+int  do_close(struct s_message* pmsg, struct proc* caller);
+int  do_lseek(struct s_message* pmsg, struct proc* caller);
+int   do_rdwt(struct s_message* pmsg, struct proc* caller);
+int do_unlink(struct s_message* pmsg);
 #endif

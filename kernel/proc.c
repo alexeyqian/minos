@@ -29,11 +29,11 @@ struct task         task_table[NR_TASKS]={
 						{task_hd,  STACK_SIZE_HD,    "task_hd"   },
 						{task_fs,  STACK_SIZE_FS,    "task_fs"   },
 						{task_tty, STACK_SIZE_TTY,   "task_tty"  },
-						{task_mm,  STACK_SIZE_MM,    "task_mm"},
-						{task_test,STACK_SIZE_MM,    "task_test"}
+						{task_mm,  STACK_SIZE_MM,    "task_mm"   },
+						{task_test,STACK_SIZE_MM,    "task_test" }
 					};
 struct task         user_proc_table[NR_PROCS]={ 	
-						{init,     STACK_SIZE_INIT,  "init"},		// TODO: hardcode -> const		
+						{init,     STACK_SIZE_INIT,  "init"},		
 						{test_a,   STACK_SIZE_TESTA, "test_a"},
 						{test_b,   STACK_SIZE_TESTB, "test_b"},
 						{test_c,   STACK_SIZE_TESTC, "test_c"}

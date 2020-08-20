@@ -18,7 +18,7 @@ printx:
 
     ret
 
-; sendrec(int function, int src_dest, MESSAGE* msg)
+; sendrec(int function, int src_dest, MESSAGE* pmsg)
 global sendrec
 sendrec:
     push ebx

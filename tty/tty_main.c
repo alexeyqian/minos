@@ -280,22 +280,22 @@ PRIVATE void tty_dev_write(TTY *tty)
     }
 }
 
-PRIVATE void tty_do_read(TTY* tty, MESSAGE* msg){
-    tty->tty_caller = msg->source; // who called, usally task_fs
-    tty->tty_procnr = msg->PROC_NR; // who wants the chars
-    tty->tty_req_buf = va2la(tty->tty_procnr, msg->BUF); // where the chars should be put
-    tty->tty_left_cnt = msg->CNT; // how many chars are requested
+PRIVATE void tty_do_read(TTY* tty, MESSAGE* pmsg){
+    tty->tty_caller = pmsg->source; // who called, usally task_fs
+    tty->tty_procnr = pmsg->PROC_NR; // who wants the chars
+    tty->tty_req_buf = va2la(tty->tty_procnr, pmsg->BUF); // where the chars should be put
+    tty->tty_left_cnt = pmsg->CNT; // how many chars are requested
     tty->tty_trans_cnt = 0; // how many chars have been transferred
 
-    msg->type =  SUSPEND_PROC;
-    msg->CNT = tty->tty_left_cnt;
-    send_recv(SEND, tty->tty_caller, msg);
+    pmsg->type = SUSPEND_PROC;
+    pmsg->CNT = tty->tty_left_cnt;
+    send_recv(SEND, tty->tty_caller, pmsg);
 }
 
-PRIVATE void tty_do_write(TTY* tty, MESSAGE* msg){
+PRIVATE void tty_do_write(TTY* tty, MESSAGE* pmsg){
     char buf[TTY_OUT_BUF_LEN];
-    char* p = (char*)va2la(msg->PROC_NR, msg->BUF);
-    int i = msg->CNT;
+    char* p = (char*)va2la(pmsg->PROC_NR, pmsg->BUF);
+    int i = pmsg->CNT;
     int j;
 
     while(i){
@@ -308,8 +308,8 @@ PRIVATE void tty_do_write(TTY* tty, MESSAGE* msg){
         p += bytes;
     }
 
-    msg->type = SYSCALL_RET;
-    send_recv(SEND, msg->source, msg);
+    pmsg->type = SYSCALL_RET;
+    send_recv(SEND, pmsg->source, pmsg);
 }
 
 // ===== tty = keyboard + console(screen) =====
@@ -462,8 +462,7 @@ PUBLIC int sys_printx(int _unused1, int _unused2, char* s, struct proc* p_proc)
 }
 
 PUBLIC void task_tty()
-{  while(1){}
-    //kspin("task_tty");
+{  
     kprintf(">>> 3. task_tty is running\n"); 
     TTY* p_tty;
     MESSAGE msg;
@@ -489,13 +488,14 @@ PUBLIC void task_tty()
         kassert(src != TASK_TTY);
 
         TTY* ptty2 = &tty_table[msg.DEVICE];
+        //kprintf(">>> tty main, type: %d, src: %d\n", msg.type, src);
         switch(msg.type){
             case DEV_OPEN: // nothing need to open, just return
                 reset_msg(&msg);
                 msg.type = SYSCALL_RET;
-                kprintf(">>> 4.1 in task_tty()::DEVOPEN before send, to: %d, type: %d\n", src, msg.type);
+                //kprintf(">>> 4.1 in task_tty()::DEVOPEN before send, to: %d, type: %d\n", src, msg.type);
                 send_recv(SEND, src, &msg);
-                kprintf(">>> 4.1 in task_tty()::DEVOPEN after send, to: %d, type: %d\n", src, msg.type);
+                //kprintf(">>> 4.1 in task_tty()::DEVOPEN after send, to: %d, type: %d\n", src, msg.type);
                 break;
             case DEV_READ:
                 tty_do_read(ptty2, &msg);
@@ -504,7 +504,6 @@ PUBLIC void task_tty()
                 tty_do_write(ptty2, &msg);
                 break;
             case HARD_INT: // waked up by clock_handler
-                kprintf(">>>key pressed : %d\n", src);
                 key_pressed = 0;
                 continue;
             default:

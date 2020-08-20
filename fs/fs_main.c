@@ -12,9 +12,9 @@
 #include "ipc.h"
 #include "hd.h"
 
-PRIVATE int fs_fork(struct s_message* msg){
+PRIVATE int fs_fork(struct s_message* pmsg){
     int i;
-    struct proc* child = &proc_table[msg->PID];
+    struct proc* child = &proc_table[pmsg->PID];
     for(i = 0; i < NR_FILES; i++){
         if(child->filp[i]){
             child->filp[i]->fd_cnt++;
@@ -225,8 +225,8 @@ PRIVATE void init_fs(){
     root_inode = get_inode(ROOT_DEV, ROOT_INODE);
 }
 
-PRIVATE int fs_exit(struct s_message* msg){
-    struct proc* p = &proc_table[msg->PID];
+PRIVATE int fs_exit(struct s_message* pmsg){
+    struct proc* p = &proc_table[pmsg->PID];
     for(int i = 0; i < NR_FILES; i++){
         if(p->filp[i]){
             // release inode

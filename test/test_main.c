@@ -9,35 +9,11 @@
 #include "klib.h"
 #include "kio.h"
 
-void test_fs_tty(){
-    char tty_name[] = "/dev_tty1";
-	int fd_stdin = open(tty_name, O_RDWR);
-	kprintf("open tty ok, df_stdin: %d\n", fd_stdin);
-	kassert(fd_stdin == 0);
-	
-	int fd_stdout = open(tty_name, O_RDWR);
-	kprintf("open tty ok2, df_stdout: %d\n", fd_stdout);
-	kassert(fd_stdout == 1);
-	
-	kspin("test_b");
-
-	char rdbuf[128];
-	
-	while(1){
-		kprintf("$ ");
-		int r = read(fd_stdin, rdbuf, 70);
-		rdbuf[r] = 0;
-
-		if(strcmp(rdbuf, "hello") == 0){
-			kprintf("hello world!\n");
-		}else{
-			if(rdbuf[0]){
-				kprintf("{%s}\n", rdbuf);
-			}
-		}
+void test_delay(){
+    while(1){			
+		kprintf(">>> ticks: %d\n", get_ticks());
+		delay(5000);
 	}
-
-	kassert(0); // never arrive here.*/
 }
 
 void test_fs(){
@@ -91,19 +67,41 @@ void test_fs(){
 	}	
 }
 
-test_delay(){
-    while(1){			
-		kprintf(">>> ticks: %d\n", get_ticks());
-		delay(5000);
+void test_fs_tty(){
+    char tty_name[] = "/dev_tty0";
+	int fd_stdin = open(tty_name, O_RDWR);
+	kprintf("df_stdin: %d\n", fd_stdin);
+	kassert(fd_stdin == 0);
+	
+	int fd_stdout = open(tty_name, O_RDWR);
+	kprintf("df_stdout: %d\n", fd_stdout);
+	kassert(fd_stdout == 1);
+		
+	char rdbuf[128];
+	
+	while(1){
+		kprintf("$ ");
+		int r = read(fd_stdin, rdbuf, 70);
+		rdbuf[r] = 0;
+
+		if(strcmp(rdbuf, "hello") == 0){
+			kprintf("hello world!\n");
+		}else{
+			if(rdbuf[0]){
+				kprintf("{%s}\n", rdbuf);
+			}
+		}
 	}
+
+	kassert(0); // never arrive here.*/
 }
 
 // <ring 1>, "system calls" via IPC message
 PUBLIC void task_test(){
     kprintf(">>> 5. task_test is running\n"); 
-    test_fs();
-    test_delay();
-    //test_fs_tty();
+    //test_fs();
+    //test_delay();
+    test_fs_tty();
 
     kspin("task_test");
 }

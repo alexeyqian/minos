@@ -166,6 +166,7 @@
 #define TASK_TTY	    3 // terminal, depend on fs
 #define TASK_MM         4 // memory management
 #define TASK_TEST       5
+
 #define INIT            6 // first user proc
 #define ANY		       (NR_TASKS + NR_PROCS + 10)
 #define NO_TASK		   (NR_TASKS + NR_PROCS + 20)
@@ -177,14 +178,15 @@
 #define STACK_SIZE_HD    0x4000
 #define STACK_SIZE_FS    0x4000
 #define STACK_SIZE_MM    0x4000
+#define STACK_SIZE_TEST  0x4000
 
 #define STACK_SIZE_INIT  0x4000
-#define STACK_SIZE_TESTA 0x4000
-#define STACK_SIZE_TESTB 0x4000
-#define STACK_SIZE_TESTC 0x4000
-#define STACK_SIZE_TOTAL STACK_SIZE_TTY+STACK_SIZE_SYS+STACK_SIZE_HD \
-	+STACK_SIZE_FS+STACK_SIZE_MM+STACK_SIZE_INIT+STACK_SIZE_TESTA \
-	+STACK_SIZE_TESTB+STACK_SIZE_TESTC
+#define STACK_SIZE_TESTA 0x2000
+#define STACK_SIZE_TESTB 0x2000
+#define STACK_SIZE_TESTC 0x2000
+#define STACK_SIZE_TOTAL STACK_SIZE_SYS+STACK_SIZE_HD \
+	+STACK_SIZE_FS+STACK_SIZE_TTY+STACK_SIZE_MM+STACK_SIZE_TEST \
+	+STACK_SIZE_INIT+STACK_SIZE_TESTA+STACK_SIZE_TESTB+STACK_SIZE_TESTC
 
 // ========= memory ===================
 /* Sizes of memory tables. The boot monitor distinguishes three memory areas, 

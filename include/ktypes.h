@@ -107,6 +107,8 @@ struct mess3{
     void* m3p2;
 };
 
+// cannot use pointer inside, since message might be transfered 
+// between different rings, and can only be transferred by value instead of reference.
 typedef struct s_message{
     int source;
     int type;

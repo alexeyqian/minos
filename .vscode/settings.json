@@ -8,6 +8,9 @@
         "xlocmon": "c",
         "xstring": "c",
         "xutility": "c",
-        "*.ipp": "c"
+        "*.ipp": "c",
+        "fstream": "c",
+        "xlocmes": "c",
+        "istream": "c"
     }
 }
