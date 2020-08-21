@@ -22,7 +22,7 @@ void test_fs(){
 	const char bufw[] = "abcde";
 	const int rd_bytes = 3;
 	char bufr[rd_bytes];
-	kassert(rd_bytes <= strlen(bufw));
+	kassert(rd_bytes <= (int)strlen(bufw));
 	// create
 	fd = open(filename, O_CREAT | O_RDWR);
 	kprintf("opened, fd: %d", fd);
@@ -31,7 +31,7 @@ void test_fs(){
 	
 	// write
 	n = write(fd, bufw, strlen(bufw));
-	kassert(n == strlen(bufw));
+	kassert(n == (int)strlen(bufw));
 
 	close(fd);
 	
@@ -42,7 +42,7 @@ void test_fs(){
 
 	// read
 	n = read(fd, bufr, rd_bytes);
-	kassert(n == rd_bytes);
+	kassert(n == (int)rd_bytes);
 	bufr[n] = 0;
 	kprintf("%d bytes read: %s\n", n, bufr);
 
@@ -96,13 +96,29 @@ void test_fs_tty(){
 	kassert(0); // never arrive here.*/
 }
 
+void test_printf(){
+	char tty_name[] = "/dev_tty0";
+	int fd_stdin = open(tty_name, O_RDWR);
+	kprintf("df_stdin: %d\n", fd_stdin);
+	kassert(fd_stdin == 0);
+	
+	int fd_stdout = open(tty_name, O_RDWR);
+	kprintf("df_stdout: %d\n", fd_stdout);
+	kassert(fd_stdout == 1);
+	int i = 1;
+	while(i < 20){
+		printf(">>> printf i:%d\n", i++);
+		delay(5000);
+	}
+}
+
 // <ring 1>, "system calls" via IPC message
 PUBLIC void task_test(){
     kprintf(">>> 5. task_test is running\n"); 
     //test_fs();
     //test_delay();
-    test_fs_tty();
-
+    //test_fs_tty();
+	//test_printf();
     kspin("task_test");
 }
 

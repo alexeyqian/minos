@@ -11,6 +11,7 @@
         "*.ipp": "c",
         "fstream": "c",
         "xlocmes": "c",
-        "istream": "c"
+        "istream": "c",
+        "cstdio": "c"
     }
 }

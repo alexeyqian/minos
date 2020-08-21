@@ -78,7 +78,7 @@ typedef struct tss{
 	uint32_t	gs;
 	uint32_t	ldt;
 	uint16_t	trap;
-	uint16_t	iobase;	// if I/O base >= TSS limit，means no IOPL map // TODO: renamed to iopb_offset
+	uint16_t	iobase;	// if I/O base >= TSS limit，means no IOPL map 
 }tss_s;
 
 
@@ -280,10 +280,14 @@ struct mem_range{
 
 struct boot_params{	
 	uint32_t magic;
-	unsigned char* kernel_file; // addr of kernel file
-	uint32_t mem_size;
+	unsigned char* kernel_file;  // addr of kernel.bin file	
 	uint32_t mem_range_count;
 	struct mem_range mem_ranges[ADDR_RANGE_MAX_COUNT];
+	// above 4 fields are passed from loader
+	// below 3 fields are calc/parsed in kernel
+	uint32_t mem_size;           // calculated from mem_ranges
+	uint32_t kernel_base;        // kernel runtime base
+	uint32_t kernel_limit;       // kernel runtime limit
 };
 
 #define	reassembly(high, high_shift, mid, mid_shift, low)	\

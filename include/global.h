@@ -11,9 +11,6 @@
 #define EXTERN
 #endif
 
-
-// TODO: use get_var() set_var() functions 
-// to avoid use global vars in non performance critical areas as much as possible
 EXTERN struct boot_params g_boot_params;
 EXTERN int k_reenter;
 EXTERN int ticks;
@@ -29,7 +26,6 @@ EXTERN struct proc         proc_table[NR_TASKS + NR_PROCS]; // contains array of
 
 EXTERN pf_irq_handler_t    irq_table[IRQ_NUM];
 EXTERN syscall_t           syscall_table[NR_SYSCALLS];
-// TODO: move
 EXTERN struct dev_drv_map  dd_map[];
 
 EXTERN uint32_t g_disp_pos; // for screen.c and tty.c
@@ -39,16 +35,12 @@ EXTERN	struct inode * root_inode;
 EXTERN struct file_desc f_desc_table[NR_FILE_DESC];
 EXTERN struct inode inode_table[NR_INODE];
 EXTERN struct super_block super_block[NR_SUPER_BLOCK]; // TODO: rename to super_block_table
-
-// TODO: move to private members in fs module
-
 extern	uint8_t* fsbuf;
 extern	const int FSBUF_SIZE;
 // mm
 EXTERN MESSAGE g_mm_msg;
 extern uint8_t* mmbuf;
 extern const int MMBUF_SIZE;
-EXTERN int g_memory_size; // TODO: remove, since we already have g_boot_params
 
 // tty
 EXTERN int key_pressed; // used for clock_handler to wake up TASK_TTY when a key is pressed

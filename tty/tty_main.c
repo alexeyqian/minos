@@ -68,7 +68,7 @@ PRIVATE void init_console(CONSOLE *p_console, int idx)
     p_console->cursor = p_console->original_addr;
     if (idx == 0)
     {   // first console use current position
-        p_console->cursor = g_disp_pos / 2; // g_disp_pos comes from screen.h TODO: move
+        p_console->cursor = g_disp_pos / 2; 
         //g_disp_pos = 0; 
     }
     else
@@ -430,7 +430,6 @@ PUBLIC int sys_printx(int _unused1, int _unused2, char* s, struct proc* p_proc)
 		char * v = (char*)V_MEM_BASE;
 		const char * q = p + 1; /* +1: skip the magic char */
 
-        //TODO: fix duplicated output issue
         while(*q){
             *v++ = *q++;
             *v++ = RED_CHAR;
@@ -493,9 +492,9 @@ PUBLIC void task_tty()
             case DEV_OPEN: // nothing need to open, just return
                 reset_msg(&msg);
                 msg.type = SYSCALL_RET;
-                //kprintf(">>> 4.1 in task_tty()::DEVOPEN before send, to: %d, type: %d\n", src, msg.type);
+                //kprintf(">>> task_tty()::DEVOPEN begin, src: %d, type: %d\n", src, msg.type);
                 send_recv(SEND, src, &msg);
-                //kprintf(">>> 4.1 in task_tty()::DEVOPEN after send, to: %d, type: %d\n", src, msg.type);
+                //kprintf(">>> task_tty()::DEVOPEN end, src: %d, type: %d\n", src, msg.type);
                 break;
             case DEV_READ:
                 tty_do_read(ptty2, &msg);

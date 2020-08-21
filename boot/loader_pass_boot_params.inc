@@ -6,15 +6,11 @@ pass_boot_params:
 	shl eax, 4
 	add eax, KERNEL_BIN_OFFSET
 	mov [BOOT_PARAM_ADDR + 4], eax ; physical address of kernel.bin
-
-	mov eax, [pm_mem_size]
-	mov [BOOT_PARAM_ADDR + 8], eax
-
+	
 	mov eax, [pm_mem_range_count]
-	mov [BOOT_PARAM_ADDR + 12], eax
+	mov [BOOT_PARAM_ADDR + 8], eax
     pop eax
 
-    ; TODO: fix the mem range copy issue
 	; copy mem range boot range buf
 .copy_mem_buf:
 	push eax
@@ -24,7 +20,7 @@ pass_boot_params:
 	
 	mov ecx, BOOT_PARAM_MEM_RANGE_BUF_SIZE ; size
 	mov esi, pm_mem_range_buf ; src
-	mov edi, BOOT_PARAM_ADDR + 16 ; dest
+	mov edi, BOOT_PARAM_ADDR + 12 ; dest
 .loop:
 	cmp ecx, 0
 	jz .done

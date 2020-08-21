@@ -61,11 +61,14 @@ kernel/kernel.bin: $(C_SOURCES) $(C_HEADERS) \
 	$(CROSS_COMPILER) $(C_FLAGS) -o lib/ipclib.o       lib/ipclib.c		
 	$(CROSS_COMPILER) $(C_FLAGS) -o lib/fslib.o        lib/fslib.c		
 	$(CROSS_COMPILER) $(C_FLAGS) -o lib/proclib.o      lib/proclib.c		
-	#$(CROSS_COMPILER) -T linker.ld -o $@ -ffreestanding -nostdlib kernel/kernel_entry.o $(C_OBJS) fs.o -lgcc
-	ld -m elf_i386 -s -Ttext 0x1000 -nostdlib -o $@ kernel/kernel_entry.o $(C_OBJS) \
+	$(CROSS_COMPILER) -T linker.ld -o $@ -ffreestanding -nostdlib kernel/kernel_entry.o $(C_OBJS) \
 		syscall/syscall_main.o hd/hd_main.o fs/fs_main.o fs/fs_open.o fs/fs_shared.o \
 		tty/tty_main.o mm/mm_main.o test/test_main.o lib/vsprintf.o lib/string.o \
-		lib/kio.o lib/assert.o lib/ipclib.o lib/fslib.o lib/proclib.o lib/syscalls.o
+		lib/kio.o lib/assert.o lib/ipclib.o lib/fslib.o lib/proclib.o lib/syscalls.o -lgcc
+	#ld -m elf_i386 -s -Ttext 0x1000 -nostdlib -o $@ kernel/kernel_entry.o $(C_OBJS) \
+	#	syscall/syscall_main.o hd/hd_main.o fs/fs_main.o fs/fs_open.o fs/fs_shared.o \
+	#	tty/tty_main.o mm/mm_main.o test/test_main.o lib/vsprintf.o lib/string.o \
+	#	lib/kio.o lib/assert.o lib/ipclib.o lib/fslib.o lib/proclib.o lib/syscalls.o
 	ar rcs lib/minoscrt.a lib/vsprintf.o lib/string.o lib/assert.o lib/kio.o lib/ipclib.o lib/fslib.o lib/proclib.o
 
 #kernel/kernel.bin: kernel/kernel_entry.o kernel/kernel.o ${OBJ}

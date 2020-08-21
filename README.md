@@ -1,7 +1,3 @@
-#TODO:
-- seperate kassert/kpanic and kassert/kpanic
-- kassert depend on kprintf?
-
 # minos
 Minimal OS Kernel, inspired by:
 - Yuan Yu (Tinix)

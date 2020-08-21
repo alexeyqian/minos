@@ -18,7 +18,7 @@ PUBLIC int alloc_mem(int pid, int memsize){
         kpanic("unsupported memory request: %d, should be less than %d", memsize, PROC_IMAGE_SIZE_DEFAULT);
 
     int base = PROCS_BASE + (pid - (NR_TASKS + NR_NATIVE_PROCS)) * PROC_IMAGE_SIZE_DEFAULT;
-    if(base + memsize >= g_memory_size)
+    if(base + memsize >= g_boot_params.mem_size)
         kpanic("memory allocation failed, pid: %d", pid);
 
     return base;
@@ -264,8 +264,6 @@ PUBLIC void do_wait(){
 }
 
 PUBLIC void task_mm(){
-    while(1){}
-    //kspin("task_mm");
     kprintf(">>> 4. task_mm is running\n");
     init_mm();
 

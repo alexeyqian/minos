@@ -21,23 +21,21 @@ PRIVATE int get_cursor(){
     offset += in_byte(REG_SCREEN_DATA);
     
     return offset * 2;
-}*/
-
-// use var to replace cursor enables uer privillege task/proc to call kprintf
-PRIVATE uint32_t get_cursor(){    
-    return g_disp_pos;
 }
 
-/*
 PRIVATE void set_cursor(int offset){
-    //disable_int();
+    disable_int();
     offset /= 2;
     out_byte(REG_SCREEN_CTRL, 14);
     out_byte(REG_SCREEN_DATA, (unsigned char)(offset >> 8));
     out_byte(REG_SCREEN_CTRL, 15);
     out_byte(REG_SCREEN_DATA, (unsigned char)(offset));
-    //enable_int();
+    enable_int();
 }*/
+
+PRIVATE uint32_t get_cursor(){    
+    return g_disp_pos;
+}
 
 PRIVATE void set_cursor(uint32_t offset){
     g_disp_pos = offset;
@@ -51,7 +49,6 @@ PRIVATE int scroll(int cursor_offset){
     // if the cursor is within the scree, return it unmodified
     if(cursor_offset < MAX_ROWS * MAX_COLS * 2)
         return cursor_offset;
-
     // shuffle the rows back one.
     int i;
     for(i = 1; i < MAX_ROWS; i++)
@@ -100,11 +97,6 @@ PUBLIC void kclear_screen(){
             kprint_char(' ', row, col, WHITE_ON_BLACK);
     
     set_cursor(get_screen_offset(0, 0));
-}
-
-PUBLIC void kspin(char* func_name){
-    kprintf(">>> kspinning in %s ... \n", func_name);
-    while(1){}
 }
 
 PUBLIC void kprintf(const char *fmt, ...){

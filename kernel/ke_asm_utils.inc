@@ -2,7 +2,6 @@
 [section .text]
 ; all below functions can only called by c language, follow c language calling convension
 ; caller clean stack
-; TODO: in future, it might be good idea to just use inline asm in C.
 
 global disable_int
 disable_int:

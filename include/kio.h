@@ -18,6 +18,6 @@ int printl(const char *fmt, ...);             // low level print, for kernel/tas
 int printf(const char *fmt, ...);             
 
 void kpanic(const char *fmt, ...); // use printl inside
+void kspin(char* func_name);
 void spin(char* func_name);       // use printl insede
-
 #endif

@@ -16,8 +16,6 @@ loader_parse_elf_kernel_bin:
     cmp eax, 0
     jz .no_action ; if the segment type is 0, then ignore it
     
-    ; TODO: ?? use filesz instead of memsz? might cause problems for .bss section.
-    ; KERNLE should not use bss section?
     ; prepare 3 parameters    
     push dword [esi + 0x10] ; param 3: [size], 0x10 is offset of field: p_filesz in program header entry
     
@@ -25,7 +23,7 @@ loader_parse_elf_kernel_bin:
     add eax, KERNEL_BIN_PHYS_ADDR
     push eax ; param 2: src
     
-    push dword [esi + 0x8] ; 0x8 is [vaddr=0x30000], param 1: dest ; TODO: dest using vaddr, need paging enabled, not good
+    push dword [esi + 0x8] ;param 1: dest 
 
     call pm_mem_copy
     add esp, 12 ; clear 3 parameters

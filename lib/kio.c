@@ -6,6 +6,7 @@
 #include "ke_asm_utils.h"
 #include "assert.h"
 #include "fs.h"
+#include "screen.h"
 
 /**
  * Low level print
@@ -31,17 +32,10 @@ PUBLIC int printl(const char* fmt, ...){
  * @return the number of chars printed
  * */
 PUBLIC int printf(const char *fmt, ...){
-    int i;
     char buf[STR_DEFAULT_LEN];
-    // points to next params after fmt
-    // now args is actually the addr of arg1 just behind fmt
-    // args is actually a char*
     va_list args = (va_list)((char*)(&fmt) + 4); 
-    i = vsprintf(buf, fmt, args); 
-    
-    int c = write(1, buf, i);
-    kassert(c == i);
-    
+    int i = vsprintf(buf, fmt, args);     
+    write(FD_STDOUT, buf, i);    
     return i;
 }
 
@@ -68,6 +62,11 @@ PUBLIC void kpanic(const char *fmt, ...)
 	//printl("%c !!kpanic!! %s", MAG_CH_PANIC, buf);
     kprintf("!!kpanic!! %s", buf);
     halt();
+}
+
+PUBLIC void kspin(char* func_name){
+    kprintf(">>> kspinning in %s ... \n", func_name);
+    while(1){}
 }
 
 /******************************************************************************************

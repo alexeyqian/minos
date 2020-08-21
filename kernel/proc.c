@@ -16,10 +16,10 @@
 #include "tty.h"
 #include "mm.h"
 #include "test.h"
+#include "screen.h"
 
 void init();
 
-// TODO: move to global
 // task stack is a mem area divided into MAX_TASK_NUM small areas
 // each small area used as stack for a process/task
 // kernel/tasks run in ring 0, should only use tty0, kprintf, kassert, kpanic etc...
@@ -73,30 +73,16 @@ PUBLIC void init_proc_table(){
 		p_proc->p_parent = NO_TASK;
 
 		if(strcmp(p_proc->p_name, "init") != 0){ // not init process
-			//kprintf("i: %d, pname: %s\n", i, p_proc->p_name);
 			// init process ldt, which contains two ldt descriptors.
 			p_proc->ldt[INDEX_LDT_C]  = gdt[SELECTOR_KERNEL_CODE >> 3];
-			p_proc->ldt[INDEX_LDT_RW] = gdt[SELECTOR_KERNEL_DATA >> 3];
-			/*
-			memcpy(
-				(char*)&p_proc->ldt[INDEX_LDT_C], 
-				(char*)&gdt[SELECTOR_KERNEL_CODE >> 3], 
-				sizeof(struct descriptor));			
-			memcpy(
-				(char*)&p_proc->ldt[INDEX_LDT_RW], 
-				(char*)&gdt[SELECTOR_KERNEL_DATA >> 3], 
-				sizeof(struct descriptor));
-			*/
+			p_proc->ldt[INDEX_LDT_RW] = gdt[SELECTOR_KERNEL_DATA >> 3];			
 			// change the DPL to lower privillege
 			p_proc->ldt[INDEX_LDT_C].attr1 =  DA_C   | privilege << 5;	
 			p_proc->ldt[INDEX_LDT_RW].attr1 = DA_DRW | privilege << 5;				
-		}else{ // init process
-			//kprintf("i: %d, pname: %s\n", i, p_proc->p_name);
-			uint32_t k_base;
-			uint32_t k_limit;
-			int ret = get_kernel_map(&k_base, &k_limit, &g_boot_params);
-			kassert(ret == 0);
-			//kprintf("k_base: 0x%x, k_limit: 0x%x\n", k_base, k_limit);
+		}else{ // init process			
+			uint32_t k_base = g_boot_params.kernel_base;
+			uint32_t k_limit = g_boot_params.kernel_limit;
+			kprintf("k_base: 0x%x, k_limit: 0x%x\n", k_base, k_limit);
 			init_descriptor(&p_proc->ldt[INDEX_LDT_C], 
 				0, // bytes before the entry point are not used
 				(k_base + k_limit) >> LIMIT_4K_SHIFT,
@@ -116,7 +102,6 @@ PUBLIC void init_proc_table(){
 		p_proc->regs.ds		= p_proc->regs.es = p_proc->regs.fs = p_proc->regs.ss
 							= INDEX_LDT_RW << 3 | SA_TIL | rpl;
 		p_proc->regs.gs		= (SELECTOR_KERNEL_VIDEO & SA_RPL_MASK) | rpl;
-		// TODO: replace p_task to p_proc
 		p_proc->regs.eip	= (uint32_t)p_task->initial_eip; // entry point for procress/task
 		p_proc->regs.esp	= (uint32_t) p_task_stack; // points to seperate stack for process/task 
 		p_proc->regs.eflags	= eflags;
@@ -143,13 +128,14 @@ PUBLIC void init_proc_table(){
 }
 
 // first process, parent for all user processes.
-void init(){
-	while(1){}
+void init(){while(1){}
+	kprintf(">>> 6. init is running");
 	int fd_stdin = open("/dev_tty0", O_RDWR);
 	kassert(fd_stdin == 0);
 	int fd_stdout = open("/dev_tty0", O_RDWR);
 	kassert(fd_stdout == 1);
-
+	printf(">>> 6.1 init::tty opened");
+	while(1){}
 	int pid = fork();
 	if(pid != 0){ // parent process
 		//kprintf(">>> parent is running, child pid: %d\n", pid);

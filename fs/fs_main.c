@@ -11,6 +11,7 @@
 #include "kio.h"
 #include "ipc.h"
 #include "hd.h"
+#include "screen.h"
 
 PRIVATE int fs_fork(struct s_message* pmsg){
     int i;
@@ -61,7 +62,6 @@ PRIVATE void read_super_block(int dev){
  * create /, the root directory
  */
 // TODO: add param buf to replace global var fsbuf
-// TODO: remove global vars
 PRIVATE void mkfs(){
     MESSAGE driver_msg;
     uint32_t i, j;
@@ -241,10 +241,11 @@ PRIVATE int fs_exit(struct s_message* pmsg){
     return 0;
 }
 
+MESSAGE fs_msg; 
 PUBLIC void task_fs(){
     kprintf(">>> 2. task_fs is running\n");
     init_fs();
-    MESSAGE fs_msg; 
+    //MESSAGE fs_msg; 
     struct proc* pcaller;
     while(1){
         send_recv(RECEIVE, ANY, &fs_msg);    
@@ -254,9 +255,9 @@ PUBLIC void task_fs(){
         pcaller = &proc_table[src]; 
         switch(msgtype){
             case OPEN:
-                // TODO: very wierd bug, cannot remove below kprintf
                 //kprintf(" do_open() begin: flags: %d, recv from: %d\n", pcaller->p_flags, pcaller->p_recvfrom);
                 fs_msg.FD = do_open(&fs_msg, pcaller);
+                //kprintf(" do_open() end: flags: %d, recv from: %d\n", pcaller->p_flags, pcaller->p_recvfrom);
                 break;
             case CLOSE:
                 fs_msg.RETVAL = do_close(&fs_msg, pcaller);
@@ -294,8 +295,12 @@ PUBLIC void task_fs(){
         // so the requesting process P (= fs_msg.PROC_NR) will wait, until fs receives RESUME_PROC message
         // it then notify process P to let it continue.
         if(fs_msg.type != SUSPEND_PROC){
-            fs_msg.type = SYSCALL_RET;            
+            fs_msg.type = SYSCALL_RET;  
+            struct proc* temp_proc = &proc_table[src];       
+            //kprintf(">>> fs_tty::send back begin, src: %d, flags: %d, recvfrom: %d, sendto:%d\n", 
+            //    src, temp_proc->p_flags, temp_proc->p_recvfrom, temp_proc->p_sendto);               
             send_recv(SEND, src, &fs_msg);
+            //kprintf(">>> fs_tty::send back end, src: %d\n", src);
         }        
     }
 }

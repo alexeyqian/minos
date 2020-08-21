@@ -28,7 +28,7 @@ sendrec:
     mov eax, IDX_SENDREC
     mov ebx, [esp + 12 + 4]  ; function
     mov ecx, [esp + 12 + 8]  ; src_dest
-    mov edx, [esp + 12 + 12] ; p_msg
+    mov edx, [esp + 12 + 12] ; pmsg
     int INT_VECTOR_SYSCALL
     
     pop edx

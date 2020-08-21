@@ -15,7 +15,6 @@
 /** Decrease the reference number of a slot in inode_table
  * when the number reaches zero, it means the inode is not used 
  * any more and can be overwritten by a new inode.
- * TODO: rename to decrease_inode_count
  * */
 PRIVATE void put_inode(struct inode* pinode){
     kassert(pinode->i_cnt > 0);
@@ -357,7 +356,6 @@ PUBLIC int do_rdwt(struct s_message* pmsg, struct proc* caller){
 
     kassert(pin >= &inode_table[0] && pin < &inode_table[NR_INODE]);
     int imode = pin->i_mode & I_TYPE_MASK;
-    // TODO: wrap into do_rdwt_special
     if(imode == I_CHAR_SPECIAL){ // special file, such as tty
         // TODO: create a new msg
         int t = pmsg->type == READ? DEV_READ : DEV_WRITE;
@@ -376,7 +374,7 @@ PUBLIC int do_rdwt(struct s_message* pmsg, struct proc* caller){
 
         return pmsg->CNT;
 
-    }else{ // regular file // TODO: wrap into do_rdwt_regular()
+    }else{ // regular file 
         kassert(pin->i_mode == I_REGULAR || pin->i_mode == I_DIRECTORY);
         kassert(pmsg->type == READ || pmsg->type == WRITE);
 

@@ -93,8 +93,6 @@ pm_start: ; entry point for protected mode
 	mov ax, 'G' ; start running in protect mode
     call loader_putax_pm
 
-	call pm_print_mem_ranges
-
 	call loader_parse_elf_kernel_bin	
 
 	mov ax, 'H' ; kernel_bin loaded
@@ -109,8 +107,6 @@ pm_start: ; entry point for protected mode
 
 %include "loader_lib_pm.inc"
 %include "loader_parse_elf_kernel_bin.inc"
-%include "_not_used_loader_print_mem_ranges.inc"
-%include "_not_used_loader_lib_pm.inc"
 %include "loader_pass_boot_params.inc"
 
 ; data variables

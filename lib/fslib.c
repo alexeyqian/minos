@@ -4,7 +4,7 @@
 #include "ktypes.h"
 #include "assert.h"
 #include "ipc.h"
-
+#include "string.h"
 
 /** 
  * open/create a file
@@ -19,7 +19,9 @@ PUBLIC int open(const char* pathname, int flags){
     msg.PATHNAME = (void*)pathname;
     msg.FLAGS = flags;
     msg.NAME_LEN = strlen(pathname);
+    //kprintf(">>> fslib::open send begin %s\n", msg.PATHNAME);
     send_recv(BOTH, TASK_FS, &msg);
+    //kprintf(">>> fslib::open send end %s\n", msg.PATHNAME);
     kassert(msg.type == SYSCALL_RET);
 
     return msg.FD;

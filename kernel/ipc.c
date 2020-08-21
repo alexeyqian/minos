@@ -9,6 +9,7 @@
 #include "string.h"
 #include "klib.h"
 #include "kio.h"
+#include "screen.h"
 
 #include "clock.h" // using schedule()
 
@@ -305,23 +306,24 @@ PUBLIC void dump_msg(const char * title, MESSAGE* m)
 }
 
 // <ring 0> implementation of system call sendrec
-PUBLIC int sys_sendrec(int function, int src_dest, MESSAGE* p_msg, struct proc* p){
+PUBLIC int sys_sendrec(int function, int src_dest, MESSAGE* pmsg, struct proc* p){
 	kassert(k_reenter == 0); // make sure we are not in ring0
 	kassert((src_dest >= 0 && src_dest <= NR_TASKS + NR_PROCS) ||
 		src_dest == ANY || src_dest == INTERRUPT);
-
 	int ret = 0;
 	int caller = proc2pid(p);
-	MESSAGE* mla = (MESSAGE*)va2la(caller, p_msg); 
+	MESSAGE* mla = (MESSAGE*)va2la(caller, pmsg); 
 	mla->source = caller;
-
 	kassert(mla->source != src_dest);
 
 	if(function == SEND){
-		ret = msg_send(p, src_dest, p_msg);
+        // TODO: wierd issue: if remove this kprintf, system will halt
+        kprintf("%d", src_dest);
+        ret = msg_send(p, src_dest, pmsg);
 		if(ret != 0) return ret;
 	}else if(function == RECEIVE){
-		ret = msg_receive(p, src_dest, p_msg);
+		//ret = msg_receive(p, src_dest, mla);
+        ret = msg_receive(p, src_dest, pmsg);
 		if(ret != 0) return ret;
 	}else{
 		kpanic("sys_sendrec invalid function", "%d, send: %d, receive: %d", function, SEND, RECEIVE);

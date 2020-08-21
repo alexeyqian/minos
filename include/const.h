@@ -173,17 +173,17 @@
 
 #define	MAX_TICKS	0x7FFFABCD
 
-#define STACK_SIZE_TTY   0x4000  // TODO: consider appropriate stack size
-#define STACK_SIZE_SYS   0x4000
-#define STACK_SIZE_HD    0x4000
-#define STACK_SIZE_FS    0x4000
-#define STACK_SIZE_MM    0x4000
-#define STACK_SIZE_TEST  0x4000
+#define STACK_SIZE_TTY   0x8000  
+#define STACK_SIZE_SYS   0x8000
+#define STACK_SIZE_HD    0x8000
+#define STACK_SIZE_FS    0x8000
+#define STACK_SIZE_MM    0x8000
+#define STACK_SIZE_TEST  0x8000
 
-#define STACK_SIZE_INIT  0x4000
-#define STACK_SIZE_TESTA 0x2000
-#define STACK_SIZE_TESTB 0x2000
-#define STACK_SIZE_TESTC 0x2000
+#define STACK_SIZE_INIT  0x8000
+#define STACK_SIZE_TESTA 0x8000
+#define STACK_SIZE_TESTB 0x8000
+#define STACK_SIZE_TESTC 0x8000
 #define STACK_SIZE_TOTAL STACK_SIZE_SYS+STACK_SIZE_HD \
 	+STACK_SIZE_FS+STACK_SIZE_TTY+STACK_SIZE_MM+STACK_SIZE_TEST \
 	+STACK_SIZE_INIT+STACK_SIZE_TESTA+STACK_SIZE_TESTB+STACK_SIZE_TESTC
@@ -300,14 +300,10 @@
 #define	STATUS		u.m3.m3i1
 #define	RETVAL		u.m3.m3i1
 
-// =============== boot params =================
-#define BOOT_PARAM_ADDR  0x500
-#define BOOT_PARAM_MAGIC 0xb007
-#define	BI_MAG			     0
-#define	BI_KERNEL_FILE	     1
-#define BI_MEM_SIZE          2
-#define	BI_MEM_RANGE_COUNT	 3
-#define	BI_MEM_RANGE_BUF	 4
+// fs
+#define FD_STDIN  0
+#define FD_STDOUT 1
+#define FD_STDERR 2
 
 // ================== utility macros ================
 #define	max(a,b)	((a) > (b) ? (a) : (b))

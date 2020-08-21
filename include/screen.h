@@ -3,6 +3,5 @@
 
 void kprintf(const char *fmt, ...);
 void kclear_screen();
-void kspin(char* func_name);
 
 #endif

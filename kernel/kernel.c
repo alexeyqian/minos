@@ -55,7 +55,7 @@ void kstart(){
 	init_idt();
 	init_tss();	
 	init_ldt_descriptors_in_dgt(); 
-	get_boot_params(&g_boot_params);
+	get_boot_params(&g_boot_params); // has to be before init proc table
 	init_proc_table();	
 	
 	//pmmgr_init();	
@@ -129,11 +129,6 @@ void init_ldt_descriptors_in_dgt(){
 uint32_t before_paging_selector_to_segbase(uint16_t selector){
 	struct descriptor* p_dest = &gdt[selector >> 3];
 	return (p_dest->base_high << 24) | (p_dest->base_mid << 16) | (p_dest->base_low);
-}
-
-// TODO: remove later, it's a hack for linker issue.
-uint32_t __stack_chk_fail_local(){
-    return 0;
 }
 
 void init_descriptor(struct descriptor* p_desc, uint32_t base, uint32_t limit, uint16_t attribute)

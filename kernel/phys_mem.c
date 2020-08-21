@@ -218,7 +218,6 @@ PUBLIC void pmmgr_init(){
 
 	// print i% regions initialized: %i max blocks, %i used blocks
 	/*
-	// TODO: test code
 	uint32_t* p1 = (uint32_t*) pmmgr_alloc_block();
 	kprintf("p1 allocated at: ");
 	kprintf((int)p1);

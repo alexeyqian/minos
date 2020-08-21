@@ -3,7 +3,7 @@
 #include "types.h"
 #include "ke_asm_utils.h"
 #include "kio.h"
-
+#include "screen.h"
 
 PUBLIC void kassertion_failure(char* exp, char* file, char* base_file, int line){
     kprintf("!!kassert(%s)!! failed. file: %s, base_file: %s, ln: %d",
