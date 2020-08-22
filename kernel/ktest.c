@@ -20,16 +20,18 @@ PRIVATE void test_printf_a(){
 }
 
 PUBLIC void test_a(){	
-	test_printf_a();
 	while(1){}
+	//test_printf_a();
 	//kspin("test a");	
 }
 
-void test_b(){while(1){}
+void test_b(){
+	while(1){}
 	kspin("test b");	
 }
 
-void test_c(){while(1){}
+void test_c(){
+	while(1){}
 	while(1){	
 		kprintf(">>> ticks: %d\n", 100);
 		delay(5000);

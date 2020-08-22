@@ -55,23 +55,32 @@ PUBLIC char* i2a(int val, int base, char ** ps)
 	return *ps;
 }*/
 
-// ring 0-1, calculate the linear address of proc's segment
-// idx: index of proc's segments
+/*
+ * <ring 0-1> calculate the linear address of proc's segment
+ * @param p: proc pointer
+ * @param idx: index of proc's segments
+ * 
+ * @return base address of memory pointed by LDT descriptor
+ * */
 PRIVATE int ldt_seg_linear(struct proc* p, int idx){
 	struct descriptor* d = &p->ldt[idx];
 	return d->base_high << 24 | d->base_mid << 16 | d->base_low;
 }
 
-// TODO: move to proc
-// ring 0-1, virtual addr -> linear addr
+/* 
+ * virtual address map to linear address for pid
+ * since each proc has it's own LDT, 
+ * and each LDT descriptor is representing differrent memory range
+ * 
+ * @return pointer to linear address
+* */
 PUBLIC void* va2la(int pid, void* va){
 	struct proc* p = &proc_table[pid];
 	uint32_t seg_base = ldt_seg_linear(p, INDEX_LDT_RW);
 	uint32_t la = seg_base + (uint32_t)va;
 
-	if(pid < NR_TASKS + NR_PROCS){
+	if(pid < NR_TASKS + NR_NATIVE_PROCS)
         kassert(la == (uint32_t)va);
-    }
-		
+    		
 	return (void*)la;
 }

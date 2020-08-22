@@ -9,10 +9,7 @@
 #include "ipc.h"
 #include "klib.h"
 
-PUBLIC void init_mm(){
-}
-
-PUBLIC int alloc_mem(int pid, int memsize){
+PRIVATE int alloc_mem(int pid, int memsize){
     kassert(pid >= (NR_TASKS + NR_NATIVE_PROCS));
     if(memsize > PROC_IMAGE_SIZE_DEFAULT)
         kpanic("unsupported memory request: %d, should be less than %d", memsize, PROC_IMAGE_SIZE_DEFAULT);
@@ -20,7 +17,7 @@ PUBLIC int alloc_mem(int pid, int memsize){
     int base = PROCS_BASE + (pid - (NR_TASKS + NR_NATIVE_PROCS)) * PROC_IMAGE_SIZE_DEFAULT;
     if(base + memsize >= g_boot_params.mem_size)
         kpanic("memory allocation failed, pid: %d", pid);
-
+    kprintf(">>> alloc_mem base: 0x%x\n", base);
     return base;
 }
 
@@ -32,12 +29,10 @@ PUBLIC int free_mem(int pid){
     return 0;
 }
 
-
 /*
  * @return 0 if success, otherwise -1 * 
  * */
-PUBLIC int do_fork(){
-    kprintf(">>> do fork\n");
+PRIVATE int do_fork(){
     // find a free slot in proc table
     struct proc* p = proc_table;
     int i;
@@ -50,40 +45,39 @@ PUBLIC int do_fork(){
     kassert(child_pid >= NR_TASKS + NR_NATIVE_PROCS);
     if(i >= NR_TASKS + NR_PROCS) return -1;
 
-    // duplicate the process table
-    
+    // duplicate the process table    
     int pid = g_mm_msg.source;
     uint16_t child_ldt_sel = p->ldt_sel;
     *p = proc_table[pid];       // shadow copy struct proc from parent to child pointing by p
     p->ldt_sel = child_ldt_sel; // restore child ldt selector
     p->p_parent = pid;
     sprintf(p->p_name, "%s_%d", proc_table[pid].p_name, child_pid);
-
+    
     // duplicate the process: TDS
     struct descriptor* ppd;  // parent descriptor
     ppd = &proc_table[pid].ldt[INDEX_LDT_C];
-    int caller_t_base = reassembly(ppd->base_high, 24, ppd->base_mid, 16, ppd->base_low);
-    // depending on the G bit of descriptor, in 1 or 4096 bytes
+    int caller_t_base = reassembly(ppd->base_high, 24, ppd->base_mid, 16, ppd->base_low);    
     int caller_t_limit = reassembly(0, 0, (ppd->limit_high_attr2 & 0xF), 16, ppd->limit_low);
+    // depending on the G bit of descriptor, in 1 or 4096 bytes
     int caller_t_size = ((caller_t_limit + 1)* ((ppd->limit_high_attr2 & (DA_LIMIT_4K >> 8))? 4096 : 1));
 
     // data & stack segments
     ppd = &proc_table[pid].ldt[INDEX_LDT_RW];
     int caller_ds_base = reassembly(ppd->base_high, 24, ppd->base_mid, 16, ppd->base_low);
     int caller_ds_limit = reassembly((ppd->limit_high_attr2 & 0xf), 16, 0, 0, ppd->limit_low);
-    // TODO: ?? caller_t_limit or caller_ds_limit
-    int caller_ds_size = ((caller_t_limit+1) * ((ppd->limit_high_attr2 & (DA_LIMIT_4K >> 8))? 4096 : 1));
+    int caller_ds_size = ((caller_ds_limit + 1) * ((ppd->limit_high_attr2 & (DA_LIMIT_4K >> 8))? 4096 : 1));
 
     // we don't seperate t, d and s segments, so we have:
     kassert((caller_t_base == caller_ds_base) 
         && (caller_t_limit == caller_ds_limit)
         && (caller_t_size == caller_ds_size));
-
+    //kprintf(">>> do_fork:: 5, caller_ds_limit: 0x%x, size:0x%x\n", caller_ds_limit, caller_ds_size);
+    
     int child_base = alloc_mem(child_pid, caller_t_size);
     kprintf("{mm} 0x%x <- 0x%x (0x%x bytes)\n", child_base, caller_t_base, caller_t_size);
     // child is a copy of parent
     phys_copy((void*)child_base, (void*)caller_t_base, caller_t_size);
-
+    
     init_descriptor(&p->ldt[INDEX_LDT_C], 
         child_base, 
         (PROC_IMAGE_SIZE_DEFAULT - 1) >> LIMIT_4K_SHIFT, 
@@ -93,23 +87,26 @@ PUBLIC int do_fork(){
         child_base,
         (PROC_IMAGE_SIZE_DEFAULT - 1) >> LIMIT_4K_SHIFT,
         DA_LIMIT_4K | DA_32 | DA_DRW | PRIVILEGE_USER << 5);
-
+    
     // send message to fs
     MESSAGE msg2fs;
     msg2fs.type = FORK;
     msg2fs.PID = child_pid;
     send_recv(BOTH, TASK_FS, &msg2fs);
-
+    
     // child pid will be returned to the parent proc
     g_mm_msg.PID = child_pid;
 
-    // send msg to child to remove it from pending status copied from parent
-    MESSAGE m;
-    m.type = SYSCALL_RET;
-    m.RETVAL = 0;
-    m.PID = 0;
-    send_recv(SEND, child_pid, &m);
+    //struct proc* temp_proc = &proc_table[child_pid];
+    //kprintf("proc: flag: %d, sendto: %d, receive from: %d", temp_proc->p_flags, temp_proc->p_sendto, temp_proc->p_recvfrom);
 
+    // send msg to child to remove it from pending status copied from parent    
+    MESSAGE msg2child;
+    msg2child.type = SYSCALL_RET;
+    msg2child.RETVAL = 0;
+    msg2child.PID = 0;
+    send_recv(SEND, child_pid, &msg2child);
+    
     return 0;
 }
 
@@ -265,7 +262,6 @@ PUBLIC void do_wait(){
 
 PUBLIC void task_mm(){
     kprintf(">>> 4. task_mm is running\n");
-    init_mm();
 
     while(1){
         send_recv(RECEIVE, ANY, &g_mm_msg);
@@ -296,7 +292,9 @@ PUBLIC void task_mm(){
 
         if(reply){
             g_mm_msg.type = SYSCALL_RET;
+            kprintf("task_mm::send back begin, src: %c\n");
             send_recv(SEND, src, &g_mm_msg);
+            kprintf("task_mm::send back end\n");
         }
     }
 }

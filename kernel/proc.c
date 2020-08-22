@@ -30,7 +30,7 @@ struct task         task_table[NR_TASKS]={
 						{task_fs,  STACK_SIZE_FS,    "task_fs"   },
 						{task_tty, STACK_SIZE_TTY,   "task_tty"  },
 						{task_mm,  STACK_SIZE_MM,    "task_mm"   },
-						{task_test,STACK_SIZE_MM,    "task_test" }
+						{task_test,STACK_SIZE_TEST,  "task_test" }
 					};
 struct task         user_proc_table[NR_PROCS]={ 	
 						{init,     STACK_SIZE_INIT,  "init"},		
@@ -80,18 +80,24 @@ PUBLIC void init_proc_table(){
 			p_proc->ldt[INDEX_LDT_C].attr1 =  DA_C   | privilege << 5;	
 			p_proc->ldt[INDEX_LDT_RW].attr1 = DA_DRW | privilege << 5;				
 		}else{ // init process			
-			uint32_t k_base = g_boot_params.kernel_base;
-			uint32_t k_limit = g_boot_params.kernel_limit;
-			kprintf("k_base: 0x%x, k_limit: 0x%x\n", k_base, k_limit);
+			kprintf("k_base: 0x%x, k_limit: 0x%x, NR_K: %d\n", 
+				g_boot_params.kernel_base, g_boot_params.kernel_limit,
+				4 * ((g_boot_params.kernel_base + g_boot_params.kernel_limit) >> LIMIT_4K_SHIFT));
+			
+			kprintf(">>> hard code init mem to 0x%x", 256 * 4096);
+			// TODO: hard code for 1M memory for init here
+			// since the get kernel_Base and kernel_limit is not correct!
 			init_descriptor(&p_proc->ldt[INDEX_LDT_C], 
 				0, // bytes before the entry point are not used
-				(k_base + k_limit) >> LIMIT_4K_SHIFT,
+				(PROC_IMAGE_SIZE_DEFAULT - 1) >> LIMIT_4K_SHIFT, 
+				//(g_boot_params.kernel_base + g_boot_params.kernel_limit) >> LIMIT_4K_SHIFT,
 				DA_32 | DA_LIMIT_4K | DA_C | privilege << 5);
 
 			init_descriptor(&p_proc->ldt[INDEX_LDT_RW], 
 				0, // bytes before the entry point are not used
-				(k_base + k_limit) >> LIMIT_4K_SHIFT,
-				DA_32 | DA_LIMIT_4K | DA_DRW | privilege << 5);
+				(PROC_IMAGE_SIZE_DEFAULT - 1) >> LIMIT_4K_SHIFT, 
+				//(g_boot_params.kernel_base + g_boot_params.kernel_limit) >> LIMIT_4K_SHIFT,
+				DA_32 | DA_LIMIT_4K | DA_DRW | privilege << 5);				
 		}
 
 		// init registers
@@ -128,30 +134,37 @@ PUBLIC void init_proc_table(){
 }
 
 // first process, parent for all user processes.
-void init(){while(1){}
-	kprintf(">>> 6. init is running");
+void init(){
+	kprintf(">>> 6. init is running\n");
+
 	int fd_stdin = open("/dev_tty0", O_RDWR);
 	kassert(fd_stdin == 0);
 	int fd_stdout = open("/dev_tty0", O_RDWR);
 	kassert(fd_stdout == 1);
-	printf(">>> 6.1 init::tty opened");
-	while(1){}
+
+	kclear_screen(); 
+
+	// from here, the first user process init is started.
+	printf(">>> first proc: init  is ready\n");
+
 	int pid = fork();
 	if(pid != 0){ // parent process
-		//kprintf(">>> parent is running, child pid: %d\n", pid);
-		int s;
-		int child = wait(&s);
+		printf(">>> parent is running, child pid: %d\n", pid);
+		//int s;
+		//int child = wait(&s);
 		//kprintf("child %d exited with status: %d", child, s);
-		kspin(">>> parent...\n");
+		while(1){}
 	}else { // child process
-		//kprintf(">>> child process is running, pid: %d\n", getpid());
+		printf("child process\n");
+		//printf(">>> child process is running, pid: %d\n", getpid());
+		while(1){}
 		//execl("/echo", "echo", "hello", "world", 0);
-		exit(123);
+		//exit(123);
 	}	
-
+	/*
 	while(1){
 		int s;
 		int child = wait(&s);
-		//kprintf("child %d exited with satus: %d\n", child, s);
-	}
+		printf("child %d exited with satus: %d\n", child, s);
+	}*/
 }

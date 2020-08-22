@@ -37,7 +37,7 @@ PUBLIC int fork(){
     MESSAGE msg;
     msg.type = FORK;
     send_recv(BOTH, TASK_MM, &msg);
-    kassert(msg.type == SYSCALL_RET);
+    kassert(msg.type == SYSCALL_RET); // TODO: replace kassert with assert
     kassert(msg.RETVAL == 0);
 
     return msg.PID;

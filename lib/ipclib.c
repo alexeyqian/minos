@@ -4,6 +4,7 @@
 #include "ktypes.h"
 #include "assert.h"
 #include "ke_asm_utils.h"
+#include "string.h"
 
 // ring 1-3, a wrapper for system call sendrec
 // use this, diret call to sendrec should be avoided.

@@ -58,7 +58,7 @@ PRIVATE void set_kernel_base_limit(struct boot_params* bp){
 
 	kassert(bp->kernel_base < temp);
 	bp->kernel_limit = temp - bp->kernel_base - 1;
-	kprintf("kernel base: 0x%x, limit: 0x%x\n", bp->kernel_base, bp->kernel_limit);
+	//kprintf("kernel base: 0x%x, limit: 0x%x\n", bp->kernel_base, bp->kernel_limit);
 }
 
 PUBLIC void get_boot_params(struct boot_params* pbp){

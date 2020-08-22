@@ -67,7 +67,7 @@ PRIVATE int msg_send(struct proc* current, int dest, MESSAGE* m){
     struct proc* sender = current;
     struct proc* p_dest = proc_table + dest;
     kassert(proc2pid(sender) != dest);
-
+    
     if(deadlock(proc2pid(sender), dest))
         kpanic(">>> DEADLOCK %s -> %s", sender->p_name, p_dest->p_name);
 

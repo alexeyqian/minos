@@ -22,6 +22,10 @@ lb 0x090100 / info break / info cpu / s <n> / c / regs / sregs / cregs /
 # Tools to check binary file
 od -t x1 -A n boot/boot_sect.bin
 hp -C filename
+## test code
+if<condition>
+    kprintf("arrive here:: x");
+    while(1){}
 
 # Boot Loader
 It's a two stage boot loader, (not yet)) follow multiboot specification.
