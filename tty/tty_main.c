@@ -11,6 +11,7 @@
 #include "assert.h"
 #include "ipc.h"
 #include "kio.h"
+#include "screen.h"
 
 PRIVATE TTY tty_table[NR_CONSOLES];
 #define TTY_FIRST (tty_table)

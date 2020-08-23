@@ -11,8 +11,11 @@
 #include "kio.h"
 #include "assert.h"
 #include "ipc.h"
+#include "screen.h"
 
-/** Decrease the reference number of a slot in inode_table
+PRIVATE struct file_desc f_desc_table[NR_FILE_DESC];
+
+/** Decrease the reference number of a slot in inode table
  * when the number reaches zero, it means the inode is not used 
  * any more and can be overwritten by a new inode.
  * */
@@ -232,14 +235,14 @@ PUBLIC int do_open(MESSAGE* pmsg, struct proc* caller){
     }
         
 
-    // find a free slot in f_desc_table[]
+    // find a free slot in file descriptor table
     for(i = 0; i < NR_FILE_DESC; i++){
         if(f_desc_table[i].fd_inode == 0)
             break;
     }
     
     if(i >= NR_FILE_DESC)
-        kpanic("f_desc_table[] is full, pid: %d", proc2pid(caller));
+        kpanic("file descriptor table is full, pid: %d", proc2pid(caller));
 
     int inode_nr = search_file(pathname);
     struct inode* pin = 0;
@@ -353,8 +356,8 @@ PUBLIC int do_rdwt(struct s_message* pmsg, struct proc* caller){
 
     int pos = caller->filp[fd]->fd_pos;
     struct inode* pin = caller->filp[fd]->fd_inode;
-
-    kassert(pin >= &inode_table[0] && pin < &inode_table[NR_INODE]);
+    
+    kassert(is_valid_inode(pin));
     int imode = pin->i_mode & I_TYPE_MASK;
     if(imode == I_CHAR_SPECIAL){ // special file, such as tty
         // TODO: create a new msg
@@ -536,7 +539,7 @@ PUBLIC int do_unlink(struct s_message* msg){
     pin->i_start_sect = 0;
     pin->i_nr_sects = 0;
     sync_inode(pin);
-    put_inode(pin); // release slot in inode_table
+    put_inode(pin); // release slot in inode table
 
     // ============= set inode_nr to 0 in directory entry
     int dir_blk0_nr = dir_inode->i_start_sect;
@@ -584,4 +587,9 @@ PUBLIC int do_unlink(struct s_message* msg){
 	}
 
     return 0;
+}
+
+PUBLIC void reset_filedesc_table(){
+    for(int i = 0; i < NR_FILE_DESC; i++)
+        memset(&f_desc_table[i], 0, sizeof(struct file_desc));
 }

@@ -24,34 +24,6 @@ PRIVATE int fs_fork(struct s_message* pmsg){
     }
 }
 
-PRIVATE void read_super_block(int dev){
-    int i;
-    MESSAGE driver_msg;
-
-    driver_msg.type = DEV_READ;
-    driver_msg.DEVICE = MINOR(dev);
-    driver_msg.POSITION = SECTOR_SIZE * 1;
-    driver_msg.BUF = fsbuf;
-    driver_msg.CNT = SECTOR_SIZE;
-    driver_msg.PROC_NR = TASK_FS;
-
-    kassert(dd_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
-    send_recv(BOTH, dd_map[MAJOR(dev)].driver_nr, &driver_msg);
-
-    // find a free slot in super_block[]
-    for(i = 0; i < NR_SUPER_BLOCK; i++){
-        if(super_block[i].sb_dev == NO_DEV) break;
-    }
-
-    if(i == NR_SUPER_BLOCK) 
-        kpanic("super_block slots used up.\n");
-    
-    kassert(i == 0); // currently we only use the 1st slot
-
-    struct super_block* psb = (struct super_block*)fsbuf;
-    super_block[i] = *psb; // TODO: copy data over ??
-    super_block[i].sb_dev = dev;
-}
 
 /** <ring 1> 
  * write a super block to sector 1
@@ -191,42 +163,31 @@ PRIVATE void mkfs(){
     WR_SECT(ROOT_DEV, sb.n_1st_sect);    
 }
 
-// TODO: remove global vars
-PRIVATE void init_fs(){
-    int i;
-
-    // init f_desc_table[]
-    for(i = 0; i < NR_FILE_DESC; i++)
-        memset(&f_desc_table[i], 0, sizeof(struct file_desc));
-    
-    // init inode_table[]
-    for(i = 0; i < NR_INODE; i++)
-        memset(&inode_table[i], 0, sizeof(struct inode));
-
-    // init super_black[]
-    struct super_block* sb = super_block;
-    for(; sb < &super_block[NR_SUPER_BLOCK]; sb++)
-        sb->sb_dev = NO_DEV;
-
-    // open device - hard disk
+PRIVATE void open_hd(){
     MESSAGE driver_msg;
     driver_msg.type = DEV_OPEN;
     driver_msg.DEVICE = MINOR(ROOT_DEV);
     kassert(dd_map[MAJOR(ROOT_DEV)].driver_nr != INVALID_DRIVER);
     send_recv(BOTH, dd_map[MAJOR(ROOT_DEV)].driver_nr, &driver_msg);
+}
+
+PRIVATE void init_fs(){
+    reset_filedesc_table();
+    reset_inode_table();    
+    reset_superblock_table();
+
+    open_hd();
 
     mkfs();
-
-    // load super block of ROOT
-    read_super_block(ROOT_DEV);
-    sb = get_super_block(ROOT_DEV);
-    kassert(sb->magic == MAGIC_V1);
-
+    
+    load_super_block(ROOT_DEV);
+    //struct super_block* sb = get super block(ROOT_DEV);
+    
     root_inode = get_inode(ROOT_DEV, ROOT_INODE);
 }
 
-PRIVATE int fs_exit(struct s_message* pmsg){
-    struct proc* p = &proc_table[pmsg->PID];
+PRIVATE int fs_exit(int pid){
+    struct proc* p = &proc_table[pid];
     for(int i = 0; i < NR_FILES; i++){
         if(p->filp[i]){
             // release inode
@@ -241,11 +202,10 @@ PRIVATE int fs_exit(struct s_message* pmsg){
     return 0;
 }
 
-MESSAGE fs_msg; 
 PUBLIC void task_fs(){
     kprintf(">>> 2. task_fs is running\n");
     init_fs();
-    //MESSAGE fs_msg; 
+    MESSAGE fs_msg; 
     struct proc* pcaller;
     while(1){
         send_recv(RECEIVE, ANY, &fs_msg);    
@@ -279,7 +239,7 @@ PUBLIC void task_fs(){
              	fs_msg.RETVAL = fs_fork(&fs_msg); 
              	break; 
             case EXIT: 
-             	fs_msg.RETVAL = fs_exit(&fs_msg); 
+             	fs_msg.RETVAL = fs_exit(fs_msg.PID); 
              	break; 
             /* case STAT: */
             /* 	fs_msg.RETVAL = do_stat(); */

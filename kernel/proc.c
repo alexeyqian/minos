@@ -39,6 +39,16 @@ struct task         user_proc_table[NR_PROCS]={
 						{test_c,   STACK_SIZE_TESTC, "test_c"}
 					};	
 
+PUBLIC void init_descriptor(struct descriptor* p_desc, uint32_t base, uint32_t limit, uint16_t attribute)
+{
+	p_desc->limit_low	     = limit & 0x0FFFF;		         // 段界限 1		(2 字节)
+	p_desc->base_low		 = base & 0x0FFFF;		         // 段基址 1		(2 字节)
+	p_desc->base_mid		 = (base >> 16) & 0x0FF;		 // 段基址 2		(1 字节)
+	p_desc->attr1			 = attribute & 0xFF;		     // 属性 1
+	p_desc->limit_high_attr2 = ((limit >> 16) & 0x0F) | ((attribute >> 8) & 0xF0); // 段界限 2 + 属性 2
+	p_desc->base_high		 = (base >> 24) & 0x0FF;		 // 段基址 3		(1 字节)
+}
+
 PUBLIC void init_proc_table(){
 	uint8_t privilege, rpl;
 	int i, j, eflags, prio;
@@ -136,7 +146,6 @@ PUBLIC void init_proc_table(){
 // first process, parent for all user processes.
 void init(){
 	kprintf(">>> 6. init is running\n");
-
 	int fd_stdin = open("/dev_tty0", O_RDWR);
 	kassert(fd_stdin == 0);
 	int fd_stdout = open("/dev_tty0", O_RDWR);
@@ -149,22 +158,18 @@ void init(){
 
 	int pid = fork();
 	if(pid != 0){ // parent process
-		printf(">>> parent is running, child pid: %d\n", pid);
-		//int s;
-		//int child = wait(&s);
-		//kprintf("child %d exited with status: %d", child, s);
-		while(1){}
+		printf(">>> [Parent] parent is running, child pid: %d\n", pid);
+		int s;
+		int child = wait(&s);
+		printf(">>> [Parent] child %d exited with status: %d", child, s);
 	}else { // child process
-		printf("child process\n");
-		//printf(">>> child process is running, pid: %d\n", getpid());
-		while(1){}
-		//execl("/echo", "echo", "hello", "world", 0);
-		//exit(123);
+		printf(">>> [Child] child process is running, pid: %d\n", getpid());
+		exit(123);
 	}	
-	/*
+	// keep wating for other process to exist as transferred parents.
 	while(1){
 		int s;
 		int child = wait(&s);
-		printf("child %d exited with satus: %d\n", child, s);
-	}*/
+		printf("[Init] child %d exited with satus: %d\n", child, s);
+	}
 }

@@ -8,6 +8,9 @@
 #include "kio.h"
 #include "ipc.h"
 #include "klib.h"
+#include "string.h"
+#include "screen.h"
+#include "proc.h"
 
 PRIVATE int alloc_mem(int pid, int memsize){
     kassert(pid >= (NR_TASKS + NR_NATIVE_PROCS));
@@ -32,7 +35,7 @@ PUBLIC int free_mem(int pid){
 /*
  * @return 0 if success, otherwise -1 * 
  * */
-PRIVATE int do_fork(){
+PRIVATE int do_fork(MESSAGE* msg){
     // find a free slot in proc table
     struct proc* p = proc_table;
     int i;
@@ -46,7 +49,7 @@ PRIVATE int do_fork(){
     if(i >= NR_TASKS + NR_PROCS) return -1;
 
     // duplicate the process table    
-    int pid = g_mm_msg.source;
+    int pid = msg->source;
     uint16_t child_ldt_sel = p->ldt_sel;
     *p = proc_table[pid];       // shadow copy struct proc from parent to child pointing by p
     p->ldt_sel = child_ldt_sel; // restore child ldt selector
@@ -71,7 +74,6 @@ PRIVATE int do_fork(){
     kassert((caller_t_base == caller_ds_base) 
         && (caller_t_limit == caller_ds_limit)
         && (caller_t_size == caller_ds_size));
-    //kprintf(">>> do_fork:: 5, caller_ds_limit: 0x%x, size:0x%x\n", caller_ds_limit, caller_ds_size);
     
     int child_base = alloc_mem(child_pid, caller_t_size);
     kprintf("{mm} 0x%x <- 0x%x (0x%x bytes)\n", child_base, caller_t_base, caller_t_size);
@@ -95,7 +97,7 @@ PRIVATE int do_fork(){
     send_recv(BOTH, TASK_FS, &msg2fs);
     
     // child pid will be returned to the parent proc
-    g_mm_msg.PID = child_pid;
+    msg->PID = child_pid;
 
     //struct proc* temp_proc = &proc_table[child_pid];
     //kprintf("proc: flag: %d, sendto: %d, receive from: %d", temp_proc->p_flags, temp_proc->p_sendto, temp_proc->p_recvfrom);
@@ -158,9 +160,9 @@ PRIVATE void cleanup(struct proc* proc){
 *                       do_wait()::comment::<1>
  * 
  * */
-PUBLIC void do_exit(int status){
+PUBLIC void do_exit(int caller, int status){
     int i;
-    int pid = g_mm_msg.source; // pid of caller
+    int pid = caller;
     int parent_pid = proc_table[pid].p_parent;
     struct proc* p = &proc_table[pid];
 
@@ -233,9 +235,8 @@ PUBLIC void do_exit(int status){
  *             {P's wait() call is done}
  *     <4> return (MM will go on with the next message loop)
  **/
-PUBLIC void do_wait(){
-    kprintf("{mm} ((--do_wait()--))");
-    int pid = g_mm_msg.source;
+PUBLIC void do_wait(int caller){
+    int pid = caller;
     int i;
     int children = 0;
     struct proc* p_proc = proc_table;
@@ -262,39 +263,35 @@ PUBLIC void do_wait(){
 
 PUBLIC void task_mm(){
     kprintf(">>> 4. task_mm is running\n");
-
+    MESSAGE mm_msg;
     while(1){
-        send_recv(RECEIVE, ANY, &g_mm_msg);
-        int src = g_mm_msg.source;
+        send_recv(RECEIVE, ANY, &mm_msg);
+        int src = mm_msg.source;
         int reply = 1;
 
-        int msgtype = g_mm_msg.type;
+        int msgtype = mm_msg.type;
 
         switch(msgtype){
             case FORK:
-                kprintf("before do fork\n");
-                g_mm_msg.RETVAL = do_fork();
-                kprintf("after do fork\n");
+                mm_msg.RETVAL = do_fork(&mm_msg);
                 break;
             case EXIT:
-                do_exit(g_mm_msg.STATUS);
+                do_exit(mm_msg.source, mm_msg.STATUS);
                 reply = 0;
                 break;
             case WAIT:
-                do_wait();
+                do_wait(mm_msg.source);
                 reply = 0;
                 break;
             default:
-                dump_msg("mm: unknow message", &g_mm_msg);
+                dump_msg("mm: unknow message", &mm_msg);
                 kassert(0);
                 break;
         }
 
         if(reply){
-            g_mm_msg.type = SYSCALL_RET;
-            kprintf("task_mm::send back begin, src: %c\n");
-            send_recv(SEND, src, &g_mm_msg);
-            kprintf("task_mm::send back end\n");
+            mm_msg.type = SYSCALL_RET;
+            send_recv(SEND, src, &mm_msg);
         }
     }
 }

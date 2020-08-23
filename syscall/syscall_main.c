@@ -29,13 +29,12 @@ PUBLIC void task_sys(){
             case GET_TICKS:
                 msg.RETVAL = ticks;
                 send_recv(SEND, src, &msg);
-                break;
-            /*
+                break;            
             case GET_PID:
                 msg.type = SYSCALL_RET;
                 msg.PID = src;
                 send_recv(SEND, src, &msg); 
-                break;*/
+                break;
             default:
                 kpanic("unknown msg type");
                 break;

@@ -30,6 +30,10 @@ int search_file(char* path);
 struct inode* get_inode(int dev, int num);
 struct super_block* get_super_block(int dev);
 int rw_sector(int io_type, int dev, uint64_t pos, int bytes, int proc_nr, void* buf);
+void reset_inode_table();
+void reset_superblock_table();
+int is_valid_inode(struct inode* pin);
+void load_super_block(int dev);
 
 /**
  * Since all invocations of `rw_sector()' in FS look similar (most of the

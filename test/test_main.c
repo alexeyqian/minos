@@ -8,6 +8,7 @@
 #include "string.h"
 #include "klib.h"
 #include "kio.h"
+#include "screen.h"
 
 void test_delay(){
     while(1){			

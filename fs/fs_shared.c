@@ -11,14 +11,67 @@
 #include "ipc.h"
 #include "hd.h"
 
+PRIVATE struct inode inode_table[NR_INODE];
+PRIVATE struct super_block super_block_table[NR_SUPER_BLOCK]; 
+
+PUBLIC void reset_inode_table(){
+    for(int i = 0; i < NR_INODE; i++)
+        memset(&inode_table[i], 0, sizeof(struct inode));
+}
+
+PUBLIC void reset_superblock_table(){
+    struct super_block* sb = super_block_table;
+    for(; sb < &super_block_table[NR_SUPER_BLOCK]; sb++)
+        sb->sb_dev = NO_DEV;
+}
+
+PUBLIC int is_valid_inode(struct inode* pin){
+    if(pin >= &inode_table[0] && pin < &inode_table[NR_INODE])
+        return 1;
+    else 
+        return 0;
+}
+
 PUBLIC struct super_block* get_super_block(int dev){
-    struct super_block* sb = super_block;
-    for(; sb < &super_block[NR_SUPER_BLOCK]; sb++){
-        if(sb->sb_dev == dev) return sb;
+    struct super_block* sb = super_block_table;
+    for(; sb < &super_block_table[NR_SUPER_BLOCK]; sb++){
+        if(sb->sb_dev == dev) {
+            kassert(sb->magic == MAGIC_V1);
+            return sb;
+        }
     }
 
     kpanic("super block of device %d not found.\n", dev);
     return 0;
+}
+
+PUBLIC void load_super_block(int dev){
+    int i;
+    MESSAGE driver_msg;
+
+    driver_msg.type = DEV_READ;
+    driver_msg.DEVICE = MINOR(dev);
+    driver_msg.POSITION = SECTOR_SIZE * 1;
+    driver_msg.BUF = fsbuf;
+    driver_msg.CNT = SECTOR_SIZE;
+    driver_msg.PROC_NR = TASK_FS;
+
+    kassert(dd_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
+    send_recv(BOTH, dd_map[MAJOR(dev)].driver_nr, &driver_msg);
+
+    // find a free slot in super block table
+    for(i = 0; i < NR_SUPER_BLOCK; i++){
+        if(super_block_table[i].sb_dev == NO_DEV) break;
+    }
+
+    if(i == NR_SUPER_BLOCK) 
+        kpanic("super block slots used up.\n");
+    
+    kassert(i == 0); // currently we only use the 1st slot
+
+    struct super_block* psb = (struct super_block*)fsbuf;
+    super_block_table[i] = *psb; // TODO: copy data over ??
+    super_block_table[i].sb_dev = dev;    
 }
 
 /** <ring 1> r/w a sector via messageing 

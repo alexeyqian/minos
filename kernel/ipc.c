@@ -13,7 +13,7 @@
 
 #include "clock.h" // using schedule()
 
-// ring 0, this routine is called after p_flags has been set != 0
+// <ring 0>, this routine is called after p_flags has been set != 0
 // it calls schedule to choose another proc as the proc_ready
 // this routing doesnot change the p_flags.
 PRIVATE void block(struct proc* p){
@@ -21,13 +21,13 @@ PRIVATE void block(struct proc* p){
     schedule();
 }
 
-// ring 0, this is a dummy routing. it does nothing actually.
+// <ring 0>, this is a dummy routing. it does nothing actually.
 // when it is called, the p_flags should have been cleared (==0)
 PRIVATE void unblock(struct proc* p){
     kassert(p->p_flags == 0);
 }
 
-// ring 0, check where it is safe to send a message from src to dest.
+// <ring 0>, check where it is safe to send a message from src to dest.
 // the routing will detect if the msaage graph contains a circle.
 // for instance, if we have procs trying to send messages like this:
 // A->B->C->A, then a deadlock occures, because all of them will wait forever.
@@ -58,11 +58,14 @@ PRIVATE int deadlock(int src, int dest)
 }
 
 
-// <ring 0> send a message to the dest proc.
-// if the dest is blocked waiting for the message, 
-// copy the message to it and unlock dest.
-// otherwise the caller will be blocked and appended to the dest's sending queue.
-// 0 if success
+/*
+ * <ring 0> send a message to the dest proc.
+ * if the dest is blocked waiting for the message, 
+ * copy the message to it and unlock dest.
+ * otherwise the caller will be blocked and appended to the dest's sending queue.
+ * 
+ * @return 0 if success
+* */
 PRIVATE int msg_send(struct proc* current, int dest, MESSAGE* m){
     struct proc* sender = current;
     struct proc* p_dest = proc_table + dest;
@@ -124,10 +127,12 @@ PRIVATE int msg_send(struct proc* current, int dest, MESSAGE* m){
     return 0;
 }
 
-// <ring 0> try to get a message from the src proc.
-// if the src is blocked sending the message, 
-// copy the message from it and unlock src.
-// Otherwise the caller will be blocked.
+/*
+ * <ring 0> try to get a message from the src proc.
+ * if the src is blocked sending the message, 
+ * copy the message from it and unlock src.
+ * Otherwise the caller will be blocked.
+*/
 PRIVATE int msg_receive(struct proc* current, int src, MESSAGE* m){
     struct proc* p_who_wanna_recv = current;
     struct proc* p_from = 0;
