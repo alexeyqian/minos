@@ -11,6 +11,9 @@
 #define SHF_ALLOC		0x2
 #define SHF_EXECINSTR   0x4
 
+#define PT_NULL 0
+#define PT_LOAD 1
+
 typedef uint32_t elf32_addr;
 typedef uint16_t elf32_half;
 typedef uint32_t elf32_off;

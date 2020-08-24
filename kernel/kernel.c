@@ -130,3 +130,62 @@ uint32_t before_paging_selector_to_segbase(uint16_t selector){
 	struct descriptor* p_dest = &gdt[selector >> 3];
 	return (p_dest->base_high << 24) | (p_dest->base_mid << 16) | (p_dest->base_low);
 }
+
+void shell(const char* tty_name){
+	int fd_stdin = open(tty_name, O_RDWR);
+	kassert(fd_stdin == FD_STDIN);
+	int fd_stdout = open(tty_name, O_RDWR);
+	kassert(fd_stdout == FD_STDOUT);
+
+	char rdbuf[128];
+	while(1){
+		write(FD_STDOUT, "$ ", 2);
+		int r = read(FD_STDIN, rdbuf, 70);
+		rdbuf[r] = 0;
+
+		int argc = 0;
+		char* argv[PROC_ORIGIN_STACK];
+		char* p = rdbuf;
+		char* s;
+		int word = 0;
+		char ch;
+		do{
+			ch = *p;
+
+			if(*p != ' ' && *p != 0 && !word){ // begin word
+				s = p;
+				word = 1;
+			}
+
+			if((*p == ' ' || *p == 0) && word){ // end word
+				word = 0;
+				argv[argc++] = s;
+				*p = 0;
+			}
+
+			p++;
+		}while(ch);
+
+		argv[argc] = 0;
+
+		int fd = open(argv[0], O_RDWR);
+		if(fd == -1){
+			if(rdbuf[0]){
+				write(FD_STDOUT, rdbuf, r);
+				write(FD_STDOUT, '\n', 1);
+			}
+		}else{
+			close(fd);
+			int pid = fork();
+			if(pid != 0) { // parent
+				int s;
+				wait(&s);
+			}else{ // child
+				execv(argv[0], argv);
+			}
+		}
+	}
+
+	close(FD_STDOUT);
+	close(FD_STDIN);
+}

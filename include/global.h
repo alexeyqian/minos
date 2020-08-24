@@ -11,10 +11,10 @@
 #define EXTERN
 #endif
 
-EXTERN uint32_t g_disp_pos; // for screen.c and tty.c
+EXTERN int                k_reenter;
+EXTERN uint32_t           g_disp_pos; 
+EXTERN uint32_t           ticks;
 EXTERN struct boot_params g_boot_params;
-EXTERN int k_reenter;
-EXTERN int ticks;
 
 EXTERN uint8_t              gdt_ptr[6];	               
 EXTERN struct descriptor    gdt[GDT_SIZE];
@@ -27,16 +27,14 @@ EXTERN struct proc         proc_table[NR_TASKS + NR_PROCS]; // contains array of
 
 EXTERN pf_irq_handler_t    irq_table[IRQ_NUM];
 EXTERN syscall_t           syscall_table[NR_SYSCALLS];
-EXTERN struct dev_drv_map  dd_map[];
 
 // fs
-EXTERN struct inode* root_inode;
-extern	uint8_t* fsbuf;
+extern	uint8_t*  fsbuf;
 extern	const int FSBUF_SIZE;
-
 // mm
-extern uint8_t* mmbuf;
-extern const int MMBUF_SIZE;
+extern	uint8_t*  mmbuf;
+extern	const int MMBUF_SIZE;
+
 
 // tty
 EXTERN int key_pressed; // used for clock_handler to wake up TASK_TTY when a key is pressed

@@ -34,6 +34,7 @@ void reset_inode_table();
 void reset_superblock_table();
 int is_valid_inode(struct inode* pin);
 void load_super_block(int dev);
+int get_dev_driver(uint32_t dev);
 
 /**
  * Since all invocations of `rw_sector()' in FS look similar (most of the

@@ -47,8 +47,7 @@ PRIVATE void mkfs(){
     driver_msg.BUF = &geo;
     driver_msg.PROC_NR = TASK_FS;
 
-    kassert(dd_map[MAJOR(ROOT_DEV)].driver_nr != INVALID_DRIVER);
-    send_recv(BOTH, dd_map[MAJOR(ROOT_DEV)].driver_nr, &driver_msg);
+    send_recv(BOTH, get_dev_driver(ROOT_DEV), &driver_msg);
 
     //kprintf("dev size: 0x%x sectors\n", geo.size);
 
@@ -167,23 +166,16 @@ PRIVATE void open_hd(){
     MESSAGE driver_msg;
     driver_msg.type = DEV_OPEN;
     driver_msg.DEVICE = MINOR(ROOT_DEV);
-    kassert(dd_map[MAJOR(ROOT_DEV)].driver_nr != INVALID_DRIVER);
-    send_recv(BOTH, dd_map[MAJOR(ROOT_DEV)].driver_nr, &driver_msg);
+    send_recv(BOTH, get_dev_driver(ROOT_DEV), &driver_msg);
 }
 
 PRIVATE void init_fs(){
     reset_filedesc_table();
     reset_inode_table();    
     reset_superblock_table();
-
     open_hd();
-
     mkfs();
-    
     load_super_block(ROOT_DEV);
-    //struct super_block* sb = get super block(ROOT_DEV);
-    
-    root_inode = get_inode(ROOT_DEV, ROOT_INODE);
 }
 
 PRIVATE int fs_exit(int pid){
@@ -241,9 +233,9 @@ PUBLIC void task_fs(){
             case EXIT: 
              	fs_msg.RETVAL = fs_exit(fs_msg.PID); 
              	break; 
-            /* case STAT: */
-            /* 	fs_msg.RETVAL = do_stat(); */
-            /* 	break; */
+            case STAT: 
+             	fs_msg.RETVAL = do_stat(&fs_msg); 
+             	break; 
             default:
                 dump_msg("fs: unknow message: ", &fs_msg);
                 kassert(0);

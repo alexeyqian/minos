@@ -225,7 +225,7 @@
 #define SECTOR_BITS		(SECTOR_SIZE * 8)
 #define SECTOR_SIZE_SHIFT	9
 
-/* major device numbers (corresponding to kernel/global.c::dd_map[]) */
+/* major device numbers (corresponding to kernel/global.c::dd map array) */
 #define	NO_DEV			0
 #define	DEV_FLOPPY		1
 #define	DEV_CDROM		2
@@ -287,6 +287,7 @@
 #define	PATHNAME	u.m3.m3p1 
 #define	FLAGS		u.m3.m3i1 
 #define	NAME_LEN	u.m3.m3i2 
+#define BUF_LEN     u.m3.m3i3
 #define	CNT		    u.m3.m3i2
 #define	REQUEST		u.m3.m3i2
 #define	PROC_NR		u.m3.m3i3

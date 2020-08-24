@@ -14,6 +14,22 @@
 PRIVATE struct inode inode_table[NR_INODE];
 PRIVATE struct super_block super_block_table[NR_SUPER_BLOCK]; 
 
+// remember to modify include/const.h if the order is changed
+PRIVATE struct dev_drv_map dd_map[] = {
+    {INVALID_DRIVER}, // unused
+    {INVALID_DRIVER}, // reserved for floppy driver
+    {INVALID_DRIVER}, // reserved for cdrom
+    {TASK_HD},        // hard disk: driver is task_hd
+    {TASK_TTY},       // tty
+    {INVALID_DRIVER}  // reserved for scsi disk driver
+};
+
+PUBLIC int get_dev_driver(uint32_t dev){
+    int retval = dd_map[MAJOR(dev)].driver_nr;
+    kassert(retval != INVALID_DRIVER);
+    return retval;
+}
+
 PUBLIC void reset_inode_table(){
     for(int i = 0; i < NR_INODE; i++)
         memset(&inode_table[i], 0, sizeof(struct inode));
@@ -55,9 +71,7 @@ PUBLIC void load_super_block(int dev){
     driver_msg.BUF = fsbuf;
     driver_msg.CNT = SECTOR_SIZE;
     driver_msg.PROC_NR = TASK_FS;
-
-    kassert(dd_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
-    send_recv(BOTH, dd_map[MAJOR(dev)].driver_nr, &driver_msg);
+    send_recv(BOTH, get_dev_driver(dev), &driver_msg);
 
     // find a free slot in super block table
     for(i = 0; i < NR_SUPER_BLOCK; i++){
@@ -93,8 +107,7 @@ PUBLIC int rw_sector(int io_type, int dev, uint64_t pos, int bytes, int proc_nr,
     driver_msg.BUF = buf;
     driver_msg.CNT = bytes;
     driver_msg.PROC_NR = proc_nr;
-    kassert(dd_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
-    send_recv(BOTH, dd_map[MAJOR(dev)].driver_nr, &driver_msg);
+    send_recv(BOTH, get_dev_driver(dev), &driver_msg);
     return 0;
 }
 
@@ -198,7 +211,7 @@ PUBLIC int search_file(char* path){
  *
  * e.g. After stip_path(filename, "/blah", ppinode) finishes, we get:
  *      - filename: "blah"
- *      - *ppinode: root_inode
+ *      - *ppinode: rootinode
  *      - ret val:  0 (successful)
  *
  * Currently an acceptable pathname should begin with at most one `/'
@@ -227,6 +240,6 @@ PUBLIC int strip_path(char* filename, const char* pathname, struct inode** ppino
         if(t - filename >= MAX_FILENAME_LEN) break;
     }
     *t = 0;
-    *ppinode = root_inode;
+    *ppinode = get_inode(ROOT_DEV, ROOT_INODE);
     return 0;
 }

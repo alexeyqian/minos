@@ -56,10 +56,19 @@ struct file_desc{
     struct inode* fd_inode;  // pointer to inode    
 };
 
+struct stat{
+    int st_dev;  // major/minor device number
+    int st_ino;  // i-node number
+    int st_mode; // file mode, protection bits, etc
+    int st_rdev; // device ID if it's special file
+    int st_size; //file size
+};
+
 void task_fs();
 int open(const char* pathname, int flags);
 int close(int fd);
 int read(int fd, void* buf, int count);
 int write(int fd, const void* buf, int count);
 int unlink(const char* pathname);
+int stat(const char* path, struct stat* buf);
 #endif

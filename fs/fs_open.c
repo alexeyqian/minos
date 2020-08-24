@@ -279,8 +279,7 @@ PUBLIC int do_open(MESSAGE* pmsg, struct proc* caller){
             int dev = pin->i_start_sect;
             driver_msg.DEVICE = MINOR(dev);
             kassert(MAJOR(dev) == 4);
-            kassert(dd_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
-            send_recv(BOTH, dd_map[MAJOR(dev)].driver_nr, &driver_msg);
+            send_recv(BOTH, get_dev_driver(dev), &driver_msg);
         }else if(imode == I_DIRECTORY){
             kassert(pin->i_num == ROOT_INODE);
         }else{
@@ -371,8 +370,7 @@ PUBLIC int do_rdwt(struct s_message* pmsg, struct proc* caller){
         pmsg->BUF = buf;
         pmsg->CNT = len;
         pmsg->PROC_NR = src;
-        kassert(dd_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
-        send_recv(BOTH, dd_map[MAJOR(dev)].driver_nr, pmsg);
+        send_recv(BOTH, get_dev_driver(dev), pmsg);
         kassert(pmsg->CNT == len);
 
         return pmsg->CNT;
@@ -585,6 +583,48 @@ PUBLIC int do_unlink(struct s_message* msg){
 		dir_inode->i_size = dir_size;
 		sync_inode(dir_inode);
 	}
+
+    return 0;
+}
+
+PUBLIC int do_stat(MESSAGE* pmsg){
+    char pathname[MAX_PATH];
+    char filename[MAX_PATH];
+
+    int name_len = pmsg->NAME_LEN;
+    int src = pmsg->source;
+    kassert(name_len < MAX_PATH);
+    phys_copy((void*)va2la(TASK_FS, pathname),
+              (void*)va2la(src, pmsg->PATHNAME),
+              name_len);
+    pathname[name_len] = 0;
+
+    int inode_nr = search_file(pathname);
+    if(inode_nr == INVALID_INODE){
+        kprintf("fs::do_stat search file returns invalid inode %s\n", pathname);
+        return -1;
+    }
+
+    struct inode* pin = 0;
+    struct inode* dir_inode;
+    if(strip_path(filename, pathname, &dir_inode) != 0){
+        kassert(0);
+    }
+
+    pin = get_inode(dir_inode->i_dev, inode_nr);
+
+    struct stat s;
+    s.st_dev = pin->i_dev;
+    s.st_ino = pin->i_num;
+    s.st_mode = pin->i_mode;
+    s.st_rdev = is_special(pin->i_mode) ? pin->i_start_sect : NO_DEV;
+    s.st_size = pin->i_size;
+
+    put_inode(pin);
+
+    phys_copy((void*)va2la(src, pmsg->BUF),
+              (void*)va2la(TASK_FS, &s),
+              sizeof(struct stat));
 
     return 0;
 }

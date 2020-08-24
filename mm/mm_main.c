@@ -11,6 +11,7 @@
 #include "string.h"
 #include "screen.h"
 #include "proc.h"
+#include "elf.h"
 
 PRIVATE int alloc_mem(int pid, int memsize){
     kassert(pid >= (NR_TASKS + NR_NATIVE_PROCS));
@@ -259,6 +260,75 @@ PUBLIC void do_wait(int caller){
         msg.PID = NO_TASK;
         send_recv(SEND, pid, &msg);
     }
+}
+
+PRIVATE int do_exec(MESSAGE* pmsg){
+    // get params from message
+    int name_len = pmsg->NAME_LEN;
+    int src = pmsg->source;
+    kassert(name_len < MAX_PATH);
+
+    char pathname[MAX_PATH];
+    phys_copy((void*)va2la(TASK_MM, pathname), 
+              (void*)va2la(src,     pmsg->PATHNAME), 
+              name_len);
+    pathname[name_len] = 0;
+
+    // get file size
+    struct stat s;
+    int ret = stat(pathname, &s);
+    if(ret != 0){
+        kprintf("mm::do_exec stat returns error. %s", pathname);
+        return -1;
+    }
+
+    //read file to memory buffer
+    int fd = open(pathname, O_RDWR);
+    if(fd == -1) return -1;
+    kassert(s.st_size < MMBUF_SIZE);
+    read(fd, mmbuf, s.st_size);
+    close(fd);
+
+    // overrite the current proc image with the new one
+    elf32_ehdr* elf_hdr = (elf32_ehdr*)(mmbuf);
+    int i;
+    for(i = 0; i < elf_hdr->e_phnum; i++){
+        elf32_phdr* prog_hdr = (elf32_phdr*)(mmbuf + elf_hdr->e_phoff + (i * elf_hdr->e_phentsize));
+        if(prog_hdr->p_type == PT_LOAD){
+            kassert(prog_hdr->p_vaddr + prog_hdr->p_memsz < PROC_IMAGE_SIZE_DEFAULT);
+            phys_copy((void*)va2la(src,     (void*)prog_hdr->p_vaddr),
+                      (void*)va2la(TASK_MM, mmbuf + prog_hdr->p_offset),
+                      prog_hdr->p_filesz);
+        }
+    }
+
+    // setup the arg stack
+    int orig_stack_len = pmsg->BUF_LEN;
+    char stackcopy[PROC_ORIGIN_STACK];
+    phys_copy((void*)va2la(TASK_MM, stackcopy),
+              (void*)va2la(src, pmsg->BUF),
+              orig_stack_len); // copy to mm task for processing: adjust address
+    uint8_t* orig_stack = (uint8_t*)(PROC_IMAGE_SIZE_DEFAULT - PROC_ORIGIN_STACK);
+    int delta = (int)orig_stack - (int)pmsg->BUF;
+    int argc = 0;
+    if(orig_stack_len){
+        char** q = (char**)stackcopy;
+        for(; *q != 0; q++, argc++)
+            *q += delta;
+    }
+
+    phys_copy((void*)va2la(src, orig_stack),
+              (void*)va2la(TASK_MM, stackcopy),
+              orig_stack_len); // copy back after processing: adjust address
+
+    proc_table[src].regs.ecx = argc; 
+    proc_table[src].regs.eax = (uint32_t)orig_stack; // argv
+    // setup eip & esp
+    proc_table[src].regs.eip = elf_hdr->e_entry;
+    proc_table[src].regs.esp = PROC_IMAGE_SIZE_DEFAULT - PROC_ORIGIN_STACK;
+    strcpy(proc_table[src].p_name, pathname);
+
+    return 0;
 }
 
 PUBLIC void task_mm(){

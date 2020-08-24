@@ -10,5 +10,6 @@ int getpid();
 int wait(int* status);
 void exit(int status);
 int fork();
-
+int exel(const char* path, const char *arg, ...);
+int execv(const char* path, char* argv[]);
 #endif

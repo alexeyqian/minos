@@ -9,6 +9,7 @@ int  do_close(struct s_message* pmsg, struct proc* caller);
 int  do_lseek(struct s_message* pmsg, struct proc* caller);
 int   do_rdwt(struct s_message* pmsg, struct proc* caller);
 int do_unlink(struct s_message* pmsg);
+int   do_stat(struct s_message* pmsg);
 void reset_filedesc_table();
 
 #endif
