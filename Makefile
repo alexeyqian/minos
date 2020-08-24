@@ -27,8 +27,7 @@ boot/loader.bin: boot/loader.asm
 	nasm $< -f bin -I 'boot/' -o $@
 
 kernel/kernel.bin: $(C_SOURCES) $(C_HEADERS) \
-		fs/fs_main.c fs/fs_open.c fs/fs_shared.c fs/fs_shared.h fs/fs_open.h \
-		mm/mm_main.c 
+		fs/fs_main.c fs/fs_open.c fs/fs_shared.c fs/fs_shared.h fs/fs_open.h mm/mm_main.c 
 	nasm kernel/kernel_entry.asm -f elf32 -I 'kernel/' -o kernel/kernel_entry.o	
 	nasm lib/syscalls.asm -f elf32 -I 'lib/' -o lib/syscalls.o	
 	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/boot_params.o kernel/boot_params.c
@@ -57,19 +56,30 @@ kernel/kernel.bin: $(C_SOURCES) $(C_HEADERS) \
 	$(CROSS_COMPILER) $(C_FLAGS) -o lib/vsprintf.o     lib/vsprintf.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o lib/string.o       lib/string.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o lib/assert.o       lib/assert.c		
-	$(CROSS_COMPILER) $(C_FLAGS) -o lib/kio.o          lib/kio.c		
+	$(CROSS_COMPILER) $(C_FLAGS) -o lib/stdio.o        lib/stdio.c		
 	$(CROSS_COMPILER) $(C_FLAGS) -o lib/ipclib.o       lib/ipclib.c		
 	$(CROSS_COMPILER) $(C_FLAGS) -o lib/fslib.o        lib/fslib.c		
 	$(CROSS_COMPILER) $(C_FLAGS) -o lib/proclib.o      lib/proclib.c		
 	$(CROSS_COMPILER) -T linker.ld -o $@ -ffreestanding -nostdlib kernel/kernel_entry.o $(C_OBJS) \
 		syscall/syscall_main.o hd/hd_main.o fs/fs_main.o fs/fs_open.o fs/fs_shared.o \
 		tty/tty_main.o mm/mm_main.o test/test_main.o lib/vsprintf.o lib/string.o \
-		lib/kio.o lib/assert.o lib/ipclib.o lib/fslib.o lib/proclib.o lib/syscalls.o -lgcc
-	#ld -m elf_i386 -s -Ttext 0x1000 -nostdlib -o $@ kernel/kernel_entry.o $(C_OBJS) \
+		lib/stdio.o lib/assert.o lib/ipclib.o lib/fslib.o lib/proclib.o lib/syscalls.o -lgcc		
+	ar rcs lib/minoscrt.a lib/vsprintf.o lib/string.o lib/assert.o lib/stdio.o lib/ipclib.o lib/fslib.o lib/proclib.o lib/syscalls.o
+	#inst.tar: command/start.asm command/echo.c	
+	nasm -I include/ -f elf32 -o command/start.o command/start.asm
+	gcc  -I include/ -m32 -c -fno-builtin -Wall -o command/echo.o command/echo.c 
+	ld -Ttext 0x1000 -m elf_i386 -o command/echo command/echo.o command/start.o lib/minoscrt.a
+	tar vcf inst.tar kernel/kernel.bin command/echo 
+
+clean:	
+	@rm -rf os.img inst.tar boot/*.o boot/*.bin kernel/*.o kernel/*.bin fs/*.o mm/*.o lib/*.o lib/*.a command/*.o
+
+# old implementation
+#ld -m elf_i386 -s -Ttext 0x1000 -nostdlib -o $@ kernel/kernel_entry.o $(C_OBJS) \
 	#	syscall/syscall_main.o hd/hd_main.o fs/fs_main.o fs/fs_open.o fs/fs_shared.o \
 	#	tty/tty_main.o mm/mm_main.o test/test_main.o lib/vsprintf.o lib/string.o \
-	#	lib/kio.o lib/assert.o lib/ipclib.o lib/fslib.o lib/proclib.o lib/syscalls.o
-	ar rcs lib/minoscrt.a lib/vsprintf.o lib/string.o lib/assert.o lib/kio.o lib/ipclib.o lib/fslib.o lib/proclib.o
+	#	lib/stdio.o lib/assert.o lib/ipclib.o lib/fslib.o lib/proclib.o lib/syscalls.o
+
 
 #kernel/kernel.bin: kernel/kernel_entry.o kernel/kernel.o ${OBJ}
 #	ld -m elf_i386 -Ttext 0x1000 --oformat binary -o $@  $^ 
@@ -79,6 +89,3 @@ kernel/kernel.bin: $(C_SOURCES) $(C_HEADERS) \
 
 #%.o: %.c ${HEADERS}
 #	gcc -m32 -ffreestanding -fno-pie -c $< -o $@
-
-clean:	
-	@rm -rf os.img boot/*.o boot/*.bin kernel/*.o kernel/*.bin fs/*.o mm/*.o lib/*.o lib/*.a

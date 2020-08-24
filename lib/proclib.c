@@ -2,14 +2,17 @@
 #include "const.h"
 #include "types.h"
 #include "ktypes.h"
-#include "assert.h"
+
 #include "ipc.h"
+#include "stdio.h"
+#include "string.h"
+#include "screen.h"
 
 PUBLIC int getpid(){
 	MESSAGE msg;
 	msg.type = GET_PID;
 	send_recv(BOTH, TASK_SYS, &msg);
-	kassert(msg.type == SYSCALL_RET);
+	//assert(msg.type == SYSCALL_RET);
 	return msg.PID;
 }
 
@@ -20,7 +23,7 @@ PUBLIC void exit(int status){
 	msg.type = EXIT;
 	msg.STATUS = status;
 	send_recv(BOTH, TASK_MM, &msg);
-	kassert(msg.type == SYSCALL_RET);
+	//assert(msg.type == SYSCALL_RET);
 }
 
 /**
@@ -37,8 +40,8 @@ PUBLIC int fork(){
     MESSAGE msg;
     msg.type = FORK;
     send_recv(BOTH, TASK_MM, &msg);
-    kassert(msg.type == SYSCALL_RET); // TODO: replace kassert with assert
-    kassert(msg.RETVAL == 0);
+    //assert(msg.type == SYSCALL_RET); // TODO: replace kassert with assert
+    //assert(msg.RETVAL == 0);
 
     return msg.PID;
 }

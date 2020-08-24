@@ -1,18 +1,18 @@
-#include "kio.h"
+#include "stdio.h"
 
 #include "const.h"
 #include "types.h"
 #include "vsprintf.h"
 #include "ke_asm_utils.h"
-#include "assert.h"
+
 #include "fs.h"
-#include "screen.h"
 
 /**
  * Low level print
  * 
  * @return the number of chars printed.
  * */
+/*
 PUBLIC int printl(const char* fmt, ...){
     int i;
     char buf[STR_DEFAULT_LEN];
@@ -20,7 +20,7 @@ PUBLIC int printl(const char* fmt, ...){
     i = vsprintf(buf, fmt, arg);
     printx(buf);
     return i;
-}
+}*/
 
 /**
  * User space print, cannot be used in kernel or tasks.
@@ -50,22 +50,8 @@ PUBLIC int sprintf(char* buf, const char* fmt, ...){
 }
 
 PUBLIC void spin(char* func_name){
-    printl(">>> spinning in %s ... \n", func_name);
-    while(1){}
-}
-
-PUBLIC void kpanic(const char *fmt, ...)
-{
-	char buf[256];
-	va_list arg = (va_list)((char*)&fmt + 4);
-	vsprintf(buf, fmt, arg);
-	//printl("%c !!kpanic!! %s", MAG_CH_PANIC, buf);
-    kprintf("!!kpanic!! %s", buf);
-    halt();
-}
-
-PUBLIC void kspin(char* func_name){
-    kprintf(">>> kspinning in %s ... \n", func_name);
+        //printl(">>> spinning in %s ... \n", func_name);
+    printf(">>> kspinning in %s ... \n", func_name);
     while(1){}
 }
 

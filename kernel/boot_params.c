@@ -1,7 +1,7 @@
 #include "boot_params.h"
 #include "types.h"
 #include "ktypes.h"
-#include "assert.h"
+
 #include "string.h"
 #include "elf.h"
 #include "screen.h"

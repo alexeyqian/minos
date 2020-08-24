@@ -7,8 +7,8 @@
 #include "ktypes.h"
 #include "string.h"
 #include "global.h"
-#include "assert.h"
-#include "kio.h"
+
+#include "stdio.h"
 #include "ipc.h"
 #include "hd.h"
 #include "screen.h"

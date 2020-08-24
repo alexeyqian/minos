@@ -2,9 +2,10 @@
 #include "const.h"
 #include "types.h"
 #include "ktypes.h"
-#include "assert.h"
+
 #include "ipc.h"
 #include "string.h"
+#include "screen.h"
 
 /** 
  * open/create a file
@@ -22,7 +23,7 @@ PUBLIC int open(const char* pathname, int flags){
     //kprintf(">>> fslib::open send begin %s\n", msg.PATHNAME);
     send_recv(BOTH, TASK_FS, &msg);
     //kprintf(">>> fslib::open send end %s\n", msg.PATHNAME);
-    kassert(msg.type == SYSCALL_RET);
+    //assert(msg.type == SYSCALL_RET);
 
     return msg.FD;
 }

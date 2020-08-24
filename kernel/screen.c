@@ -113,15 +113,24 @@ PUBLIC void kprintf(const char *fmt, ...){
 		kprint_char(buf[i], -1, -1, 0);
 }
 
-/*
-PUBLIC void kprint_int_as_hex(int num){
-	char str[16];
-    itoa(num, str, 16);
-    kprintf(str);
+
+PUBLIC void kpanic(const char *fmt, ...)
+{
+	char buf[256];
+	va_list arg = (va_list)((char*)&fmt + 4);
+	vsprintf(buf, fmt, arg);
+	//printl("%c !!kpanic!! %s", MAG_CH_PANIC, buf);
+    kprintf("!!kpanic!! %s", buf);
+    halt();
 }
 
-PUBLIC void kprint(char* str){
-    for(int i=0; str[i]!='\0'; i++)
-		kprint_char(str[i], -1, -1, 0);
+PUBLIC void kspin(char* func_name){
+    kprintf(">>> kspinning in %s ... \n", func_name);
+    while(1){}
 }
-*/
+
+PUBLIC void kassertion_failure(char* exp, char* file, char* base_file, int line){
+    kprintf("!!kassert(%s)!! failed. file: %s, base_file: %s, ln: %d",
+        exp, file, base_file, line);
+    halt();
+}

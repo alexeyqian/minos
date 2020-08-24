@@ -2,7 +2,7 @@
 #include "const.h"
 #include "types.h"
 #include "ktypes.h"
-#include "assert.h"
+
 #include "ke_asm_utils.h"
 #include "string.h"
 
@@ -26,8 +26,8 @@ PUBLIC int send_recv(int function, int src_dest, MESSAGE* p_msg){
             ret = sendrec(function, src_dest, p_msg);
             break;
         default:
-            kassert((function == BOTH) || 
-                (function == SEND) || (function == RECEIVE));
+            //assert((function == BOTH) || 
+            //    (function == SEND) || (function == RECEIVE));
             break;
     }
 

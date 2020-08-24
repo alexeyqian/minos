@@ -8,9 +8,9 @@
 #include "ke_asm_utils.h"
 #include "klib.h"
 #include "keyboard.h"
-#include "assert.h"
+
 #include "ipc.h"
-#include "kio.h"
+#include "stdio.h"
 #include "screen.h"
 
 PRIVATE TTY tty_table[NR_CONSOLES];

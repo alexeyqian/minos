@@ -3,9 +3,9 @@
 #include "types.h"
 #include "ktypes.h"
 #include "global.h"
-#include "assert.h"
+
 #include "string.h"
-#include "kio.h"
+#include "stdio.h"
 #include "ipc.h"
 #include "klib.h"
 #include "string.h"

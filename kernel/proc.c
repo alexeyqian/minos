@@ -7,9 +7,9 @@
 #include "global.h"
 #include "ipc.h"
 #include "ktest.h"
-#include "assert.h"
+
 #include "boot_params.h"
-#include "kio.h"
+#include "stdio.h"
 #include "syscall.h"
 #include "hd.h"
 #include "fs.h"

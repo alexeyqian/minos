@@ -6,8 +6,6 @@
 #include "global.h"
 #include "string.h"
 
-char* itoa(int num, char* str, int base);
-
 #define proc2pid(x) (x - proc_table)
 void* va2la(int pid, void*va);
 

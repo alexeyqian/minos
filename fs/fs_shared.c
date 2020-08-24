@@ -6,10 +6,11 @@
 #include "ktypes.h"
 #include "string.h"
 #include "global.h"
-#include "assert.h"
-#include "kio.h"
+
+#include "stdio.h"
 #include "ipc.h"
 #include "hd.h"
+#include "screen.h"
 
 PRIVATE struct inode inode_table[NR_INODE];
 PRIVATE struct super_block super_block_table[NR_SUPER_BLOCK]; 

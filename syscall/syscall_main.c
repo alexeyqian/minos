@@ -4,10 +4,10 @@
 #include "types.h"
 #include "ktypes.h"
 #include "global.h"
-#include "assert.h"
+
 #include "string.h"
 #include "klib.h"
-#include "kio.h"
+#include "stdio.h"
 
 
 PUBLIC int get_ticks(){

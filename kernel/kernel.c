@@ -7,9 +7,9 @@
 #include "ke_asm_utils.h"
 #include "syscall.h"
 #include "string.h"
-#include "assert.h"
+
 #include "klib.h"
-#include "kio.h"
+#include "stdio.h"
 #include "boot_params.h"
 
 #include "interrupt.h"

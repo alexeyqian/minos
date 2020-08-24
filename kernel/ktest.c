@@ -1,8 +1,8 @@
 #include "ktest.h"
 #include "clock.h"
-#include "kio.h"
+#include "stdio.h"
 #include "fs.h"
-#include "assert.h"
+
 #include "string.h"
 #include "proc.h"
 

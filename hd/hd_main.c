@@ -4,10 +4,11 @@
 #include "ktypes.h"
 #include "global.h"
 #include "ke_asm_utils.h"
-#include "assert.h"
+
 #include "klib.h"
-#include "kio.h"
+#include "stdio.h"
 #include "ipc.h"
+#include "screen.h"
 
 PRIVATE uint8_t hd_status;
 PRIVATE uint8_t hdbuf[SECTOR_SIZE * 2];

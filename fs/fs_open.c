@@ -8,8 +8,8 @@
 #include "string.h"
 #include "global.h"
 #include "klib.h"
-#include "kio.h"
-#include "assert.h"
+#include "stdio.h"
+
 #include "ipc.h"
 #include "screen.h"
 

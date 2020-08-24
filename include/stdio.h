@@ -12,12 +12,9 @@
 #define SEEK_END	3
 
 int sprintf(char* buf, const char* fmt, ...); // print to buf
-int printl(const char *fmt, ...);             // low level print, for kernel/tasks
+//int printl(const char *fmt, ...);             // low level print, for kernel/tasks
 // user process print, cannot use in kernel/tasks
 // prerequisite: tty has already been opened and with fd = 1
 int printf(const char *fmt, ...);             
 
-void kpanic(const char *fmt, ...); // use printl inside
-void kspin(char* func_name);
-void spin(char* func_name);       // use printl insede
 #endif
