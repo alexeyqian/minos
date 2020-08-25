@@ -282,6 +282,9 @@
 #define	NR_INODE	    64	/* FIXME */
 #define	NR_SUPER_BLOCK	8
 
+#define	INSTALL_START_SECT		0x8000
+#define	INSTALL_NR_SECTS		0x800
+
 // =================== IPC messages ==============
 #define	FD		    u.m3.m3i1 
 #define	PATHNAME	u.m3.m3p1 

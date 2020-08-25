@@ -24,55 +24,39 @@ PRIVATE int fs_fork(struct s_message* pmsg){
     }
 }
 
-
-/** <ring 1> 
- * write a super block to sector 1
- * create 3 special files: dev_tty0, dev_tty1, dev_tty2
- * create the inode map
- * create the sector map
- * create the inodes of the files
- * create /, the root directory
- */
-// TODO: add param buf to replace global var fsbuf
-PRIVATE void mkfs(){
-    MESSAGE driver_msg;
-    uint32_t i, j;
-    uint32_t bits_per_sect = SECTOR_SIZE * 8;
-    
+PRIVATE void set_super_block(struct super_block* sb){
     // get the geometry of ROOTDEV
+    MESSAGE driver_msg;    
     struct part_info geo;
     driver_msg.type = DEV_IOCTL;
     driver_msg.DEVICE = MINOR(ROOT_DEV);
     driver_msg.REQUEST = DIOCTL_GET_GEO;
     driver_msg.BUF = &geo;
     driver_msg.PROC_NR = TASK_FS;
-
     send_recv(BOTH, get_dev_driver(ROOT_DEV), &driver_msg);
+    kprintf("dev size: 0x%x sectors\n", geo.size);
 
-    //kprintf("dev size: 0x%x sectors\n", geo.size);
-
-    //========= super block ============
-    struct super_block sb;
-    sb.magic = MAGIC_V1;
-    sb.nr_inodes = bits_per_sect; // maximum nodes
-    sb.nr_inode_sects = sb.nr_inodes * INODE_SIZE / SECTOR_SIZE;
-    sb.nr_sects = geo.size; // partition size in sector
-    sb.nr_imap_sects = 1;   // total inode map size in sector, max inodes = 4096 = 512*8
-    sb.nr_smap_sects = sb.nr_sects / bits_per_sect + 1;
-    sb.n_1st_sect = 1 + 1 // boot sector $ super block
-        + sb.nr_imap_sects + sb.nr_smap_sects + sb.nr_inode_sects;
-    sb.root_inode = ROOT_INODE; // = 1, inode 0 is reserved
-    sb.inode_size = INODE_SIZE;
+    uint32_t bits_per_sect = SECTOR_SIZE * 8;
+    sb->magic = MAGIC_V1;
+    sb->nr_inodes = bits_per_sect; // maximum nodes
+    sb->nr_inode_sects = sb->nr_inodes * INODE_SIZE / SECTOR_SIZE;
+    sb->nr_sects = geo.size; // partition size in sector
+    sb->nr_imap_sects = 1;   // total inode map size in sector, max inodes = 4096 = 512*8
+    sb->nr_smap_sects = sb->nr_sects / bits_per_sect + 1;
+    sb->n_1st_sect = 1 + 1 // boot sector $ super block
+        + sb->nr_imap_sects + sb->nr_smap_sects + sb->nr_inode_sects;
+    sb->root_inode = ROOT_INODE; // = 1, inode 0 is reserved
+    sb->inode_size = INODE_SIZE;
     struct inode x;
-    sb.inode_isize_off = (int)&x.i_size - (int)&x;
-    sb.inode_start_off = (int)&x.i_start_sect - (int)&x;
-    sb.dir_ent_size = DIR_ENTRY_SIZE;
+    sb->inode_isize_off = (int)&x.i_size - (int)&x;
+    sb->inode_start_off = (int)&x.i_start_sect - (int)&x;
+    sb->dir_ent_size = DIR_ENTRY_SIZE;
     struct dir_entry de;
-    sb.dir_ent_inode_off = (int)&de.inode_nr - (int)&de;
-    sb.dir_ent_fname_off = (int)&de.name - (int)&de;
+    sb->dir_ent_inode_off = (int)&de.inode_nr - (int)&de;
+    sb->dir_ent_fname_off = (int)&de.name - (int)&de;
 
     memset(fsbuf, 0x90, SECTOR_SIZE);
-    memcpy(fsbuf, &sb, SUPER_BLOCK_SIZE);
+    memcpy(fsbuf, sb, SUPER_BLOCK_SIZE); // NOT &sb
 
     // write the super block to sector 1
     WR_SECT(ROOT_DEV, 1);
@@ -82,13 +66,15 @@ PRIVATE void mkfs(){
 	       geo.base * 2,
 	       (geo.base + 1) * 2,
 	       (geo.base + 1 + 1) * 2,
-	       (geo.base + 1 + 1 + sb.nr_imap_sects) * 2,
-	       (geo.base + 1 + 1 + sb.nr_imap_sects + sb.nr_smap_sects) * 2,
-	       (geo.base + sb.n_1st_sect) * 2);
-    */
-    // ============= inode map =============
+	       (geo.base + 1 + 1 + sb->nr_imap_sects) * 2,
+	       (geo.base + 1 + 1 + sb->nr_imap_sects + sb->nr_smap_sects) * 2,
+	       (geo.base + sb->n_1st_sect) * 2);
+    */    
+}
+
+PRIVATE void set_inode_map(){
     memset(fsbuf, 0, SECTOR_SIZE);
-    for(i = 0; i < (NR_CONSOLES + 2); i++)
+    for(int i = 0; i < (NR_CONSOLES + 3); i++)
         fsbuf[0] |= 1 << i;
 
     // bit 0: reserved
@@ -96,13 +82,15 @@ PRIVATE void mkfs(){
     // bit 2: /dev_tty0
     // bit 3: /dev_tty1
     // bit 4: /dev_tty2
-    kassert(fsbuf[0] == 0x1F); // 0001 1111
+    // bit 5: /inst.tar
+    kassert(fsbuf[0] == 0x3F); // 0011 1111
 
     // write inode map to sector 2
     WR_SECT(ROOT_DEV, 2);
+}
 
-
-    // ============ sector map ===============
+PRIVATE set_sector_map(struct super_block* sb){
+    int i, j;
     memset(fsbuf, 0, SECTOR_SIZE);
     // bit 0  is reserved (sector 0),
     // NR_DEFAULT_FILE_SECTS is reserved to '/'
@@ -115,26 +103,50 @@ PRIVATE void mkfs(){
         fsbuf[i] |= (1 << j); // is i not j
 
     // write sector map to sector n:2+nr_imap_sects
-    WR_SECT(ROOT_DEV, 2 + sb.nr_imap_sects);
+    WR_SECT(ROOT_DEV, 2 + sb->nr_imap_sects);
 
     // zero the rest sector map
     memset(fsbuf, 0, SECTOR_SIZE);
-    for(i = 1; i < sb.nr_smap_sects; i++)
-        WR_SECT(ROOT_DEV, 2 + sb.nr_imap_sects + i);
+    for(i = 1; i < sb->nr_smap_sects; i++)
+        WR_SECT(ROOT_DEV, 2 + sb->nr_imap_sects + i);
     
-    // ========== inodes array ===========
-    
+    // set sector map for inst.tar
+	// make sure it'll not be overwritten by the disk log 
+	//assert(INSTALL_START_SECT + INSTALL_NR_SECTS < sb->nr_sects - NR_SECTS_FOR_LOG);
+	int bit_offset = INSTALL_START_SECT -
+		sb->n_1st_sect + 1; /* sect M <-> bit (M - sb->n_1stsect + 1) */
+	int bit_off_in_sect = bit_offset % (SECTOR_SIZE * 8);
+	int bit_left = INSTALL_NR_SECTS;
+	int cur_sect = bit_offset / (SECTOR_SIZE * 8);
+	RD_SECT(ROOT_DEV, 2 + sb->nr_imap_sects + cur_sect);
+	while (bit_left) {
+		int byte_off = bit_off_in_sect / 8;
+		/* this line is ineffecient in a loop, but I don't care */
+		fsbuf[byte_off] |= 1 << (bit_off_in_sect % 8);
+		bit_left--;
+		bit_off_in_sect++;
+		if (bit_off_in_sect == (SECTOR_SIZE * 8)) {
+			WR_SECT(ROOT_DEV, 2 + sb->nr_imap_sects + cur_sect);
+			cur_sect++;
+			RD_SECT(ROOT_DEV, 2 + sb->nr_imap_sects + cur_sect);
+			bit_off_in_sect = 0;
+		}
+	}
+	WR_SECT(ROOT_DEV, 2 + sb->nr_imap_sects + cur_sect);
+}
+
+PRIVATE void set_inodes(struct super_block* sb){
     // inode of '/'
     memset(fsbuf, 0, SECTOR_SIZE);
     struct inode * pi = (struct inode*)fsbuf;
     pi->i_mode = I_DIRECTORY;
-    pi->i_size = DIR_ENTRY_SIZE * 4; // 4 files . dev_tty0 - 2
+    pi->i_size = DIR_ENTRY_SIZE * 5; // 5 files . dev_tty0 - 2, inst.tar
 
-    pi->i_start_sect = sb.n_1st_sect; // first data sect
+    pi->i_start_sect = sb->n_1st_sect; // first data sect
     pi->i_nr_sects = NR_DEFAULT_FILE_SECTS;
 
     // inode of /dev_tty0~2
-    for(i = 0; i < NR_CONSOLES; i++){
+    for(int i = 0; i < NR_CONSOLES; i++){
         pi = (struct inode*)(fsbuf + (INODE_SIZE * (i + 1)));
         pi->i_mode = I_CHAR_SPECIAL;
         pi->i_size = 0;
@@ -142,24 +154,55 @@ PRIVATE void mkfs(){
         pi->i_nr_sects = 0;
     }    
 
-    // write inodes array sector
-    WR_SECT(ROOT_DEV, 2 + sb.nr_imap_sects + sb.nr_smap_sects);
+    //inode of `/instl.tar'
+	pi = (struct inode*)(fsbuf + (INODE_SIZE * (NR_CONSOLES + 1)));
+	pi->i_mode = I_REGULAR;
+	pi->i_size = INSTALL_NR_SECTS * SECTOR_SIZE;
+	pi->i_start_sect = INSTALL_START_SECT;
+	pi->i_nr_sects = INSTALL_NR_SECTS;
 
-    // ============= '/' root directory file ============
+    // write inodes array sector
+    WR_SECT(ROOT_DEV, 2 + sb->nr_imap_sects + sb->nr_smap_sects);
+
+}
+
+PRIVATE void set_root_dir(struct super_block* sb){
     memset(fsbuf, 0, SECTOR_SIZE);
     struct dir_entry* pde = (struct dir_entry*)fsbuf;
     pde->inode_nr = 1;
     strcpy(pde->name, ".");
 
     // dir entry of /dev_tty0~2
-    for(i = 0; i < NR_CONSOLES; i++){
+    for(int i = 0; i < NR_CONSOLES; i++){
         pde++;
         pde->inode_nr = i + 2;// dev_tty0's inode is 2
         sprintf(pde->name, "dev_tty%d", i);
     }
 
+    (++pde)->inode_nr = NR_CONSOLES + 2;
+	strcpy(pde->name, "inst.tar");
+    
     // write '/' directory file into first data sector
-    WR_SECT(ROOT_DEV, sb.n_1st_sect);    
+    WR_SECT(ROOT_DEV, sb->n_1st_sect);    
+}
+
+
+/** <ring 1> 
+ * write a super block to sector 1
+ * create 3 special files: dev_tty0, dev_tty1, dev_tty2
+ * create the inode map
+ * create the sector map
+ * create the inodes of the files
+ * create /, the root directory
+ */
+// TODO: add param buf to replace global var fsbuf
+PRIVATE void mkfs(){
+    struct super_block sb;
+    set_super_block(&sb);
+    set_inode_map();
+    set_sector_map(&sb);
+    set_inodes(&sb);    
+    set_root_dir(&sb);    
 }
 
 PRIVATE void open_hd(){

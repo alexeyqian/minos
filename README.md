@@ -7,6 +7,9 @@ Minimal OS Kernel, inspired by:
 
 The best way to study OS is to make a simple one by yourself.
 
+# TODO:
+- make file in sub folder
+
 # Compiler
 Create your own cross platfom gcc compiler: i686-elf-gcc, the hosted compiler is not working at this stage.
 Why do I need a cross compiler: https://wiki.osdev.org/Why_do_I_need_a_Cross_Compiler%3F
@@ -22,6 +25,7 @@ lb 0x090100 / info break / info cpu / s <n> / c / regs / sregs / cregs /
 # Tools to check binary file
 od -t x1 -A n boot/boot_sect.bin
 hp -C filename
+xxd -u -a -g 1 -c 16 -s 0xA01800 -l 512 80m.img
 ## test code
 if<condition>
     kprintf("arrive here:: x");

@@ -214,6 +214,8 @@ void init(){
 	int fd_stdout = open("/dev_tty0", O_RDWR);
 	kassert(fd_stdout == 1);
 
+	printf(">>> untar\n");
+	untar("/inst.tar");
 	kclear_screen(); 
 
 	// from here, the first user process init is started.

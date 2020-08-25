@@ -63,13 +63,17 @@ kernel/kernel.bin: $(C_SOURCES) $(C_HEADERS) \
 	$(CROSS_COMPILER) -T linker.ld -o $@ -ffreestanding -nostdlib kernel/kernel_entry.o $(C_OBJS) \
 		syscall/syscall_main.o hd/hd_main.o fs/fs_main.o fs/fs_open.o fs/fs_shared.o \
 		tty/tty_main.o mm/mm_main.o test/test_main.o lib/vsprintf.o lib/string.o \
-		lib/stdio.o lib/assert.o lib/ipclib.o lib/fslib.o lib/proclib.o lib/syscalls.o -lgcc		
+		lib/stdio.o lib/assert.o lib/ipclib.o lib/fslib.o lib/proclib.o lib/syscalls.o -lgcc	
+	# minoscrt.a is runtime c lib, which should be independent, can only depend on syscalls	
 	ar rcs lib/minoscrt.a lib/vsprintf.o lib/string.o lib/assert.o lib/stdio.o lib/ipclib.o lib/fslib.o lib/proclib.o lib/syscalls.o
 	#inst.tar: command/start.asm command/echo.c	
 	nasm -I include/ -f elf32 -o command/start.o command/start.asm
 	gcc  -I include/ -m32 -c -fno-builtin -Wall -o command/echo.o command/echo.c 
 	ld -Ttext 0x1000 -m elf_i386 -o command/echo command/echo.o command/start.o lib/minoscrt.a
 	tar vcf inst.tar kernel/kernel.bin command/echo 
+	# TODO: hard code ROOT_BASE INSTALL_START_SECT
+	#seek=`echo "obase=10;ibase=16;(4EFF+8000)*200"|bc`
+	dd if=inst.tar of=80m.img seek=27131392 bs=1 count=`ls -l inst.tar|awk -F " " '{print $$5}'` conv=notrunc
 
 clean:	
 	@rm -rf os.img inst.tar boot/*.o boot/*.bin kernel/*.o kernel/*.bin fs/*.o mm/*.o lib/*.o lib/*.a command/*.o
