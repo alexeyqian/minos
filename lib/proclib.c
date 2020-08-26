@@ -54,7 +54,7 @@ PUBLIC int wait(int* status){
 	return (msg.PID == NO_TASK ? -1 : msg.PID);
 }
 
-PUBLIC int exel(const char* path, const char *arg, ...){
+PUBLIC int execl(const char* path, const char *arg, ...){
 	va_list parg = (va_list)(&arg);
 	char** p = (char**)parg;
 	return execv(path, p);

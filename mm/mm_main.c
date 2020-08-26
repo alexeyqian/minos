@@ -349,6 +349,9 @@ PUBLIC void task_mm(){
                 do_exit(mm_msg.source, mm_msg.STATUS);
                 reply = 0;
                 break;
+            case EXEC:
+                mm_msg.RETVAL = do_exec(&mm_msg);
+                break;
             case WAIT:
                 do_wait(mm_msg.source);
                 reply = 0;
