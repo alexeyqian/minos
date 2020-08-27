@@ -55,10 +55,11 @@ void kstart(){
 	init_idt();
 	init_tss();	
 	init_ldt_descriptors_in_dgt(); 
+	
 	get_boot_params(&g_boot_params); // has to be before init proc table
 	init_proc_table();	
 	
-	//pmmgr_init();	
+	pmmgr_init(&g_boot_params);	
 	//vmmgr_init();kprintf(">>> virtual memory initialized and paging enabled.");
 	 
 	kmain();

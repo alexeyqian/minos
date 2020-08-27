@@ -2,13 +2,13 @@
 #define MINOS_PHYS_MEM_H
 
 #include "types.h"
-#include "ktypes.h" 
 
 #define MEM_REGION_COUNT 1 // TODO: update to 15
 
 typedef uint32_t physical_addr;
+struct boot_params;
 
-void pmmgr_init();
+void pmmgr_init(struct boot_params* pbp);
 void* pmmgr_alloc_block ();
 void pmmgr_free_block (void*);
 void* pmmgr_alloc_blocks (size_t);

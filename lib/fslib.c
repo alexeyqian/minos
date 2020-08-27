@@ -9,6 +9,7 @@
 
 /** 
  * open/create a file
+ * @attention cannot use printf/assert inside, since the stdout might not open yet.
  * 
  * @param flag O_CREATE, O_RDWR
  * 
@@ -20,10 +21,7 @@ PUBLIC int open(const char* pathname, int flags){
     msg.PATHNAME = (void*)pathname;
     msg.FLAGS = flags;
     msg.NAME_LEN = strlen(pathname);
-    //kprintf(">>> fslib::open send begin %s\n", msg.PATHNAME);
     send_recv(BOTH, TASK_FS, &msg);
-    //kprintf(">>> fslib::open send end %s\n", msg.PATHNAME);
-    //assert(msg.type == SYSCALL_RET);
 
     return msg.FD;
 }
@@ -41,9 +39,7 @@ PUBLIC int close(int fd)
 	MESSAGE msg;
 	msg.type   = CLOSE;
 	msg.FD     = fd;
-
 	send_recv(BOTH, TASK_FS, &msg);
-
 	return msg.RETVAL;
 }
 
@@ -109,6 +105,5 @@ PUBLIC int stat(const char* path, struct stat* buf){
     msg.BUF      = (void*)buf;
     msg.NAME_LEN = strlen(path);
     send_recv(BOTH, TASK_FS, &msg);
-    //assert(msg.type == SYSCALL_RET);
     return msg.RETVAL;
 }

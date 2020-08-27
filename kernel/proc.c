@@ -94,7 +94,7 @@ PUBLIC void init_proc_table(){
 				g_boot_params.kernel_base, g_boot_params.kernel_limit,
 				4 * ((g_boot_params.kernel_base + g_boot_params.kernel_limit) >> LIMIT_4K_SHIFT));
 			
-			kprintf(">>> hard code init mem to 0x%x", 256 * 4096);
+			kprintf(">>> hard code init mem to 0x%x\n", 256 * 4096);
 			// TODO: hard code for 1M memory for init here
 			// since the get kernel_Base and kernel_limit is not correct!
 			init_descriptor(&p_proc->ldt[INDEX_LDT_C], 
@@ -168,7 +168,7 @@ struct posix_tar_header
 void untar(const char* filename){
 	printf(">>> extract %s\n", filename);
 	int fd = open(filename, O_RDWR);
-	//assert(fd != -1);
+	assert(fd != -1);
 
 	char buf[SECTOR_SIZE*16];
 	int chunk = sizeof(buf);
@@ -209,9 +209,9 @@ void untar(const char* filename){
 void shabby_shell(const char * tty_name)
 {
 	int fd_stdin  = open(tty_name, O_RDWR);
-	//assert(fd_stdin  == 0);
+	assert(fd_stdin  == 0);
 	int fd_stdout = open(tty_name, O_RDWR);
-	//assert(fd_stdout == 1);
+	assert(fd_stdout == 1);
 
 	char rdbuf[128];
 
@@ -292,7 +292,7 @@ void init(){
 			close(fd_stdout);
 			
 			shabby_shell(tty_list[i]);
-			//assert(0);
+			never_here();
 		}
 	}
 
@@ -303,5 +303,5 @@ void init(){
 		printf("[Init] child %d exited with satus: %d\n", child, s);
 	}
 
-	//assert(0);
+	never_here();
 }

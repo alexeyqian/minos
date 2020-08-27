@@ -29,12 +29,13 @@ EXTERN pf_irq_handler_t    irq_table[IRQ_NUM];
 EXTERN syscall_t           syscall_table[NR_SYSCALLS];
 
 // fs
+#define FSBUF_BASE 0x600000
+#define FSBUF_SIZE 0X100000
 extern	uint8_t*  fsbuf;
-extern	const int FSBUF_SIZE;
 // mm
+#define MMBUF_BASE 0x700000
+#define MMBUF_SIZE 0X100000
 extern	uint8_t*  mmbuf;
-extern	const int MMBUF_SIZE;
-
 
 // tty
 EXTERN int key_pressed; // used for clock_handler to wake up TASK_TTY when a key is pressed

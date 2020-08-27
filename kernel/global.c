@@ -25,9 +25,6 @@ pf_irq_handler_t    irq_table[IRQ_NUM];
 syscall_t           syscall_table[NR_SYSCALLS] = {sys_printx, sys_sendrec};
 
 // 6M - 7M buffer for fs
-PUBLIC uint8_t*  fsbuf = (uint8_t*)0x600000;
-PUBLIC const int FSBUF_SIZE = 0x100000;
-
+PUBLIC uint8_t*  fsbuf = (uint8_t*)FSBUF_BASE;
 // 7M - 8M buffer for mm 
-PUBLIC	uint8_t*  mmbuf = (uint8_t*)0x700000;
-PUBLIC	const int MMBUF_SIZE = 0x100000;
+PUBLIC	uint8_t*  mmbuf = (uint8_t*)MMBUF_BASE;

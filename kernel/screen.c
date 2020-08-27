@@ -134,3 +134,13 @@ PUBLIC void kassertion_failure(char* exp, char* file, char* base_file, int line)
         exp, file, base_file, line);
     halt();
 }
+
+PUBLIC void assertion_failure(char* exp, char* file, char* base_file, int line){
+    printf("!!assert(%s)!! failed. file: %s, base_file: %s, ln: %d",
+        exp, file, base_file, line);
+        while(1){}
+}
+
+PUBLIC void never_here(){
+    assert(0);
+}

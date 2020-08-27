@@ -12,7 +12,6 @@ PUBLIC int getpid(){
 	MESSAGE msg;
 	msg.type = GET_PID;
 	send_recv(BOTH, TASK_SYS, &msg);
-	//assert(msg.type == SYSCALL_RET);
 	return msg.PID;
 }
 
@@ -23,7 +22,7 @@ PUBLIC void exit(int status){
 	msg.type = EXIT;
 	msg.STATUS = status;
 	send_recv(BOTH, TASK_MM, &msg);
-	//assert(msg.type == SYSCALL_RET);
+	assert(msg.type == SYSCALL_RET);
 }
 
 /**
@@ -40,8 +39,8 @@ PUBLIC int fork(){
     MESSAGE msg;
     msg.type = FORK;
     send_recv(BOTH, TASK_MM, &msg);
-    //assert(msg.type == SYSCALL_RET); // TODO: replace kassert with assert
-    //assert(msg.RETVAL == 0);
+    assert(msg.type == SYSCALL_RET);
+    assert(msg.RETVAL == 0);
 
     return msg.PID;
 }
@@ -66,7 +65,7 @@ PUBLIC int execv(const char* path, char* argv[]){
 	uint32_t stack_len = 0;
 
 	while(*p++){
-		//assert(stack_len + 2*sizeof(char*) < PROC_ORIGIN_STACK);
+		assert(stack_len + 2*sizeof(char*) < PROC_ORIGIN_STACK);
 		stack_len += sizeof(char*);
 	}
 
@@ -78,7 +77,7 @@ PUBLIC int execv(const char* path, char* argv[]){
 	char** q = (char**)arg_stack;
 	for(p = argv; *p != 0; p++){
 		*q++ = &arg_stack[stack_len]; // set address of arg to pointer array item
-		//assert(stack_len + strlen(*p) + 1 < PROC_ORIGIN_STACK);
+		assert(stack_len + strlen(*p) + 1 < PROC_ORIGIN_STACK);
 		strcpy(&arg_stack[stack_len], *p);
 		stack_len += strlen(*p);
 		arg_stack[stack_len] = 0; // set zero as string end for arg
@@ -93,7 +92,7 @@ PUBLIC int execv(const char* path, char* argv[]){
 	msg.BUF_LEN = stack_len;
 
 	send_recv(BOTH, TASK_MM, &msg);
-	//assert(msg.type == SYSCALL_RET);
+	assert(msg.type == SYSCALL_RET);
 
 	return msg.RETVAL;
 }
