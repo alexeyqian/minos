@@ -26,9 +26,9 @@ void test_fs(){
 	kassert(rd_bytes <= (int)strlen(bufw));
 	// create
 	fd = open(filename, O_CREAT | O_RDWR);
-	kprintf("opened, fd: %d", fd);
+	//kprintf("opened, fd: %d", fd);
 	kassert(fd != -1);
-	kprintf("File created. %s, fd: %d\n", filename, fd);
+	//kprintf("File created. %s, fd: %d\n", filename, fd);
 	
 	// write
 	n = write(fd, bufw, strlen(bufw));
@@ -39,13 +39,13 @@ void test_fs(){
 	// open
 	fd = open(filename, O_RDWR);
 	kassert(fd != -1);
-	kprintf("file opened. fd: %d\n", fd);
+	//kprintf("file opened. fd: %d\n", fd);
 
 	// read
 	n = read(fd, bufr, rd_bytes);
 	kassert(n == (int)rd_bytes);
 	bufr[n] = 0;
-	kprintf("%d bytes read: %s\n", n, bufr);
+	//kprintf("%d bytes read: %s\n", n, bufr);
 
 	close(fd);
 
@@ -54,7 +54,7 @@ void test_fs(){
 	for (i = 0; i < sizeof(filenames) / sizeof(filenames[0]); i++) {
 		fd = open(filenames[i], O_CREAT | O_RDWR);
 		kassert(fd != -1);
-		kprintf("File created: %s (fd %d)\n", filenames[i], fd);
+		//kprintf("File created: %s (fd %d)\n", filenames[i], fd);
 		close(fd);
 	}
 	char * rfilenames[] = {"/foo", "/bar", "/baz", "/dev_tty0"};
@@ -116,7 +116,7 @@ void test_printf(){
 // <ring 1>, "system calls" via IPC message
 PUBLIC void task_test(){
     kprintf(">>> 5. task_test is running\n"); 
-    //test_fs();
+    test_fs();
     //test_delay();
     //test_fs_tty();
 	//test_printf();

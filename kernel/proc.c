@@ -267,7 +267,7 @@ void shabby_shell(const char * tty_name)
 }
 
 // <ring 3> first process, parent for all user processes.
-void init(){
+void init(){while(1){}
 	kprintf(">>> 6. init is running\n");
 	int fd_stdin = open("/dev_tty0", O_RDWR);
 	kassert(fd_stdin == 0);

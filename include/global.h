@@ -28,12 +28,13 @@ EXTERN struct proc         proc_table[NR_TASKS + NR_PROCS]; // contains array of
 EXTERN pf_irq_handler_t    irq_table[IRQ_NUM];
 EXTERN syscall_t           syscall_table[NR_SYSCALLS];
 
+// TODO: use dynamic allocation for these buffers
 // fs
-#define FSBUF_BASE 0x600000
+#define FSBUF_BASE 0x100000
 #define FSBUF_SIZE 0X100000
 extern	uint8_t*  fsbuf;
 // mm
-#define MMBUF_BASE 0x700000
+#define MMBUF_BASE 0x200000
 #define MMBUF_SIZE 0X100000
 extern	uint8_t*  mmbuf;
 

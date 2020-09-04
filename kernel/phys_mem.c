@@ -2,15 +2,19 @@
 #include "types.h"
 #include "ktypes.h"
 
-#define PMMBR_BASE             0xA00000 // physical memory manage begins from 10M
+#define PMMBR_BASE             0x300000 // physical memory manage begins from 4M
 #define PMMGR_BLOCKS_PER_BYTE  8
 #define PMMGR_BLOCK_SIZE       4096
 #define PMMGR_BLOCK_ALIGN      PMMGR_BLOCK_SIZE
 
-static uint32_t  _pmmgr_mem_size    = 0;
+static uint32_t  _pmmgr_mem_size    = 0; // in kb or bytes
 static uint32_t  _pmmgr_max_blocks  = 0;
 static uint32_t  _pmmgr_used_blocks = 0;
 static uint32_t* _pmmgr_mem_map     = 0;
+// _mmmgr_memmap & _pmmgr_memmap_size
+// pmmap_size = max_blocks / BLOCKS_PER_DWORD; PER BYTE
+//if (max_blocks % BLOCKS_PER_DWORD)
+//        pmmap_size++;
 
 PRIVATE void pmmgr_map_set(int bit){
     _pmmgr_mem_map[bit/32] |= (1 << (bit % 32));
@@ -159,12 +163,14 @@ PUBLIC void pmmgr_init(struct boot_params* pbp){
     _pmmgr_max_blocks = _pmmgr_mem_size / PMMGR_BLOCK_SIZE;
     _pmmgr_used_blocks = _pmmgr_max_blocks;
     _pmmgr_mem_map = (uint32_t*)PMMBR_BASE;
-    
+
+    /* TODO: ignored for now
 	for(int i = 0; i < pbp->mem_range_count; i++){
 		if(pbp->mem_ranges[i].type == 1)
 			pmmgr_init_region(pbp->mem_ranges[i].baseaddr_low, pbp->mem_ranges[i].length_low);			
-	}
-	// Reserver lower 10M
+	}*/
+
+	// Reserver lower 4M
 	pmmgr_uninit_region(0x0, PMMBR_BASE); 
     // reserve memory for mem bitmap itself
     //memset(_pmmgr_mem_map, 0xf, _pmmgr_max_blocks / PMMGR_BLOCKS_PER_BYTE);	

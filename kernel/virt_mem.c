@@ -135,86 +135,62 @@ void vmmgr_map_page (void* phys, void* virt) {
 
    // get page table
    pd_entry* e = &pageDirectory->m_entries[PAGE_DIRECTORY_INDEX ((uint32_t) virt) ];
-   if ( (*e & I86_PTE_PRESENT) != I86_PTE_PRESENT) {
-
-      // page table not present, allocate it
+   if ( (*e & I86_PTE_PRESENT) != I86_PTE_PRESENT) { // page table not present, allocate it
       struct ptable* table = (struct ptable*) pmmgr_alloc_block ();
-      if (!table)
-         return;
+      if (!table) return;
 
-      // clear page table
       memset ((char*)table, 0, sizeof(struct ptable));
 
-      //! create a new entry
+      // set a new entry
       pd_entry* entry = &pageDirectory->m_entries[PAGE_DIRECTORY_INDEX((uint32_t)virt)];
-
-      //! map in the table (Can also just do *entry |= 3) to enable these bits
       pd_entry_add_attrib (entry, I86_PDE_PRESENT);
       pd_entry_add_attrib (entry, I86_PDE_WRITABLE);
       pd_entry_set_frame (entry, (physical_addr)table);
    }
 
-   //! get table
    struct ptable* table = (struct ptable*) PAGE_GET_PHYSICAL_ADDRESS ( e );
-   //! get page
    pt_entry* page = &table->m_entries [ PAGE_TABLE_INDEX ( (uint32_t) virt) ];
-
-   //! map it in (Can also do (*page |= 3 to enable..)
    pt_entry_set_frame ( page, (physical_addr) phys);
    pt_entry_add_attrib ( page, I86_PTE_PRESENT);
 }
 
-void vmmgr_init () {
-    // allocate default directory table
-    struct pdirectory* dir = (struct pdirectory*)pmmgr_alloc_block(); //pmmgr_alloc_blocks(3); // TODO: ?? WHY 3?
-    if (!dir) return;
-    memset ((char*)dir, 0, sizeof (struct pdirectory)); 
-
-    // allocate first page table, 4m from 0
-    struct ptable* table0 = (struct ptable*) pmmgr_alloc_block ();
+PRIVATE void map_page_table(struct pdirectory* dir, uint32_t paddr_base, uint32_t vaddr_base){
+    struct ptable* table0 = (struct ptable*) pmmgr_alloc_block();
+    kprintf(">>> map_page_table:: table0 allocated at: 0x%x", table0);
     if (!table0) return;
     memset ((char*)table0, 0, sizeof (struct ptable));
-
-    // allocate 3g page table, 4m from 3g
-    struct ptable* table3g = (struct ptable*) pmmgr_alloc_block ();
-    if (!table3g) return;
-    memset ((char*)table3g, 0, sizeof (struct ptable));
-
-    //! 1st 4mb are idenitity mapped
-    for (int i=0, frame=0x0, virt=0x00000000; i<1024; i++, frame+=4096, virt+=4096) {
-        pt_entry page=0;
+    
+    for (int i=0, frame=paddr_base, virt=vaddr_base; i<1024; i++, frame+=4096, virt+=4096) {
+        pt_entry page = 0;
         pt_entry_add_attrib (&page, I86_PTE_PRESENT);
+        pt_entry_add_attrib (&page, I86_PTE_USER);
+        pt_entry_add_attrib (&page, I86_PTE_WRITABLE);
         pt_entry_set_frame  (&page, frame);
-
-        //! ...and add it to the page table
         table0->m_entries [PAGE_TABLE_INDEX (virt) ] = page;
     }
 
-    // TODO: depends on where the kernel is loaded, subject to change 
-    //! map 1mb to 3gb 
-    for (int i=0, frame=0x100000, virt=0xc0000000; i<1024; i++, frame+=4096, virt+=4096) {
-        pt_entry page=0;
-        pt_entry_add_attrib (&page, I86_PTE_PRESENT);
-        pt_entry_set_frame  (&page, frame);
-
-        //! ...and add it to the page table
-        table3g->m_entries [PAGE_TABLE_INDEX (virt) ] = page;
-    }
-    
-    // get 2 entries in dir table and set them up to point to our 2 tables
-    pd_entry* entry0 = &dir->m_entries [PAGE_DIRECTORY_INDEX (0x00000000) ];
+    pd_entry* entry0 = &dir->m_entries [PAGE_DIRECTORY_INDEX (vaddr_base) ];
     pd_entry_add_attrib (entry0, I86_PDE_PRESENT);
     pd_entry_add_attrib (entry0, I86_PDE_WRITABLE);
+    pd_entry_add_attrib (entry0, I86_PDE_USER);
     pd_entry_set_frame  (entry0, (physical_addr)table0);
+}
 
-    pd_entry* entry3g = &dir->m_entries [PAGE_DIRECTORY_INDEX (0xc0000000) ];
-    pd_entry_add_attrib (entry3g, I86_PDE_PRESENT);
-    pd_entry_add_attrib (entry3g, I86_PDE_WRITABLE);
-    pd_entry_set_frame  (entry3g, (physical_addr)table3g);
+void vmmgr_init () {
+    struct pdirectory* dir = (struct pdirectory*)pmmgr_alloc_block(); 
+    kprintf(">>> vmmgr_init:: dir allocated at: 0x%x", dir);
+    if (!dir) return;
+    memset ((char*)dir, 0, sizeof (struct pdirectory)); 
+
+    // map physical mem 0 - 4M, idenitity mapped
+    map_page_table(dir, 0x0, 0x0);  
+    // map 4-8m, identity mapped  
+    //map_page_table(dir, 0x400000, 0x400000);
+
+    // map physical 1M - 1M + kernel_size 3G - 3G + kernel_size
+    // map_page_table(dir, 0x100000, 0xc0000000);  
     
-    // store current PDBR
-    _cur_pdbr = (physical_addr) &dir->m_entries;
-        
+    _cur_pdbr = (physical_addr) &dir->m_entries;        
     // switch to our page directory
     vmmgr_switch_pdirectory (dir);    
     // remember that as soon as paging is enabled, all address become virtual

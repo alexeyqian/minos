@@ -57,16 +57,17 @@ void kstart(){
 	init_ldt_descriptors_in_dgt(); 
 	
 	get_boot_params(&g_boot_params); // has to be before init proc table
-	init_proc_table();	
-	
+		
 	pmmgr_init(&g_boot_params);	
-	//vmmgr_init();kprintf(">>> virtual memory initialized and paging enabled.");
-	 
+	vmmgr_init();
+	//after this line, all addresses become virtual
+			
 	kmain();
 }
 
 void kmain(){ 
-	kprintf(">>> kmain\n");	// kprintf SHOULD NOT BE USED ANYMORE AFTER THIS	
+	kprintf(">>> kmain\n");		
+	init_proc_table();
 	init_clock(); 
 	init_keyboard();    	
 	restart(); // pretenting a schedule happend to start a process.
@@ -77,8 +78,9 @@ void kmain(){
 void init_new_gdt(){
 	store_gdt(); // store old gdt to [gdt_ptr]
 
-	// copy old gdt from loader mem area to new kernel mem area for easy kernel access
-    memcpy((char*)&gdt,                         // new gdt
+	// copy old gdt table items (not gdt_ptr itself)
+	// from loader mem area to new kernel mem area for easy kernel access
+    memcpy((char*)&gdt,                         // new gdt table
         (char*)(*((uint32_t*)(&gdt_ptr[2]))),   // base  of old GDT
 		*((uint16_t*)(&gdt_ptr[0])) + 1	        // limit of old GDT
 	);

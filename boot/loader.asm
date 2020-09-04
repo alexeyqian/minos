@@ -95,7 +95,7 @@ pm_start: ; entry point for protected mode
 
 	call loader_parse_elf_kernel_bin	
 
-	mov ax, 'H' ; kernel_bin loaded
+	mov ax, 'H' ; kernel loaded
     call loader_putax_pm
 	
 	call pass_boot_params

@@ -7,6 +7,12 @@ Minimal OS Kernel, inspired by:
 
 The best way to study OS is to make a simple one by yourself.
 
+resources:
+http://www.jamesmolloy.co.uk/tutorial_html/
+http://www.brokenthorn.com/Resources/OSDev17.html
+https://github.com/lucic71/lucicOS
+https://littleosbook.github.io/
+
 # TODO:
 - make file in sub folder
 
