@@ -70,11 +70,11 @@ PRIVATE void init_8259a(){
 PRIVATE void init_idt_descriptor(unsigned char vector, uint8_t desc_type, pf_int_handler_t handler, unsigned char privilege){
     struct gate* p_gate	= &idt[vector];
 	uint32_t	 base	= (uint32_t)handler;
-	p_gate->offset_low	= base & 0xFFFF;
+	p_gate->offset_low	= (uint16_t)(base & 0xFFFF);
 	p_gate->selector	= SELECTOR_KERNEL_CODE;
 	p_gate->dcount		= 0;
-	p_gate->attr		= desc_type | (privilege << 5);
-	p_gate->offset_high	= (base >> 16) & 0xFFFF;
+	p_gate->attr		= desc_type | (uint8_t)(privilege << 5);
+	p_gate->offset_high	= (uint16_t)((base >> 16) & 0xFFFF);
 }
 
 PUBLIC void init_idt(){
@@ -152,7 +152,7 @@ PUBLIC void exception_handler(int vec_no, int err_code, int eip, int cs, int efl
     kprintf("Exception handler: %d\n", err_description[vec_no]);
     kprintf("EFLAGS: 0x%x, CS: 0x%x, EIP: 0x%x\n", eflags, cs, eip);
 
-    if(err_code != 0xffffffff)
+    if(err_code != (int)0xffffffff)
         kprintf(" Error Code: 0x%x\n", err_code);    
 }
 

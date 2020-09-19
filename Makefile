@@ -26,6 +26,10 @@ boot/boot.bin: boot/boot.asm
 boot/loader.bin: boot/loader.asm
 	nasm $< -f bin -I 'boot/' -o $@
 
+refactory: kernel/keyboard.c
+	$(CROSS_COMPILER) $(C_FLAGS) -Wsign-compare -Wconversion -o \
+	kernel/keyboard.o kernel/keyboard.c	
+
 kernel/kernel.bin: $(C_SOURCES) $(C_HEADERS) \
 		fs/fs_main.c fs/fs_open.c fs/fs_shared.c fs/fs_shared.h fs/fs_open.h mm/mm_main.c 
 	nasm kernel/kernel_entry.asm -f elf32 -I 'kernel/' -o kernel/kernel_entry.o	

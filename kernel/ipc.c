@@ -10,7 +10,7 @@
 #include "klib.h"
 #include "stdio.h"
 #include "screen.h"
-
+#include "tty.h"
 #include "clock.h" // using schedule()
 
 // <ring 0>, this routine is called after p_flags has been set != 0
@@ -260,7 +260,6 @@ PUBLIC void dump_proc(struct proc* p)
 {
 	char info[STR_DEFAULT_LEN];
 	int i;
-	int text_color = MAKE_COLOR(GREEN, RED);
 
 	int dump_len = sizeof(struct proc);
 

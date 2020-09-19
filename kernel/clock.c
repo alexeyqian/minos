@@ -6,6 +6,8 @@
 #include "klib.h"
 #include "screen.h"
 #include "ipc.h"
+#include "syscall.h"
+#include "interrupt.h"
 
 PUBLIC void delay(int milli_sec){
     int t = get_ticks();

@@ -5,7 +5,7 @@
 #include "global.h"
 #include "klib.h"
 #include "ke_asm_utils.h"
-
+#include "interrupt.h"
 #include "keymap.h"
 #include "tty.h"
 
@@ -29,10 +29,10 @@ PRIVATE bool_t alt_l;
 PRIVATE bool_t alt_r;
 PRIVATE bool_t ctrl_l;
 PRIVATE bool_t ctrl_r;
-PRIVATE int caps_lock;
-PRIVATE int num_lock;
-PRIVATE int scroll_lock;
-PRIVATE int column = 0; // keyrow[column]: a value in keymap
+PRIVATE bool_t caps_lock = 0;   
+PRIVATE bool_t num_lock = 0;    
+PRIVATE bool_t scroll_lock = 0; 
+PRIVATE bool_t column = 0; // keyrow[column]: a value in keymap
 
 // wait for an empty keyboard controller(8042) buffer to write
 PRIVATE void kb_wait(){
@@ -50,13 +50,13 @@ PRIVATE void kb_ack(){
 }
 
 PRIVATE void set_leds(){
-	uint8_t leds = (caps_lock << 2) | (num_lock << 1) | scroll_lock;
+	int leds = (caps_lock << 2) | (num_lock << 1) | scroll_lock;
 	kb_wait();
 	out_byte(KB_DATA, LED_CODE);
 	kb_ack();
 
 	kb_wait();
-	out_byte(KB_DATA, leds);
+	out_byte(KB_DATA, (uint8_t)leds); // safe here
 	kb_ack();
 }
 
@@ -66,7 +66,7 @@ PRIVATE uint8_t retrive_scan_code_from_kb_buf()
 	while (kb_in.count <= 0) {} // waiting for at least one scan code
 
 	disable_int();
-	scan_code = *(kb_in.p_tail);
+	scan_code = (uint8_t)(*(kb_in.p_tail));
 	kb_in.p_tail++;
 	if (kb_in.p_tail == kb_in.buf + KB_IN_BYTES) {
 		kb_in.p_tail = kb_in.buf;
@@ -81,7 +81,7 @@ PRIVATE void append_scan_code_to_kb_buf(){
 	uint8_t scan_code = in_byte(KB_DATA);   // read out from 8042, so it can response for next key interrupt.
 	if(kb_in.count >= KB_IN_BYTES) return;  // ignre scan code if buffer is full
 	
-	*(kb_in.p_head) = scan_code;
+	*(kb_in.p_head) = (char)scan_code; // safe convert here
 	kb_in.p_head++;
 
 	if(kb_in.p_head == kb_in.buf + KB_IN_BYTES)

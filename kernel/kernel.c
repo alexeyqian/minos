@@ -115,7 +115,7 @@ void init_ldt_descriptors_in_dgt(){
 	for(int i = 0; i < NR_TASKS + NR_PROCS; i++){
 		memset(&proc_table[i], 0, sizeof(struct proc));
 
-		proc_table[i].ldt_sel = SELECTOR_LDT_FIRST + (i << 3);
+		proc_table[i].ldt_sel = (uint16_t)SELECTOR_LDT_FIRST + (uint16_t)(i << 3);
 		kassert(INDEX_LDT_FIRST + i < GDT_SIZE);
 
 		// Fill LDT descriptor in GDT
@@ -131,7 +131,7 @@ void init_ldt_descriptors_in_dgt(){
 
 uint32_t before_paging_selector_to_segbase(uint16_t selector){
 	struct descriptor* p_dest = &gdt[selector >> 3];
-	return (p_dest->base_high << 24) | (p_dest->base_mid << 16) | (p_dest->base_low);
+	return (uint32_t)(p_dest->base_high << 24) | (uint32_t)(p_dest->base_mid << 16) | (uint32_t)(p_dest->base_low);
 }
 
 void shell(const char* tty_name){
@@ -175,7 +175,8 @@ void shell(const char* tty_name){
 		if(fd == -1){
 			if(rdbuf[0]){
 				write(FD_STDOUT, rdbuf, r);
-				write(FD_STDOUT, '\n', 1);
+				char *temp_newline = "\n";
+				write(FD_STDOUT, temp_newline, 1);
 			}
 		}else{
 			close(fd);

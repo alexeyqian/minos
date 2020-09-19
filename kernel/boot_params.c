@@ -16,7 +16,7 @@
 
 PRIVATE void print_mem_ranges(struct boot_params* bp){
 	struct mem_range* p;
-	for(int i = 0; i < bp->mem_range_count; i++){
+	for(uint32_t i = 0; i < bp->mem_range_count; i++){
 		p = &(bp->mem_ranges[i]);
 		kprintf("baddr_lo: 0x%x, baddr_hi: 0x%x, len_lo: 0x%x, len_hi: 0x%x, type: %d\n", 
 			p->baseaddr_low, p->baseaddr_high, p->length_low, p->length_high, p->type);
@@ -27,7 +27,7 @@ PRIVATE void set_mem_size(struct boot_params* bp){
 	struct mem_range* p;
 	uint32_t mem_size = 0;
 	uint32_t temp_mem_size = 0;
-	for(int i = 0; i < bp->mem_range_count; i++){
+	for(uint32_t i = 0; i < bp->mem_range_count; i++){
 		p = &(bp->mem_ranges[i]);
 		if(p->type != ADDR_RANGE_MEMORY) continue;
 
@@ -42,15 +42,15 @@ PRIVATE void set_mem_size(struct boot_params* bp){
 PRIVATE void set_kernel_base_limit(struct boot_params* bp){   
 	elf32_ehdr* elf_header = (elf32_ehdr*)(bp->kernel_file);
 	if(memcmp(elf_header->e_ident, ELFMAG, SELFMAG) != 0)
-		return -1;
+		return;
 
-	bp->kernel_base = ~0;
-	unsigned int temp = 0;
-	for(int i = 0; i < elf_header->e_shnum; i++){
+	bp->kernel_base = ~((uint32_t)0);
+	uint32_t temp = 0;
+	for(uint32_t i = 0; i < elf_header->e_shnum; i++){
 		elf32_shdr* section_header = (elf32_shdr*)(bp->kernel_file + elf_header->e_shoff + i * elf_header->e_shentsize);
 		if(section_header->sh_flags & SHF_ALLOC){
-			int bottom = section_header->sh_addr;
-			int top = section_header->sh_addr + section_header->sh_size;
+			uint32_t bottom = section_header->sh_addr;
+			uint32_t top = section_header->sh_addr + section_header->sh_size;
 			if(bp->kernel_base > bottom) bp->kernel_base = bottom;
 			if(temp < top) temp = top;
 		}
