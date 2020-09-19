@@ -44,14 +44,15 @@ PUBLIC void init_descriptor(struct descriptor* p_desc, uint32_t base, uint32_t l
 	p_desc->limit_low	     = limit & 0x0FFFF;		         // 段界限 1		(2 字节)
 	p_desc->base_low		 = base & 0x0FFFF;		         // 段基址 1		(2 字节)
 	p_desc->base_mid		 = (base >> 16) & 0x0FF;		 // 段基址 2		(1 字节)
-	p_desc->attr1			 = attribute & 0xFF;		     // 属性 1
-	p_desc->limit_high_attr2 = ((limit >> 16) & 0x0F) | ((attribute >> 8) & 0xF0); // 段界限 2 + 属性 2
-	p_desc->base_high		 = (base >> 24) & 0x0FF;		 // 段基址 3		(1 字节)
+	p_desc->attr1			 = (uint8_t)(attribute & 0xFF);		     // 属性 1
+	p_desc->limit_high_attr2 = (uint8_t)(((limit >> 16) & 0x0F) | ((attribute >> 8) & 0xF0)); // 段界限 2 + 属性 2
+	p_desc->base_high		 = (uint8_t)((base >> 24) & 0x0FF);		 // 段基址 3		(1 字节)
 }
 
 PUBLIC void init_proc_table(){
 	uint8_t privilege, rpl;
-	int i, j, eflags, prio;
+	int i, j, prio;
+	uint32_t eflags;
 
 	struct proc* p_proc = proc_table;
 	struct task* p_task; 
@@ -87,8 +88,10 @@ PUBLIC void init_proc_table(){
 			p_proc->ldt[INDEX_LDT_C]  = gdt[SELECTOR_KERNEL_CODE >> 3];
 			p_proc->ldt[INDEX_LDT_RW] = gdt[SELECTOR_KERNEL_DATA >> 3];			
 			// change the DPL to lower privillege
-			p_proc->ldt[INDEX_LDT_C].attr1 =  DA_C   | privilege << 5;	
-			p_proc->ldt[INDEX_LDT_RW].attr1 = DA_DRW | privilege << 5;				
+			//kassert(DA_C <= UINT8_MAX);
+			//kassert(DA_DRW <= UINT8_MAX);
+			p_proc->ldt[INDEX_LDT_C].attr1 =  (uint8_t)(DA_C   | privilege << 5);	
+			p_proc->ldt[INDEX_LDT_RW].attr1 = (uint8_t)(DA_DRW | privilege << 5);				
 		}else{ // init process			
 			kprintf("k_base: 0x%x, k_limit: 0x%x, NR_K: %d\n", 
 				g_boot_params.kernel_base, g_boot_params.kernel_limit,
@@ -101,13 +104,13 @@ PUBLIC void init_proc_table(){
 				0, // bytes before the entry point are not used
 				(PROC_IMAGE_SIZE_DEFAULT - 1) >> LIMIT_4K_SHIFT, 
 				//(g_boot_params.kernel_base + g_boot_params.kernel_limit) >> LIMIT_4K_SHIFT,
-				DA_32 | DA_LIMIT_4K | DA_C | privilege << 5);
+				(uint16_t)(DA_32 | DA_LIMIT_4K | DA_C | privilege << 5));
 
 			init_descriptor(&p_proc->ldt[INDEX_LDT_RW], 
 				0, // bytes before the entry point are not used
 				(PROC_IMAGE_SIZE_DEFAULT - 1) >> LIMIT_4K_SHIFT, 
 				//(g_boot_params.kernel_base + g_boot_params.kernel_limit) >> LIMIT_4K_SHIFT,
-				DA_32 | DA_LIMIT_4K | DA_DRW | privilege << 5);				
+				(uint16_t)(DA_32 | DA_LIMIT_4K | DA_DRW | privilege << 5));				
 		}
 
 		// init registers
@@ -281,7 +284,7 @@ void init(){while(1){}
 	// after this point, we can use printf now.
 
 	char* tty_list[] = {"/dev_tty1", "/dev_tty2"};
-	for(int i = 0; i < sizeof(tty_list)/sizeof(tty_list[0]); i++){
+	for(uint32_t i = 0; i < sizeof(tty_list)/sizeof(tty_list[0]); i++){
 		int pid = fork();
 		if (pid != 0) { // parent process
 			printf("[parent is running, child pid:%d]\n", pid);

@@ -26,9 +26,9 @@ boot/boot.bin: boot/boot.asm
 boot/loader.bin: boot/loader.asm
 	nasm $< -f bin -I 'boot/' -o $@
 
-refactory: kernel/keyboard.c
+refactory: kernel/proc.c
 	$(CROSS_COMPILER) $(C_FLAGS) -Wsign-compare -Wconversion -o \
-	kernel/keyboard.o kernel/keyboard.c	
+	kernel/proc.o kernel/proc.c	
 
 kernel/kernel.bin: $(C_SOURCES) $(C_HEADERS) \
 		fs/fs_main.c fs/fs_open.c fs/fs_shared.c fs/fs_shared.h fs/fs_open.h mm/mm_main.c 
