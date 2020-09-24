@@ -3,6 +3,7 @@
 #include "ke_asm_utils.h"
 #include "string.h"
 #include "klib.h"
+#include "screen.h"
 
 // ============= PTE =================
 inline void pt_entry_add_attrib (pt_entry* e, uint32_t attrib) {
@@ -14,7 +15,7 @@ inline void pt_entry_del_attrib (pt_entry* e, uint32_t attrib) {
 }
 
 inline void pt_entry_set_frame (pt_entry* e, physical_addr addr) {
-	*e = (*e & ~I86_PTE_FRAME) | addr;
+	*e = (*e & ~(uint32_t)I86_PTE_FRAME) | addr;
 }
 
 inline bool_t pt_entry_is_present (pt_entry e) {
@@ -39,7 +40,7 @@ inline void pd_entry_del_attrib (pd_entry* e, uint32_t attrib) {
 }
 
 inline void pd_entry_set_frame (pd_entry* e, physical_addr addr) {
-	*e = (*e & ~I86_PDE_FRAME) | addr;
+	*e = (*e & ~(uint32_t)I86_PDE_FRAME) | addr;
 }
 
 inline bool_t pd_entry_is_present (pd_entry e) {
@@ -61,10 +62,10 @@ inline bool_t pd_entry_is_user (pd_entry e) {
 inline bool_t pd_entry_is_4mb (pd_entry e) {
 	return e & I86_PDE_4MB;
 }
-
+/*
 inline void pd_entry_enable_global (pd_entry e) {
 
-}
+}*/
 
 // ============== VMMGR =================
 
@@ -160,11 +161,12 @@ PRIVATE void map_page_table(struct pdirectory* dir, uint32_t paddr_base, uint32_
     if (!table0) return;
     memset ((char*)table0, 0, sizeof (struct ptable));
     
-    for (int i=0, frame=paddr_base, virt=vaddr_base; i<1024; i++, frame+=4096, virt+=4096) {
+    for (uint32_t i = 0, frame = paddr_base, virt = vaddr_base; i < 1024; i++, frame += 4096, virt += 4096) {
         pt_entry page = 0;
         pt_entry_add_attrib (&page, I86_PTE_PRESENT);
         pt_entry_add_attrib (&page, I86_PTE_USER);
         pt_entry_add_attrib (&page, I86_PTE_WRITABLE);
+        //kassert(frame >= 0);
         pt_entry_set_frame  (&page, frame);
         table0->m_entries [PAGE_TABLE_INDEX (virt) ] = page;
     }

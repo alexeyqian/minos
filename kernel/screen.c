@@ -4,6 +4,8 @@
 #include "vsprintf.h"
 #include "global.h"
 #include "klib.h"
+#include "stdio.h"
+#include "ke_asm_utils.h"
 
 #define VIDEO_ADDRESS 0xb8000
 #define MAX_ROWS 25
@@ -66,15 +68,15 @@ PRIVATE int scroll(int cursor_offset){
     return cursor_offset;
 }
 
-PRIVATE void kprint_char(unsigned char c, int row, int col, char attribute){
-    unsigned char* vidmem = (unsigned char *) VIDEO_ADDRESS;
+PRIVATE void kprint_char(char c, int row, int col, char attribute){
+    char* vidmem = (char*) VIDEO_ADDRESS;
     if(!attribute) attribute = WHITE_ON_BLACK;
 
     int offset;
     if(col >= 0 && row >= 0)
         offset = get_screen_offset(row, col);
     else // use the current cursor position
-        offset = get_cursor();
+        offset = (int)get_cursor();
 
     if(c == '\n'){
         int rows = offset / (2 * MAX_COLS);
@@ -88,7 +90,7 @@ PRIVATE void kprint_char(unsigned char c, int row, int col, char attribute){
     // make scrolling adjustment, for when we reach the bottom of the screen
     offset = scroll(offset);
     // update the cursor position on the screen device
-    set_cursor(offset);
+    set_cursor((uint32_t)offset);
 }
 
 PUBLIC void kclear_screen(){
@@ -96,7 +98,7 @@ PUBLIC void kclear_screen(){
         for(int col = 0; col < MAX_COLS; col++)
             kprint_char(' ', row, col, WHITE_ON_BLACK);
     
-    set_cursor(get_screen_offset(0, 0));
+    set_cursor((uint32_t)get_screen_offset(0, 0));
 }
 
 PUBLIC void kprintf(const char *fmt, ...){

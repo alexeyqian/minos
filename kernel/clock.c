@@ -9,6 +9,36 @@
 #include "syscall.h"
 #include "interrupt.h"
 
+// TODO: update as PRIVATE
+PUBLIC void init_clock(){ // init 8253 PIT
+	out_byte(TIMER_MODE, RATE_GENERATOR);
+	out_byte(TIMER0, (uint8_t) (TIMER_FREQ/HZ) );
+	out_byte(TIMER0, (uint8_t) ((TIMER_FREQ/HZ) >> 8));
+
+	put_irq_handler(CLOCK_IRQ, clock_handler);
+	enable_irq(CLOCK_IRQ);	
+}
+/*
+PUBLIC void clock_task(){	
+	MESSAGE msg; // message buffer for both input and output
+	int result;
+
+	init_clock();
+
+	// process request, nver reply
+	while(TRUE){
+		send_recv(RECEIVE, ANY, &msg);  
+		switch(msg.type){
+			case HARD_INT:
+				result = do_clocitick(&msg);
+				break;
+			default:
+				kprintf("CLOCK: illegal request. Type: %d, from %d.\n", m.type, m.source);
+		}
+	}
+
+}*/
+
 PUBLIC void delay(int milli_sec){
     int t = get_ticks();
     while(((get_ticks() - t) * 1000 / HZ) < milli_sec) {}
@@ -33,14 +63,7 @@ PRIVATE void clock_handler(int irq){
 	schedule(); 
 }
 
-PUBLIC void init_clock(){ // init 8253 PIT
-	out_byte(TIMER_MODE, RATE_GENERATOR);
-	out_byte(TIMER0, (uint8_t) (TIMER_FREQ/HZ) );
-	out_byte(TIMER0, (uint8_t) ((TIMER_FREQ/HZ) >> 8));
 
-	put_irq_handler(CLOCK_IRQ, clock_handler);
-	enable_irq(CLOCK_IRQ);	
-}
 
 // priority is fixed value, ticks is counting down.
 // when all processes ticks are 0, then reset ticks to it's priority.

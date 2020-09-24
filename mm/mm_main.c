@@ -19,7 +19,9 @@ PRIVATE int alloc_mem(int pid, int memsize){
         kpanic("unsupported memory request: %d, should be less than %d", memsize, PROC_IMAGE_SIZE_DEFAULT);
 
     int base = PROCS_BASE + (pid - (NR_TASKS + NR_NATIVE_PROCS)) * PROC_IMAGE_SIZE_DEFAULT;
-    if(base + memsize >= g_boot_params.mem_size)
+    kassert(base >= 0);
+    kassert(memsize >= 0);
+    if((uint32_t)base + (uint32_t)memsize >= g_boot_params.mem_size)
         kpanic("memory allocation failed, pid: %d", pid);
     kprintf(">>> alloc_mem base: 0x%x\n", base);
     return base;
@@ -30,6 +32,7 @@ PRIVATE int alloc_mem(int pid, int memsize){
  *  So we don't need to really free anything.
  * */
 PUBLIC int free_mem(int pid){
+    UNUSED(pid);
     return 0;
 }
 
@@ -78,16 +81,18 @@ PRIVATE int do_fork(MESSAGE* msg){
     
     int child_base = alloc_mem(child_pid, caller_t_size);
     kprintf("{mm} 0x%x <- 0x%x (0x%x bytes)\n", child_base, caller_t_base, caller_t_size);
+    kassert(child_base >= 0);
+    kassert(caller_t_size >= 0);
     // child is a copy of parent
-    phys_copy((void*)child_base, (void*)caller_t_base, caller_t_size);
+    phys_copy((void*)child_base, (void*)caller_t_base, (size_t)caller_t_size);
     
     init_descriptor(&p->ldt[INDEX_LDT_C], 
-        child_base, 
+        (uint32_t)child_base, 
         (PROC_IMAGE_SIZE_DEFAULT - 1) >> LIMIT_4K_SHIFT, 
         DA_LIMIT_4K | DA_32 | DA_C | PRIVILEGE_USER << 5);
 
     init_descriptor(&p->ldt[INDEX_LDT_RW],
-        child_base,
+        (uint32_t)child_base,
         (PROC_IMAGE_SIZE_DEFAULT - 1) >> LIMIT_4K_SHIFT,
         DA_LIMIT_4K | DA_32 | DA_DRW | PRIVILEGE_USER << 5);
     
@@ -202,7 +207,7 @@ PUBLIC void do_exit(int caller, int status){
     // if the proc has any child, make INIT the new parent
     for(i = 0; i < NR_TASKS + NR_PROCS; i++){
         if(proc_table[i].p_parent == pid){ // is a child
-            proc_table[i].p_parent == INIT; // FIXME: make sure init always waiting
+            proc_table[i].p_parent = INIT; // FIXME: make sure init always waiting
             kprintf("{MM} %s (%d) exit(), so %s (%d) is INIT's child now\n",
 			       p->p_name, pid, proc_table[i].p_name, i);
 			kprintf("{MM} ((--do_exit():2: proc_table[INIT].p_flags: 0x%x--))\n",
@@ -271,7 +276,7 @@ PRIVATE int do_exec(MESSAGE* pmsg){
     char pathname[MAX_PATH];
     phys_copy((void*)va2la(TASK_MM, pathname), 
               (void*)va2la(src,     pmsg->PATHNAME), 
-              name_len);
+              (size_t)name_len);
     pathname[name_len] = 0;
 
     // get file size
@@ -303,7 +308,8 @@ PRIVATE int do_exec(MESSAGE* pmsg){
     }
 
     // setup the arg stack
-    int orig_stack_len = pmsg->BUF_LEN;
+    assert(pmsg->BUF_LEN >= 0);
+    uint32_t orig_stack_len = (uint32_t)pmsg->BUF_LEN;
     char stackcopy[PROC_ORIGIN_STACK];
     phys_copy((void*)va2la(TASK_MM, stackcopy),
               (void*)va2la(src, pmsg->BUF),
@@ -321,7 +327,7 @@ PRIVATE int do_exec(MESSAGE* pmsg){
               (void*)va2la(TASK_MM, stackcopy),
               orig_stack_len); // copy back after processing: adjust address
 
-    proc_table[src].regs.ecx = argc; 
+    proc_table[src].regs.ecx = (uint32_t)argc; 
     proc_table[src].regs.eax = (uint32_t)orig_stack; // argv
     // setup eip & esp
     proc_table[src].regs.eip = elf_hdr->e_entry;

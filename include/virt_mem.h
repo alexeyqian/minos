@@ -57,7 +57,7 @@ bool_t pd_entry_is_user (pd_entry);
 bool_t pd_entry_is_4mb (pd_entry);
 bool_t pd_entry_is_writable (pd_entry e);
 physical_addr pd_entry_pfn (pd_entry e);
-void pd_entry_enable_global (pd_entry e);
+//void pd_entry_enable_global (pd_entry e);
 
 // =========== virtual memory manager ==========
 typedef uint32_t virtual_addr;
@@ -66,7 +66,7 @@ typedef uint32_t virtual_addr;
 #define PAGES_PER_DIR   1024
 #define PAGE_DIRECTORY_INDEX(x) (((x) >> 22) & 0x3ff)
 #define PAGE_TABLE_INDEX(x) (((x) >> 12) & 0x3ff)
-#define PAGE_GET_PHYSICAL_ADDRESS(x) (*x & ~0xfff)
+#define PAGE_GET_PHYSICAL_ADDRESS(x) (*x & ~(uint32_t)0xfff)
 
 struct ptable{
     pt_entry m_entries[PAGES_PER_TABLE];

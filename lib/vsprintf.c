@@ -25,7 +25,7 @@ PRIVATE char* itoa(int num, char* str, int base){
 
     while(num != 0){
         int rem = num % base;
-        str[i++] = (rem > 9)? (rem - 10) + 'a' : rem + '0';
+        str[i++] = (char)((rem > 9)? (rem - 10) + 'a' : rem + '0');
         num = num / base;
     }
 
@@ -112,8 +112,8 @@ PUBLIC int vsprintf(char *buf, const char *fmt, va_list args)
 			break;
 		}
 
-		size_t k;
-		for (k = 0; k < ((align_nr > strlen(inner_buf)) ? (align_nr - strlen(inner_buf)) : 0); k++) {
+		int k_limit = ((align_nr > (int)strlen(inner_buf)) ? (align_nr - (int)strlen(inner_buf)) : 0);
+		for (int k = 0; k < k_limit; k++) {
 			*p++ = cs;
 		}
 		q = inner_buf;

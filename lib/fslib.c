@@ -20,7 +20,7 @@ PUBLIC int open(const char* pathname, int flags){
     msg.type = OPEN;
     msg.PATHNAME = (void*)pathname;
     msg.FLAGS = flags;
-    msg.NAME_LEN = strlen(pathname);
+    msg.NAME_LEN = (int)strlen(pathname);
     send_recv(BOTH, TASK_FS, &msg);
 
     return msg.FD;
@@ -73,7 +73,7 @@ PUBLIC int unlink(const char* pathname){
     MESSAGE msg;
     msg.type = UNLINK;
     msg.PATHNAME = (void*)pathname;
-    msg.NAME_LEN = strlen(pathname);
+    msg.NAME_LEN = (int)strlen(pathname);
     send_recv(BOTH, TASK_FS, &msg);
     return msg.RETVAL;
 }
@@ -103,7 +103,7 @@ PUBLIC int stat(const char* path, struct stat* buf){
     msg.type = STAT;
     msg.PATHNAME = (void*)path;
     msg.BUF      = (void*)buf;
-    msg.NAME_LEN = strlen(path);
+    msg.NAME_LEN = (int)strlen(path);
     send_recv(BOTH, TASK_FS, &msg);
     return msg.RETVAL;
 }

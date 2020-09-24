@@ -4,8 +4,9 @@
 
 // @return pointer to buf
 PUBLIC void* memset(void* buf, int value, size_t size){
+	//kassert(value < __UINT8_MAX__);
     for(size_t i = 0; i < size; i++)
-        ((unsigned char*)buf)[i] = value;
+        ((char*)buf)[i] = (char)value;
         
     return buf;
 }

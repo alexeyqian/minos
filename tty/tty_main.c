@@ -32,13 +32,14 @@ PUBLIC void tty_output_char(CONSOLE *p_con, char ch);
  * @param src   Addr of source.
  * @param size  How many words will be copied.
  *****************************************************************************/
-PRIVATE	void w_copy(unsigned int dst, const unsigned int src, int size)
+PRIVATE	void w_copy(unsigned int dst, const unsigned int src, size_t size)
 {
 	phys_copy((void*)(V_MEM_BASE + (dst << 1)),
 		  (void*)(V_MEM_BASE + (src << 1)),
 		  size << 1);
 }
 
+/* NOT USED
 PRIVATE void tty_output_str(TTY* p_tty, char* buf, int len){
 	char* p = buf;
 	int i = len;
@@ -46,7 +47,7 @@ PRIVATE void tty_output_str(TTY* p_tty, char* buf, int len){
 		tty_output_char(p_tty->p_console, *p++);
 		i--;
 	}
-}
+}*/
 
 PRIVATE void tty_set_cursor(unsigned int position)
 {
@@ -200,7 +201,7 @@ PUBLIC void tty_output_char(CONSOLE *con, char ch)
 		w_copy(con->original_addr, cp_orig, SCREEN_SIZE - SCREEN_WIDTH);
 		con->current_start_addr = con->original_addr;
 		con->cursor = con->original_addr + (SCREEN_SIZE - SCREEN_WIDTH) + cursor_x;
-		clear_screen(con->cursor, SCREEN_WIDTH);
+		clear_screen((int)con->cursor, SCREEN_WIDTH);
 		if (!con->is_full)
 			con->is_full = 1;
     }
@@ -210,7 +211,7 @@ PUBLIC void tty_output_char(CONSOLE *con, char ch)
     if (con->cursor >= con->current_start_addr + SCREEN_SIZE
         || con->cursor < con->current_start_addr){ // TODO: if <-> while?
        scroll_screen(con, SCROLL_SCREEN_UP);
-       clear_screen(con->cursor, SCREEN_WIDTH);
+       clear_screen((int)con->cursor, SCREEN_WIDTH);
     }
 
     flush(con);
@@ -239,13 +240,13 @@ PRIVATE void tty_dev_read(TTY *p_tty)
 PRIVATE char retrive_char_from_tty_buf(TTY *p_tty)
 {
     //disable_int();
-    char ch = *(p_tty->p_inbuf_tail);
+    uint32_t ch = *(p_tty->p_inbuf_tail);
     p_tty->p_inbuf_tail++;
     if (p_tty->p_inbuf_tail == p_tty->in_buf + TTY_IN_BYTES)
         p_tty->p_inbuf_tail = p_tty->in_buf;
     p_tty->inbuf_count--;
     //enable_int();
-    return ch;
+    return (char)ch;
 }
 
 /**
@@ -301,7 +302,8 @@ PRIVATE void tty_do_write(TTY* tty, MESSAGE* pmsg){
 
     while(i){
         int bytes = min(TTY_OUT_BUF_LEN, i);
-        phys_copy(va2la(TASK_TTY, buf), (void*)p, bytes);
+        kassert(bytes >= 0);
+        phys_copy(va2la(TASK_TTY, buf), (void*)p, (size_t)bytes);
         for(j = 0; j < bytes; j++)
             tty_output_char(tty->p_console, buf[j]);
         

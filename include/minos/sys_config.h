@@ -1,0 +1,13 @@
+#ifndef MINOS_SYS_CONFIG_H
+#define MINOS_SYS_CONFIG_H
+
+#define _MACHINE_IBM_PC  1
+#define _MINOS_MACHINE _MACHINE_IBM_PC
+
+#define _CHIP_INTEL 1
+#define _MINOS_CHIP _CHIP_INTEL
+
+#define _NR_PROCS 64
+#define _NR_SYS_PROCS 32
+
+#endif

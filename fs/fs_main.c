@@ -242,7 +242,7 @@ PUBLIC void task_fs(){
     init_fs();
     MESSAGE fs_msg; 
     struct proc* pcaller;
-    while(1){
+    while(TRUE){
         send_recv(RECEIVE, ANY, &fs_msg);    
 
         int msgtype = fs_msg.type;

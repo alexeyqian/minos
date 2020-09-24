@@ -218,11 +218,10 @@ typedef struct task{
 	char name[32];
 }TASK;
 
-// TODO: remove/update mem related ...
-typedef unsigned int  vir_clicks;
-typedef unsigned int  vir_bytes;
-typedef unsigned int  phys_clicks;
-typedef unsigned long phys_bytes;
+typedef unsigned long  phys_bytes;
+typedef unsigned long  phys_clicks;
+typedef unsigned long  virt_bytes;
+typedef unsigned long  virt_clicks;
 
 struct memory{
 	phys_clicks base;
@@ -231,21 +230,21 @@ struct memory{
 
 // memory map for local text, statck, data segments.
 struct mem_map{
-    vir_clicks mem_vir;
-    vir_clicks mem_len;
+    virt_clicks mem_vir;
+    virt_clicks mem_len;
     phys_clicks mem_phys;
 };
 
 struct far_mem{
     int in_use;
     phys_clicks mem_phys;
-    vir_clicks  mem_len;
+    virt_clicks  mem_len;
 };
 
 struct vir_addr{
     int proc_nr;
     int segment;
-    vir_bytes offset;
+    virt_bytes offset;
 };
 
 struct kinfo{
@@ -254,7 +253,7 @@ struct kinfo{
     phys_bytes data_base;
     phys_bytes data_size;
     
-    vir_bytes  proc_addr; // virtual address of process table
+    virt_bytes  proc_addr; // virtual address of process table
 
     int nr_procs; // number of user processes
     int nr_tasks; // number of kernel tasks

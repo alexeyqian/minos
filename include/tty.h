@@ -31,7 +31,7 @@ typedef struct s_tty{
 
 typedef struct s_console // CONSOLE is a video memory region
 {
-	unsigned int	current_start_addr;	
+	unsigned int	current_start_addr;	// TODO: should use phy_addr type
 	unsigned int	original_addr;		
 	unsigned int	size_in_word; // how many words does the console have
 	unsigned int	cursor;			
