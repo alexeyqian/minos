@@ -1,11 +1,4 @@
-#include "interrupt.h"
-#include "const.h"
-#include "types.h"
-#include "ktypes.h"
-#include "global.h"
-#include "klib.h"
-#include "ke_asm_utils.h"
-#include "screen.h" 
+#include "kernel.h"
 
 // exceptions 
 #define	INT_VECTOR_DIVIDE		    0x0
@@ -29,6 +22,7 @@
 #define	INT_VECTOR_IRQ0			    0x20
 #define	INT_VECTOR_IRQ8			    0x28
 
+// MUST match var in ke_syscalls.inc
 #define	INT_VECTOR_SYSCALL	    	0x90
 
 // 8259A interrupt controller ports
@@ -63,7 +57,7 @@ PRIVATE void init_8259a(){
 	out_byte(INT_M_CTLMASK,	0xFF);	             // Master, OCW1. 
 	out_byte(INT_S_CTLMASK,	0xFF);	             // Slave , OCW1. 
 
-	for(int i = 0; i < IRQ_NUM; i++)
+	for(int i = 0; i < NR_IRQ; i++)
 		irq_table[i] = irq_handler;
 }
 
@@ -122,7 +116,7 @@ PUBLIC void init_idt(){
 	*p_idt_limit = IDT_SIZE * sizeof(struct gate) - 1;
 	*p_idt_base  = (uint32_t)&idt;
 
-	load_idt();	
+	load_idt();	// TODO: use &idt_ptr to avoid import var to asm
 }
 
 PUBLIC void exception_handler(int vec_no, int err_code, int eip, int cs, int eflags){   

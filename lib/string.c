@@ -1,6 +1,6 @@
 #include "string.h"
 #include "const.h"
-#include "types.h"
+#include "sys/types.h"
 
 // @return pointer to buf
 PUBLIC void* memset(void* buf, int value, size_t size){
@@ -134,9 +134,10 @@ PUBLIC char * strcat(char * s1, const char *s2)
 }
 
 
-PUBLIC uint32_t digit_count(uint32_t num){
-    uint32_t count = 0;
+PUBLIC int digit_count(int num){
+    int count = 0;	
     if(num == 0) return 1;
+	if(num < 0) num = -num;
     while(num > 0){
         num /= 10;
         count ++;
@@ -144,39 +145,3 @@ PUBLIC uint32_t digit_count(uint32_t num){
 
     return count;
 }
-
-
-
-/*
-PUBLIC char* itox( int num, char* str) {
-    char *	p = str;
-	char	ch;
-	int	i;
-	bool_t	flag = FALSE;
-
-	*p++ = '0';
-	*p++ = 'x';
-
-	if(num == 0){
-		*p++ = '0';
-	}
-	else{	
-		for(i=28;i>=0;i-=4){
-			ch = (num >> i) & 0xF;
-			if(flag || (ch > 0)){
-				flag = TRUE;
-				ch += '0';
-				if(ch > '9'){
-					ch += 7;
-				}
-				*p++ = ch;
-			}
-		}
-	}
-
-	*p = 0;
-
-	return str;
-}
-
-*/

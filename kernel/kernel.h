@@ -1,17 +1,23 @@
 #ifndef KERNEL_H
 #define KERNEL_H
 
-// This is the master header for the kernel.
+// POSIX headers
+#include <const.h>
+#include <sys/types.h>
+#include <limits.h>
+#include <string.h>
+#include <utils.h>
 
-#define _POSIX_SOURCE 1 // tell headers to include POSIX files
-#define _MINOS        1 // tell headers to include minos files
-#define _SYSTEM       1 // tell headers that this is the kernel
+// MINOS specific headers
+#include <minos/const.h>
+#include <minos/types.h>
+#include <minos/proto.h>
+#include <minos/fs.h>
 
-#include "minos/config.h"// global config, must be first
-//#include <ansi.h>		 // C style: ANSI or K&R, MUST be second
-#include "sys/types.h"   // general system types
-#include "minos/const.h" // MINOS specific constants
-#include "minos/type.h"  // MINOS specific types
-#include "minos/ipc.h"   // MINOS inter-process communication
-#include "timers.h"      // watchdog timer management
+// MINOS kernel headers
+#include "ke_asm_utils.h"   // functions have to be written in asm
+#include "kconst.h"
+#include "ktypes.h"
+#include "proto.h"          // function prototypes
+#include "global.h"
 #endif

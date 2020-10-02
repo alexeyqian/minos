@@ -1,9 +1,11 @@
 #include "virt_mem.h"
-#include "types.h"
+#include <sys/types.h>
+#include <minos/proto.h>
+#include <string.h>
+#include <utils.h>
 #include "ke_asm_utils.h"
-#include "string.h"
-#include "klib.h"
-#include "screen.h"
+#include "ktypes.h"
+#include "proto.h"
 
 // ============= PTE =================
 inline void pt_entry_add_attrib (pt_entry* e, uint32_t attrib) {
@@ -96,10 +98,10 @@ inline pd_entry* vmmgr_pdirectory_lookup_entry (struct pdirectory* p, virtual_ad
 }
 
 inline bool_t vmmgr_switch_pdirectory (struct pdirectory* dir) {
-	if (!dir) return false;
+	if (!dir) return FALSE;
 	_cur_directory = dir;
 	vmmgr_load_pdbr (_cur_pdbr);
-	return true;
+	return TRUE;
 }
 
 struct pdirectory* vmmgr_get_directory () {
@@ -110,14 +112,14 @@ bool_t vmmgr_alloc_page (pt_entry* e) {
 	//! allocate a free physical frame
 	void* p = pmmgr_alloc_block ();
 	if (!p)
-		return false;
+		return FALSE;
 
 	//! map it to the page
 	pt_entry_set_frame (e, (physical_addr)p);
 	pt_entry_add_attrib (e, I86_PTE_PRESENT);
 	//doesent set WRITE flag...
 
-	return true;
+	return TRUE;
 }
 
 void vmmgr_free_page (pt_entry* e) {
@@ -186,6 +188,7 @@ void vmmgr_init () {
 
     // map physical mem 0 - 4M, idenitity mapped
     map_page_table(dir, 0x0, 0x0);  
+    kprintf(">>> identical map: 0 - 4M\n");
     // map 4-8m, identity mapped  
     //map_page_table(dir, 0x400000, 0x400000);
 
@@ -197,7 +200,7 @@ void vmmgr_init () {
     vmmgr_switch_pdirectory (dir);    
     // remember that as soon as paging is enabled, all address become virtual
     vmmgr_enable_paging ();
-    // all addresses are virtual after this line.
+    kprintf(">>> =========== all addresses are virtual after this line. =============\n");
 }
 
 // =========== functions using asm ================
@@ -215,7 +218,7 @@ void vmmgr_disable_paging(){
 
 bool_t vmmgr_is_paging () {
 	uint32_t res= get_cr0();
-	return (res & 0x80000000) ? false : true;
+	return (res & 0x80000000) ? FALSE : TRUE;
 }
 
 void vmmgr_load_pdbr (physical_addr addr) {

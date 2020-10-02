@@ -1,19 +1,18 @@
-#include "ipc.h"
-#include "const.h"
-#include "types.h"
-#include "ktypes.h"
-#include "global.h"
-#include "ke_asm_utils.h"
-#include "syscall.h"
+#include "kernel.h"
 
-#include "string.h"
-#include "klib.h"
-#include "stdio.h"
-#include "screen.h"
-#include "tty.h"
-#include "clock.h" // using schedule()
+/*
+ * <ring 0-1> calculate the linear address of proc's segment
+ * @param p: proc pointer
+ * @param idx: index of proc's segments
+ * 
+ * @return base address of memory pointed by LDT descriptor
+ * */
+PRIVATE int ldt_seg_linear(struct proc* p, int idx){
+	struct descriptor* d = &p->ldt[idx];
+	return d->base_high << 24 | d->base_mid << 16 | d->base_low;
+}
 
-// <ring 0>, this routine is called after p_flags has been set != 0
+// this routine is called after p_flags has been set != 0
 // it calls schedule to choose another proc as the proc_ready
 // this routing doesnot change the p_flags.
 PRIVATE void block(struct proc* p){
@@ -21,19 +20,19 @@ PRIVATE void block(struct proc* p){
     schedule();
 }
 
-// <ring 0>, this is a dummy routing. it does nothing actually.
+// a dummy routing. it does nothing actually.
 // when it is called, the p_flags should have been cleared (==0)
 PRIVATE void unblock(struct proc* p){
     kassert(p->p_flags == 0);
 }
 
-// <ring 0>, check where it is safe to send a message from src to dest.
+// check where it is safe to send a message from src to dest.
 // the routing will detect if the msaage graph contains a circle.
 // for instance, if we have procs trying to send messages like this:
 // A->B->C->A, then a deadlock occures, because all of them will wait forever.
 // if no cycles detected, it is considered as safe.
 // 0 if success
-PRIVATE int deadlock(int src, int dest)
+PRIVATE int deadlock(int src, int dest) // TODO: add proc_table as param, rename global to g_proc_table
 {
 	struct proc* p = proc_table + dest;
 	while (1) {
@@ -57,16 +56,15 @@ PRIVATE int deadlock(int src, int dest)
 	return 0;
 }
 
-
 /*
- * <ring 0> send a message to the dest proc.
+ * send a message to the dest proc.
  * if the dest is blocked waiting for the message, 
  * copy the message to it and unlock dest.
  * otherwise the caller will be blocked and appended to the dest's sending queue.
  * 
  * @return 0 if success
 * */
-PRIVATE int msg_send(struct proc* current, int dest, MESSAGE* m){
+PRIVATE int msg_send(struct proc* current, int dest, KMESSAGE* m){
     struct proc* sender = current;
     struct proc* p_dest = proc_table + dest;
     kassert(proc2pid(sender) != dest);
@@ -81,7 +79,7 @@ PRIVATE int msg_send(struct proc* current, int dest, MESSAGE* m){
 
         phys_copy( va2la(dest, p_dest->p_msg), 
                     va2la(proc2pid(sender), m),
-                    sizeof(MESSAGE));
+                    sizeof(KMESSAGE));
         
         p_dest->p_msg = 0; 
         p_dest->p_flags &= ~RECEIVING; // dest has received the msg
@@ -128,12 +126,12 @@ PRIVATE int msg_send(struct proc* current, int dest, MESSAGE* m){
 }
 
 /*
- * <ring 0> try to get a message from the src proc.
+ * try to get a message from the src proc.
  * if the src is blocked sending the message, 
  * copy the message from it and unlock src.
  * Otherwise the caller will be blocked.
 */
-PRIVATE int msg_receive(struct proc* current, int src, MESSAGE* m){
+PRIVATE int msg_receive(struct proc* current, int src, KMESSAGE* m){
     struct proc* p_who_wanna_recv = current;
     struct proc* p_from = 0;
     struct proc* prev = 0;
@@ -146,14 +144,14 @@ PRIVATE int msg_receive(struct proc* current, int src, MESSAGE* m){
         // there is an interrupt needs a p_who_wanna_recv's handling
         // and it is ready to handle it.
         
-        MESSAGE msg;
-        reset_msg(&msg);
+        KMESSAGE msg;
+        memset(&msg, 0, sizeof(KMESSAGE));        
         msg.source = INTERRUPT;
         msg.type = HARD_INT;
         
         kassert(m);
 
-        phys_copy(va2la(proc2pid(p_who_wanna_recv), m), (char*)&msg, sizeof(MESSAGE));
+        phys_copy(va2la(proc2pid(p_who_wanna_recv), m), (char*)&msg, sizeof(KMESSAGE));
 
         p_who_wanna_recv->has_int_msg = 0;
         kassert(p_who_wanna_recv->p_flags == 0);
@@ -232,7 +230,7 @@ PRIVATE int msg_receive(struct proc* current, int src, MESSAGE* m){
         
         phys_copy(va2la(proc2pid(p_who_wanna_recv), m),
             va2la(proc2pid(p_from), p_from->p_msg),
-            sizeof(MESSAGE));
+            sizeof(KMESSAGE));
 
         p_from->p_msg = 0;
         p_from->p_sendto = NO_TASK;
@@ -256,67 +254,14 @@ PRIVATE int msg_receive(struct proc* current, int src, MESSAGE* m){
     return 0;
 }
 
-PUBLIC void dump_proc(struct proc* p)
-{
-	char info[STR_DEFAULT_LEN];
-	int i;
-
-	int dump_len = sizeof(struct proc);
-
-    tty_reset_start_addr();
-	
-	sprintf(info, "byte dump of proc_table[%d]:\n", p - proc_table); 
-    kprintf("%s", info);
-	for (i = 0; i < dump_len; i++) {
-		sprintf(info, "%x.", ((unsigned char *)p)[i]);
-		kprintf("%s", info);
-	}
-
-	sprintf(info, "ANY: 0x%x.\n", ANY); kprintf("%s", info);
-	sprintf(info, "NO_TASK: 0x%x.\n", NO_TASK); kprintf("%s", info);
-	kprintf("%s", info);
-
-	sprintf(info, "ldt_sel: 0x%x.  ", p->ldt_sel); kprintf("%s", info);
-	sprintf(info, "ticks: 0x%x.  ", p->ticks); kprintf("%s", info);;
-	sprintf(info, "priority: 0x%x.  ", p->priority); kprintf("%s", info);;
-	sprintf(info, "name: %s.  \n", p->p_name); kprintf("%s", info);;
-	sprintf(info, "p_flags: 0x%x.  ", p->p_flags); kprintf("%s", info);;
-	sprintf(info, "p_recvfrom: 0x%x.  ", p->p_recvfrom); kprintf("%s", info);;
-	sprintf(info, "p_sendto: 0x%x.  \n", p->p_sendto); kprintf("%s", info);;
-	sprintf(info, "has_int_msg: 0x%x.  ", p->has_int_msg); kprintf("%s", info);;
-}
-
-PUBLIC void dump_msg(const char * title, MESSAGE* m)
-{
-	int packed = 0;
-	kprintf("{%s}<0x%x>{%ssrc:%s(%d),%stype:%d,%s(0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x)%s}%s",  //, (0x%x, 0x%x, 0x%x)}",
-	       title,
-	       (int)m,
-	       packed ? "" : "\n        ",
-	       proc_table[m->source].p_name,
-	       m->source,
-	       packed ? " " : "\n        ",
-	       m->type,
-	       packed ? " " : "\n        ",
-	       m->u.m3.m3i1,
-	       m->u.m3.m3i2,
-	       m->u.m3.m3i3,
-	       m->u.m3.m3i4,
-	       (int)m->u.m3.m3p1,
-	       (int)m->u.m3.m3p2,
-	       packed ? "" : "\n",
-	       packed ? "" : "\n"/* , */
-		);
-}
-
-// <ring 0> implementation of system call sendrec
-PUBLIC int sys_sendrec(int function, int src_dest, MESSAGE* pmsg, struct proc* p){
+// implementation of system call sendrec
+PUBLIC int sys_sendrec(int function, int src_dest, KMESSAGE* pmsg, struct proc* p){
 	kassert(k_reenter == 0); // make sure we are not in ring0
 	kassert((src_dest >= 0 && src_dest <= NR_TASKS + NR_PROCS) ||
 		src_dest == ANY || src_dest == INTERRUPT);
 	int ret = 0;
 	int caller = proc2pid(p);
-	MESSAGE* mla = (MESSAGE*)va2la(caller, pmsg); 
+	KMESSAGE* mla = (KMESSAGE*)va2la(caller, pmsg); 
 	mla->source = caller;
 	kassert(mla->source != src_dest);
 
@@ -336,7 +281,19 @@ PUBLIC int sys_sendrec(int function, int src_dest, MESSAGE* pmsg, struct proc* p
 	return 0;
 }
 
-// <ring 0> inform a proc that an interrupt has occured
+PUBLIC void* va2la(int pid, void* va){
+	struct proc* p = &proc_table[pid];
+	uint32_t seg_base = (uint32_t)ldt_seg_linear(p, INDEX_LDT_RW);
+	uint32_t la = seg_base + (uint32_t)va;
+
+	if(pid < NR_TASKS){ // + NR_NATIVE_PROCS){
+		kassert(la == (uint32_t)va);
+	}        
+    		
+	return (void*)la;
+}
+
+// inform a proc that an interrupt has occured
 PUBLIC void inform_int(int task_nr){
     struct proc* p = proc_table + task_nr;
 	if((p->p_flags & RECEIVING) && // dest is wating for the msg
@@ -359,9 +316,3 @@ PUBLIC void inform_int(int task_nr){
 		p->has_int_msg = 1;
 	}	
 }
-
-PUBLIC void reset_msg(MESSAGE* p)
-{
-	memset(p, 0, sizeof(MESSAGE));
-}
-

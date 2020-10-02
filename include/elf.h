@@ -1,7 +1,7 @@
-#ifndef MINOS_ELF_H
-#define MINOS_ELF_H
+#ifndef _ELF_H
+#define _ELF_H
 
-#include "types.h"
+#include "sys/types.h"
 
 #define EI_NIDENT   16
 #define	ELFMAG		"\177ELF"

@@ -1,9 +1,6 @@
-#include "vsprintf.h"
-#include "const.h"
-#include "types.h"
-#include "string.h"
-#include "klib.h"
-#include "stdio.h"
+#include <const.h>
+#include <string.h>
+#include <utils.h>
 
 PRIVATE char* itoa(int num, char* str, int base){
     int i = 0;
@@ -46,7 +43,7 @@ PUBLIC int vsprintf(char *buf, const char *fmt, va_list args)
 	va_list	p_next_arg = args;
 	int	m;
 
-	char	inner_buf[STR_DEFAULT_LEN];
+	char	inner_buf[256];
 	char	cs;
 	int	align_nr;
 

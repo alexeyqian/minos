@@ -1,65 +1,142 @@
 #ifndef MINOS_CONST_H
 #define MINOS_CONST_H
 
-#ifndef CHIP
-#error CHIP is not defined
-#endif
+// ========= IRQ ==============
+#define NR_IRQ          16
 
-#define EXTERN  extern
-#define PRIVATE static
-#define PUBLIC 
+// hardware interrupts
+#define	CLOCK_IRQ	    0
+#define	KEYBOARD_IRQ	1 // TODO: move to keyboard.h
+#define	CASCADE_IRQ   	2	/* cascade enable for 2nd AT controller */
+#define	ETHER_IRQ	    3	/* default ethernet interrupt vector */
+#define	SECONDARY_IRQ	3	/* RS232 interrupt vector for port 2 */
+#define	RS232_IRQ	    4	/* RS232 interrupt vector for port 1 */
+#define	XT_WINI_IRQ	    5	/* xt winchester */
+#define	FLOPPY_IRQ   	6	/* floppy disk */
+#define	PRINTER_IRQ	    7
+#define	AT_WINI_IRQ	   14	/* at winchester */
 
-#define TRUE  1
-#define FALSE 0
+// TASK
+#define NR_SYSCALLS     2
 
-#define HZ 60 // clock frequency
+#define NR_TASKS        3
+#define NR_PROCS        1
+//#define NR_NATIVE_PROCS 4
+#define TASK_CLOCK	    0  
+#define TASK_SYS	    1 
+#define TASK_HD		    2 
 
-#define SUPER_USER (uid_t)0  
+#define SVC_FS         10
+//#define INIT            6 // first user proc
 
-// devices 0377 = b000 011 111 111
-#define MAJOR    8 // (dev>>MAJOR) & 0377
-#define MINOR    0 // (dev>>MAJOR) & 0377  
+#define ANY		       (NR_TASKS + NR_PROCS + 10)
+#define NO_TASK		   (NR_TASKS + NR_PROCS + 20)
 
-#define NULL ((void*)0) // null pointer
+// kernel space tasks
+#define STACK_SIZE_CLOCK 0x8000  
+#define STACK_SIZE_SYS   0x8000
+#define STACK_SIZE_HD    0x8000
 
-#define PROC_NAME_LEN  16
+// user space services
+#define STACK_SIZE_FS    0x8000
+#define STACK_SIZE_TOTAL STACK_SIZE_CLOCK+STACK_SIZE_SYS+STACK_SIZE_HD \
+	+STACK_SIZE_FS
 
-#define MAX(A, b) ((a) > (b) ? (a) : (b))
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
+// CLOCK
+#define HZ              100
 
-#if (CHIP == INTEL)
-#define CLICK_SIZE 1024
-#define CLICK_SHIFT 10
-#endif
+// IPC
+#define SEND    1
+#define RECEIVE 2
+#define BOTH    3
+#define INTERRUPT -10
 
-/* Flag bits for i_mode in the inode. */
-#define I_TYPE          0170000	/* this field gives inode type */
-#define I_REGULAR       0100000	/* regular file, not dir or special */
-#define I_BLOCK_SPECIAL 0060000	/* block special file */
-#define I_DIRECTORY     0040000	/* file is a directory */
-#define I_CHAR_SPECIAL  0020000	/* character special file */
-#define I_NAMED_PIPE	0010000 /* named pipe (FIFO) */
-#define I_SET_UID_BIT   0004000	/* set effective uid_t on exec */
-#define I_SET_GID_BIT   0002000	/* set effective gid_t on exec */
-#define ALL_MODES       0006777	/* all bits for user, group and others */
-#define RWX_MODES       0000777	/* mode bits for RWX only */
-#define R_BIT           0000004	/* Rwx protection bit */
-#define W_BIT           0000002	/* rWx protection bit */
-#define X_BIT           0000001	/* rwX protection bit */
-#define I_NOT_ALLOC     0000000	/* this inode is free */
+#define	FD		    u.m3.m3i1 
+#define	PATHNAME	u.m3.m3p1 
+#define	FLAGS		u.m3.m3i1 
+#define	NAME_LEN	u.m3.m3i2 
+#define BUF_LEN     u.m3.m3i3
+#define	CNT		    u.m3.m3i2
+#define	REQUEST		u.m3.m3i2
+#define	PROC_NR		u.m3.m3i3
+#define	DEVICE		u.m3.m3i4
+#define	POSITION	u.m3.m3l1
+#define	BUF	    	u.m3.m3p2
+#define	OFFSET		u.m3.m3i2 
+#define	WHENCE		u.m3.m3i3 
 
-/* Flag used only in flags argument of dev_open. */
-#define RO_BIT		0200000	/* Open device readonly; fail if writable. */
+#define	PID		    u.m3.m3i2
+#define	STATUS		u.m3.m3i1
+#define	RETVAL		u.m3.m3i1
 
-/* Some limits. */
-#define MAX_BLOCK_NR  ((block_t) 077777777)	/* largest block number */
-#define HIGHEST_ZONE   ((zone_t) 077777777)	/* largest zone number */
-#define MAX_INODE_NR ((ino_t) 037777777777)	/* largest inode number */
-#define MAX_FILE_POS ((off_t) 037777777777)	/* largest legal file offset */
+// PROC: proc.p_flags
+#define SENDING   0x02	// set when proc trying to send 
+#define RECEIVING 0x04	// set when proc trying to recv 
+#define WAITING   0x08  // proc waiting for the child to terminate
+#define HANGING   0x10  // proc exits without being waited by parent
+#define FREE_SLOT 0x20  // proc table entry is not used
 
-#define NO_BLOCK              ((block_t) 0)	/* absence of a block number */
-#define NO_ENTRY                ((ino_t) 0)	/* absence of a dir entry */
-#define NO_ZONE                ((zone_t) 0)	/* absence of a zone number */
-#define NO_DEV                  ((dev_t) 0)	/* absence of a device numb */
+// HD
+#define INVALID_DRIVER	-20
+
+
+// ======== HD related constants ==================
+#define	DIOCTL_GET_GEO	1
+
+/* Hard Drive */
+#define SECTOR_SIZE		512
+#define SECTOR_BITS		(SECTOR_SIZE * 8)
+#define SECTOR_SIZE_SHIFT	9
+
+/* major device numbers (corresponding to kernel/global.c::dd map array) */
+#define	NO_DEV			0
+#define	DEV_FLOPPY		1
+#define	DEV_CDROM		2
+#define	DEV_HD			3
+#define	DEV_CHAR_TTY    4
+#define	DEV_SCSI		5
+/* make device number from major and minor numbers */
+#define	MAJOR_SHIFT		8
+#define	MAKE_DEV(a,b)		((a << MAJOR_SHIFT) | b)
+/* separate major and minor numbers from device number */
+#define	MAJOR(x)		((x >> MAJOR_SHIFT) & 0xFF)
+#define	MINOR(x)		(x & 0xFF)
+
+#define	INVALID_INODE		0
+#define	ROOT_INODE          1
+
+#define	MAX_DRIVES          2
+#define	NR_PART_PER_DRIVE	4
+#define	NR_SUB_PER_PART		16
+#define	NR_SUB_PER_DRIVE	(NR_SUB_PER_PART * NR_PART_PER_DRIVE)
+#define	NR_PRIM_PER_DRIVE	(NR_PART_PER_DRIVE + 1)
+
+/**
+ * @def MAX_PRIM_DEV
+ * Defines the max minor number of the primary partitions.
+ * If there are 2 disks, prim_dev ranges in hd[0-9], this macro will
+ * equals 9.
+ */
+#define	MAX_PRIM		(MAX_DRIVES * NR_PRIM_PER_DRIVE - 1)
+
+#define	MAX_SUBPARTITIONS	(NR_SUB_PER_DRIVE * MAX_DRIVES)
+
+/* device numbers of hard disk */
+#define	MINOR_hd1a		0x10
+#define MINOR_hd2a      (MINOR_hd1a + NR_SUB_PER_PART)
+//#define	MINOR_hd2a		0x20
+//#define	MINOR_hd2b		0x21
+//#define	MINOR_hd3a		0x30
+//#define	MINOR_hd4a		0x40
+
+#define MINOR_BOOT MINOR_hd2a // TODO: move to config.h
+#define	ROOT_DEV		MAKE_DEV(DEV_HD, MINOR_BOOT)	/* 3, 0x21 */
+
+#define	P_PRIMARY	0
+#define	P_EXTENDED	1
+
+#define ORANGES_PART	0x99	/* Orange'S partition */
+#define NO_PART	    	0x00	/* unused entry */
+#define EXT_PART    	0x05	/* extended partition */
 
 #endif

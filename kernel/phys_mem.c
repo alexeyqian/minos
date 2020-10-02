@@ -1,7 +1,10 @@
 #include "phys_mem.h"
-#include "types.h"
+#include <sys/types.h>
+#include <minos/proto.h>
+#include <utils.h>
+
 #include "ktypes.h"
-#include "screen.h"
+#include "proto.h"
 
 #define ALLOC_BASE             0x300000 // physical memory manage begins from 4M
 #define PMMGR_BLOCKS_PER_BYTE  8
@@ -181,14 +184,22 @@ PUBLIC void pmmgr_init(struct boot_params* pbp){
     uint32_t bitmap_size = (_mem_size - ALLOC_BASE) / (PMMGR_BLOCK_SIZE * PMMGR_BLOCKS_PER_BYTE);
     pmmgr_uninit_region(ALLOC_BASE, bitmap_size);
 
-    kprintf(">>> pmmgr max blocks %d, used blocks %d, bitmap size: %d bytes\n", _max_blocks, _used_blocks, bitmap_size);
-	
+    kprintf(">>> pmmgr alloc base: 0x%x, max blocks %d, used blocks %d, bitmap size: %d bytes\n", 
+        ALLOC_BASE, _max_blocks, _used_blocks, bitmap_size);
+	kprintf(">>> first block is reserved.\n");
+
+    kprintf(">>> =========== begin testing physical memory allocation =================\n");
 	void* p1 = pmmgr_alloc_block();
-	kprintf(">>> test p1 allocated at: 0x%x", p1);
+	kprintf(">>> test p1 allocated at: 0x%x\n", p1);
 	
 	void* p2 = pmmgr_alloc_block();
-	kprintf(">>> test p2 allocated at: 0x%x", p2);
+	kprintf(">>> test p2 allocated at: 0x%x\n", p2);
 
 	pmmgr_free_block(p1);
 	pmmgr_free_block(p2);
+    kprintf(">>> p1 and p2 are freed\n");
+    void* p3 = pmmgr_alloc_block();
+    kprintf(">>> test p3 allocated at: 0x%x\n", p3);
+    pmmgr_free_block(p3);
+    kprintf(">>> =========== end testing physical memory allocation =================\n");
 }

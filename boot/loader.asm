@@ -99,7 +99,7 @@ pm_start: ; entry point for protected mode
     call loader_putax_pm
 	
 	call pass_boot_params
-
+	
 	; LOADER'S JOB ENDS AFTER THIS JMP
 	; ================ enter kernel code ========================
 	jmp code_selector: KERNEL_PHYS_ENTRY_POINT

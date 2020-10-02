@@ -1,14 +1,9 @@
-#include "boot_params.h"
-#include "types.h"
-#include "ktypes.h"
+#include "kernel.h"
+#include <elf.h>
 
-#include "string.h"
-#include "elf.h"
-#include "screen.h"
-
-// @attention must match code in loader.asm
-#define BOOT_PARAM_ADDR  0x500
-#define BOOT_PARAM_MAGIC 0xb007
+// @attention MUST match code in loader.asm
+#define BOOT_PARAM_ADDR      0x500
+#define BOOT_PARAM_MAGIC     0xb007
 #define	BI_MAG			     0
 #define	BI_KERNEL_FILE	     1
 #define	BI_MEM_RANGE_COUNT	 2
@@ -58,10 +53,12 @@ PRIVATE void set_kernel_base_limit(struct boot_params* bp){
 
 	kassert(bp->kernel_base < temp);
 	bp->kernel_limit = temp - bp->kernel_base - 1;
-	//kprintf("kernel base: 0x%x, limit: 0x%x\n", bp->kernel_base, bp->kernel_limit);
+	kprintf("kernel base: 0x%x, limit: 0x%x\n", bp->kernel_base, bp->kernel_limit);
 }
 
-PUBLIC void get_boot_params(struct boot_params* pbp){
+PUBLIC void read_boot_params(struct boot_params* pbp){
+	kprintf(">>> ======== begin boot parameters ===========\n");
+
 	// boot params should have been saved at BOOT_PARAM_ADDR
 	uint32_t* p = (uint32_t*)BOOT_PARAM_ADDR;
 	kprintf("bp magic: 0x%x at 0x%x\n", p[BI_MAG], BOOT_PARAM_ADDR);	
@@ -86,4 +83,6 @@ PUBLIC void get_boot_params(struct boot_params* pbp){
 	
 	// kernel base and limit
 	set_kernel_base_limit(pbp);
+	kprintf(">>> ======== end boot parameters ===========\n");
+
 }
