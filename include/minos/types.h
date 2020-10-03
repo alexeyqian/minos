@@ -22,8 +22,8 @@ struct mess3{
     int m3i2;
     int m3i3;
     int m3i4;
-    uint64_t m3l1;
-    uint64_t m3l2;
+    uint64_t m3l1; 
+    uint64_t m3l2; 
     void* m3p1;
     void* m3p2;
 };
@@ -32,23 +32,35 @@ enum kcall_type{
     KC_RET,
 	KC_IN_BYTE,
 	KC_OUT_BYTE,
+    KC_PORT_READ,
+    KC_PORT_WRITE,
+    KC_ENABLE_IRQ,
+    KC_DISABLE_IRQ,
 	KC_ENABLE_INT,
 	KC_DISABLE_INT,
 	KC_PUTS,
     KC_TICKS
 };
 
-// cannot use pointer inside, since message might be transfered 
-// between different rings, and can only be transferred by value instead of reference.
-typedef struct kmessage{ 
-    int source;
+typedef struct kcall_params{
     int type;
     union{
         struct mess1 m1;
         struct mess2 m2;
         struct mess3 m3;
     }u;
-}KMESSAGE; 
+} KCALL_PARAMS;
+
+struct two_ints_s{
+    int i1;
+    int i2;
+};
+
+struct three_ints_s{
+    int i1;
+    int i2;
+    int i3;
+};
 
 enum kmessage_type{ 
 	HARD_INT = 1,
@@ -74,5 +86,37 @@ enum kmessage_type{
 	DISK_LOG
 };
 
+// cannot use pointer inside, since message might be transfered 
+// between different rings, and can only be transferred by value instead of reference.
+typedef struct kmessage{ 
+    int source;
+    int type;
+    union{
+        struct mess1 m1;
+        struct mess2 m2;
+        struct mess3 m3;
+    }u;
+}KMESSAGE; 
+
+// TODO: add prefix MSG_FIELD_
+#define	PID		    u.m3.m3i2
+#define	STATUS		u.m3.m3i1
+#define	RETVAL		u.m3.m3i1
+#define	PROC_NR		u.m3.m3i3
+#define	BUF	    	u.m3.m3p2
+#define BUF_LEN     u.m3.m3i3
+
+#define	DEVICE		u.m3.m3i4
+#define	POSITION	u.m3.m3l1
+#define	OFFSET		u.m3.m3i2 
+#define	WHENCE		u.m3.m3i3 
+
+#define	FD		    u.m3.m3i1 
+#define	PATHNAME	u.m3.m3p1 
+
+#define	FLAGS		u.m3.m3i1 
+#define	NAME_LEN	u.m3.m3i2 
+#define	CNT		    u.m3.m3i2
+#define	REQUEST		u.m3.m3i2
 
 #endif

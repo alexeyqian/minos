@@ -22,31 +22,11 @@ PUBLIC void schedule(){
 	}
 }
 
-PRIVATE void clock_handler(int irq){
-	UNUSED(irq);
-	
-	if(++ticks >= MAX_TICKS) ticks = 0;
-
-	if(p_proc_ready->ticks)
-		p_proc_ready->ticks--;
-
-	//if(key_pressed)
-	//	inform_int(TASK_TTY);
-		
-	if(k_reenter != 0){ // interrupt re-enter
-		return;
-	}
-
-	if (p_proc_ready->ticks > 0) return;
-	schedule(); 
-}
-
 PUBLIC void init_clock(){ // init 8253 PIT
 	out_byte(TIMER_MODE, RATE_GENERATOR);
 	out_byte(TIMER0, (uint8_t) (TIMER_FREQ/HZ) );
 	out_byte(TIMER0, (uint8_t) ((TIMER_FREQ/HZ) >> 8));
-
-	put_irq_handler(CLOCK_IRQ, clock_handler);
+	//put_irq_handler(CLOCK_IRQ, clock_irq_handler); MOVED TO INTERRUPT.C
 	enable_irq(CLOCK_IRQ);	
 }
 /*

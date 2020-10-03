@@ -12,15 +12,14 @@ void put_irq_handler(int irq, pf_irq_handler_t handler);
 // kprintf.c
 void kcls();
 void kputs(char* str);
+void kprintf(const char *fmt, ...);
+void kassertion_failure(char *exp, char *file, char *base_file, int line);
+#define kassert(exp)  if (exp) ; \
+        else kassertion_failure(#exp, __FILE__, __BASE_FILE__, __LINE__)
 
 void kpanic(const char *fmt, ...);
 void kspin(char* func_name);
 void never_here();
-
-// interrupt.c
-void init_idt();
-void irq_handler(int irq);
-void put_irq_handler(int irq, pf_irq_handler_t handler);
 
 //boot_params.c
 struct boot_params;

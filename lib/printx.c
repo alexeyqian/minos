@@ -6,6 +6,7 @@
 #include <utils.h>
 
 #define CHARBUF 256
+//@attention used before tty is ready, after that, use printf
 PUBLIC void printx(const char *fmt, ...){
     int i;
     char buf[CHARBUF];

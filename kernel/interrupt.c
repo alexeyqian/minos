@@ -31,6 +31,39 @@
 #define	INT_S_CTL	    0xA0	/* I/O port for second interrupt controller  <Slave>  */
 #define	INT_S_CTLMASK	0xA1	/* setting bits in this port disables ints   <Slave>  */
 
+PUBLIC void irq_handler(int irq){
+    kprintf("IRQ handler: 0x%x\n", irq);
+}
+
+PRIVATE void clock_irq_handler(int irq){
+	UNUSED(irq);
+	
+	if(++ticks >= MAX_TICKS) ticks = 0;
+
+	if(p_proc_ready->ticks)
+		p_proc_ready->ticks--;
+
+	//if(key_pressed)
+	//	inform_int(TASK_TTY);
+		
+	if(k_reenter != 0){ // interrupt re-enter
+		return;
+	}
+
+	if (p_proc_ready->ticks > 0) return;
+	schedule(); 
+}
+
+#define REG_STATUS	0x1F7 // TODO: duplicated define in _hd.h
+PRIVATE void hd_irq_handler()
+{
+	// interrupts are cleared when the host
+	// reads the status register
+	// issues a reset, or
+	// writes to the command register
+	in_byte(REG_STATUS);
+	inform_int(TASK_HD);
+}
 
 PUBLIC void put_irq_handler(int irq, pf_irq_handler_t handler){
 	disable_irq(irq);
@@ -59,6 +92,10 @@ PRIVATE void init_8259a(){
 
 	for(int i = 0; i < NR_IRQ; i++)
 		irq_table[i] = irq_handler;
+
+	// setup special handlers
+	put_irq_handler(CLOCK_IRQ, clock_irq_handler);
+	put_irq_handler(AT_WINI_IRQ, hd_irq_handler);
 }
 
 PRIVATE void init_idt_descriptor(unsigned char vector, uint8_t desc_type, pf_int_handler_t handler, unsigned char privilege){
@@ -148,8 +185,4 @@ PUBLIC void exception_handler(int vec_no, int err_code, int eip, int cs, int efl
 
     if(err_code != (int)0xffffffff)
         kprintf(" Error Code: 0x%x\n", err_code);    
-}
-
-PUBLIC void irq_handler(int irq){
-    kprintf("IRQ handler: 0x%x\n", irq);
 }
