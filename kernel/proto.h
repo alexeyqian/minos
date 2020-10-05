@@ -8,6 +8,7 @@
 void init_idt();
 void irq_handler(int irq);
 void put_irq_handler(int irq, pf_irq_handler_t handler);
+uint8_t read_from_kb_buf();
 
 // kprintf.c
 void kcls();

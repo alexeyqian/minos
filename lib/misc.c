@@ -36,6 +36,10 @@ void enableirq(int irq){
     kcall(KC_ENABLE_IRQ, &irq);
 }
 
+PUBLIC uint8_t retrive_scan_code_from_kb_buf(){
+    return (uint8_t)kcall(KC_KEYBOARD_READ, NULL);
+}
+
 PUBLIC int kc_ticks(){
     return kcall(KC_TICKS, NULL);
 }

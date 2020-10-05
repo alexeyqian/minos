@@ -36,6 +36,9 @@ int sys_kcall(int _unused1, int func, void* param, struct proc* p_proc){
             p_int = (int*)la_param;
             enable_irq(*p_int);
             break;
+        case KC_KEYBOARD_READ:
+            return read_from_kb_buf();
+            break;            
         case KC_PUTS:
             str = (char*)la_param;
             kputs(str);

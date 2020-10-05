@@ -9,7 +9,7 @@ all: clean os.img
 
 clean:	
 	@rm -rf os.img boot/*.o boot/*.bin kernel/*.o kernel/*.bin \
-	lib/*.o lib/*.a drivers/hd/*.o drivers/hd/*.bin services/fs/*.o services/fs/*.a
+	lib/*.o lib/*.a drivers/hd/*.o drivers/hd/*.bin services/fs/*.o services/fs/*.a services/tty/*.o services/tty/*.bin
 
 dev: tty/tty_main.c
 	$(CROSS_COMPILER) $(C_FLAGS) -Wsign-compare -Wconversion -o \
@@ -52,5 +52,8 @@ kernel/kernel.bin: $(C_SOURCES) $(C_HEADERS) lib/vsprintf.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o lib/misc.o lib/misc.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o drivers/hd/hd.o drivers/hd/hd.c	
 	$(CROSS_COMPILER) $(C_FLAGS) -o services/fs/fs.o services/fs/fs.c	
+	$(CROSS_COMPILER) $(C_FLAGS) -o services/tty/keyboard.o services/tty/keyboard.c	
+	$(CROSS_COMPILER) $(C_FLAGS) -o services/tty/tty.o services/tty/tty.c	
 	$(CROSS_COMPILER) $(L_FLAGS) -o $@ kernel/asm/kernel_entry.o $(C_OBJS) \
-		lib/vsprintf.o lib/string.o lib/printx.o lib/fslib.o lib/misc.o drivers/hd/hd.o services/fs/fs.o -lgcc	
+		lib/vsprintf.o lib/string.o lib/printx.o lib/fslib.o lib/misc.o drivers/hd/hd.o \
+		services/fs/fs.o services/tty/keyboard.o services/tty/tty.o -lgcc	

@@ -13,6 +13,8 @@
 #include <minos/types.h>
 #include <minos/proto.h>
 #include <minos/fs.h>
+#include <minos/keyboard.h>
+#include <minos/tty.h>
 
 // MINOS kernel headers
 #include "ke_asm_utils.h"   // functions have to be written in asm

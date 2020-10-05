@@ -28,6 +28,7 @@ void outb(uint16_t port, uint8_t value);
 void portread (uint16_t port, void* buf, int n);
 void portwrite(uint16_t port, void* buf, int n);
 void enableirq(int irq);
+uint8_t retrive_scan_code_from_kb_buf();
 
 // should only used by kernel and drivers, 
 // TODO: move to kernel, add driver version of it to use kcall 

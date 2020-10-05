@@ -43,7 +43,7 @@ PRIVATE void clock_irq_handler(int irq){
 	if(p_proc_ready->ticks)
 		p_proc_ready->ticks--;
 
-	//if(key_pressed)
+	//if(key_pressed) TODO: enable later
 	//	inform_int(TASK_TTY);
 		
 	if(k_reenter != 0){ // interrupt re-enter
@@ -63,6 +63,51 @@ PRIVATE void hd_irq_handler()
 	// writes to the command register
 	in_byte(REG_STATUS);
 	inform_int(TASK_HD);
+}
+
+PRIVATE KB_INPUT kb_in;
+
+// TODO: move, should only be used by keyboard driver
+PUBLIC uint8_t read_from_kb_buf()	
+{
+	uint8_t	scan_code;
+	while (kb_in.count <= 0) {} // waiting for at least one scan code
+
+	clear_intr(); // TODO: need other atom technic
+	scan_code = (uint8_t)(*(kb_in.p_tail));
+	kb_in.p_tail++;
+	if (kb_in.p_tail == kb_in.buf + KB_IN_BYTES) {
+		kb_in.p_tail = kb_in.buf;
+	}
+	kb_in.count--;
+	set_intr();
+
+	return scan_code;
+}
+
+/*
+	// for 1 byte  scan code, each keypress/release fires 2 interrupts (1 make code and 1 break code)
+	// for 2 bytes scan code, each keypress/release fires 4 interrupts (2 make codes and 2 break codes, start with E0)
+	// for 3 bytes scan code, PUASE, only has make code, no break code, so only fires 3 interrupts (start with E1)
+	// one for make code (press), one for break code (release).
+	// scan code has 2 types: make code and break code
+*/
+// Called per interrupt
+PRIVATE void keyboard_irq_handler(int irq){
+	UNUSED(irq);
+	//append scan code to kb buf
+	uint8_t scan_code = in_byte(KB_DATA);   // read out from 8042, so it can response for next key interrupt.
+	if(kb_in.count >= KB_IN_BYTES) return;  // ignre scan code if buffer is full
+	
+	*(kb_in.p_head) = (char)scan_code; // safe convert here
+	kb_in.p_head++;
+
+	if(kb_in.p_head == kb_in.buf + KB_IN_BYTES)
+		kb_in.p_head = kb_in.buf;
+	
+	kb_in.count++;	
+
+	// key_pressed = 1; TODO: enable later
 }
 
 PUBLIC void put_irq_handler(int irq, pf_irq_handler_t handler){
@@ -96,6 +141,11 @@ PRIVATE void init_8259a(){
 	// setup special handlers
 	put_irq_handler(CLOCK_IRQ, clock_irq_handler);
 	put_irq_handler(AT_WINI_IRQ, hd_irq_handler);
+
+	// init keyboard buf
+	kb_in.count = 0;
+	kb_in.p_head = kb_in.p_tail = kb_in.buf;
+	put_irq_handler(KEYBOARD_IRQ, keyboard_irq_handler);
 }
 
 PRIVATE void init_idt_descriptor(unsigned char vector, uint8_t desc_type, pf_int_handler_t handler, unsigned char privilege){

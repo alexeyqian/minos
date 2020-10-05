@@ -38,6 +38,7 @@ enum kcall_type{
     KC_DISABLE_IRQ,
 	KC_ENABLE_INT,
 	KC_DISABLE_INT,
+    KC_KEYBOARD_READ,
 	KC_PUTS,
     KC_TICKS
 };
