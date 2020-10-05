@@ -139,7 +139,8 @@ typedef struct proc{
 
 	int p_parent;    // the pid of parrent process
 	int exit_status; // for parent
-	struct file_desc* filp[NR_FILES]; 
+	//struct file_desc* filp[NR_FILES]; 
+	// TODO: move out filp from kernel to file system, mapping p_idx, pfd_idx and fdt_idx in file system instead of kernel
 }PROC;
 
 // The paging has made LDT almost obsolete, and there is no longer need for multiple LDT descriptors.
@@ -191,10 +192,6 @@ struct kinfo{
     int nr_tasks; // number of kernel tasks
     char release[6];
     char version[6];
-};
-
-struct dev_drv_map{
-    int driver_nr;
 };
 
 #define ADDR_RANGE_MEMORY   1

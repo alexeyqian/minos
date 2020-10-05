@@ -119,4 +119,8 @@ typedef struct kmessage{
 #define	CNT		    u.m3.m3i2
 #define	REQUEST		u.m3.m3i2
 
+struct dev_drv_map{
+    int driver_nr;
+};
+
 #endif

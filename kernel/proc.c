@@ -2,17 +2,18 @@
 
 char                task_stack[STACK_SIZE_TOTAL];
 struct task         task_table[NR_TASKS]={  						
-						{task_clock, STACK_SIZE_CLOCK, "task_clock"  },
+						{task_clock, STACK_SIZE_CLOCK, "task_clock"},
 						{task_sys,   STACK_SIZE_SYS,   "task_sys"  },
-						{drv_hd,    STACK_SIZE_HD,    "drv_hd"   }
+						
 					};
 struct task         user_proc_table[NR_PROCS]={ 	
+						{drv_hd,     STACK_SIZE_HD,  "drv_hd"},
 						{svc_fs,     STACK_SIZE_FS,  "svc_fs"},	
 					};	
 
 PUBLIC void init_proc_table(){
 	uint8_t privilege, rpl;
-	int i, j, prio;
+	int i, prio;
 	uint32_t eflags;
 
 	struct proc* p_proc = proc_table;
@@ -92,10 +93,7 @@ PUBLIC void init_proc_table(){
 		p_proc->has_int_msg = 0;
 		p_proc->q_sending = 0;
 		p_proc->next_sending = 0;
-
-		for(j = 0; j < NR_FILES; j++)
-			p_proc->filp[j] = 0;
-
+		
 		p_task_stack -= p_task->stack_size;		
 	}
 

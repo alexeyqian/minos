@@ -48,8 +48,9 @@ kernel/kernel.bin: $(C_SOURCES) $(C_HEADERS) lib/vsprintf.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o lib/string.o lib/string.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o lib/vsprintf.o lib/vsprintf.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o lib/printx.o lib/printx.c
+	$(CROSS_COMPILER) $(C_FLAGS) -o lib/fslib.o lib/fslib.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o lib/misc.o lib/misc.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o drivers/hd/hd.o drivers/hd/hd.c	
 	$(CROSS_COMPILER) $(C_FLAGS) -o services/fs/fs.o services/fs/fs.c	
 	$(CROSS_COMPILER) $(L_FLAGS) -o $@ kernel/asm/kernel_entry.o $(C_OBJS) \
-		lib/vsprintf.o lib/string.o lib/printx.o lib/misc.o drivers/hd/hd.o services/fs/fs.o -lgcc	
+		lib/vsprintf.o lib/string.o lib/printx.o lib/fslib.o lib/misc.o drivers/hd/hd.o services/fs/fs.o -lgcc	

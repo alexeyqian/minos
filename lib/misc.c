@@ -92,3 +92,13 @@ PUBLIC int send_recv(int function, int src_dest, KMESSAGE* p_msg){
 
     return ret;
 }
+
+/**
+ * Write formated string tu buf
+ * 
+ * @param buf formated string will be written here
+ * */
+PUBLIC int sprintf(char* buf, const char* fmt, ...){
+    va_list arg = (va_list)((char *)(&fmt) + 4);
+    return vsprintf(buf, fmt, arg);
+}

@@ -12,6 +12,7 @@
 #include <minos/const.h>
 #include <minos/types.h>
 #include <minos/proto.h>
+#include <minos/hd.h>
 
 // ======== HD related constants ==================
 #define	DIOCTL_GET_GEO	1
@@ -297,11 +298,6 @@ struct hd_cmd {
 	uint8_t	lba_high;
 	uint8_t	device;
 	uint8_t	command;
-};
-
-struct part_info {
-	uint32_t	base;	/* # of start sector (NOT byte offset, but SECTOR) */
-	uint32_t	size;	/* how many sectors in this partition (NOT byte size, but SECTOR number) */
 };
 
 /* main drive struct, one entry per drive */

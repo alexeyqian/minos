@@ -19,14 +19,16 @@
 // TASK
 #define NR_SYSCALLS     2
 
-#define NR_TASKS        3
-#define NR_PROCS        1
+#define NR_TASKS        2
+#define NR_PROCS        2
 //#define NR_NATIVE_PROCS 4
 #define TASK_CLOCK	    0  
 #define TASK_SYS	    1 
-#define TASK_HD		    2 
 
-#define SVC_FS         10
+#define TASK_HD		    2 
+#define TASK_FS         3
+#define TASK_TTY        4
+
 //#define INIT            6 // first user proc
 
 #define ANY		       (NR_TASKS + NR_PROCS + 10)
@@ -123,4 +125,6 @@
 #define NO_PART	    	0x00	/* unused entry */
 #define EXT_PART    	0x05	/* extended partition */
 
+// TTY
+#define NR_CONSOLES                3
 #endif

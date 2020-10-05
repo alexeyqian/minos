@@ -11,6 +11,8 @@
 #define	phys_copy	memcpy
 #define	phys_set	memset
 
+int sprintf(char* buf, const char* fmt, ...); // print to buf
+
 // used by non-kernel process before tty is running.
 void printx(const char *fmt, ...); 
 void assertion_failurex(char *exp, char *file, char *base_file, int line);

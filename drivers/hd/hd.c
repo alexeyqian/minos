@@ -1,5 +1,5 @@
 #include "_hd.h"
-#include <hd.h>
+#include <minos/hd.h>
 
 //PRIVATE uint8_t hd_status;
 PRIVATE uint8_t hdbuf[SECTOR_SIZE * 2];

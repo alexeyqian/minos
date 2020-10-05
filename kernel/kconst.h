@@ -84,10 +84,4 @@
 
 #define	MAX_TICKS	0x7FFFABCD
 
-// =============== file system =================
-#define	NR_FILES	    64 // max files a proc can open at same time
-#define	NR_FILE_DESC	64	
-#define	NR_INODE	    64	
-#define	NR_SUPER_BLOCK	8
-
 #endif
