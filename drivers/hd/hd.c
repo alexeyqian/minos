@@ -315,7 +315,7 @@ PRIVATE void hd_ioctl(KMESSAGE *p)
 
 PUBLIC void drv_hd()
 {
-	printx(">>> 3. driver hd is running.\n");
+	printx(">>> 2. driver hd is running.\n");
 	KMESSAGE msg;
 	init_hd();
 	while (TRUE)

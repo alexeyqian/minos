@@ -45,6 +45,6 @@ PRIVATE void clock_handler_not_used(int irq){
 
 
 PUBLIC void task_clock(){
-    kprintf(">>> 1. task clock is running.\n");
+    kprintf(">>> 0. task clock is running.\n");
     while(TRUE){}
 }

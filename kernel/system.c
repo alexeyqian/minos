@@ -332,7 +332,7 @@ PRIVATE int do_exec(KMESSAGE* pmsg){
 }
 
 PUBLIC void task_sys(){
-    kprintf(">>> 2. task system is running.\n");
+    kprintf(">>> 1. task system is running.\n");
     KMESSAGE msg;
     while(TRUE){
         send_recv(RECEIVE, ANY, &msg);  

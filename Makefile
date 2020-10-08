@@ -34,6 +34,7 @@ boot/loader.bin: boot/loader.asm
 
 kernel/kernel.bin: $(C_SOURCES) $(C_HEADERS) lib/vsprintf.c
 	nasm kernel/asm/kernel_entry.asm -f elf32 -I 'kernel/asm/' -o kernel/asm/kernel_entry.o	
+	nasm lib/syscalls.asm -f elf32 -I 'lib/' -o lib/syscalls.o	
 	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/main.o kernel/main.c	
 	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/kprintf.o kernel/kprintf.c	
 	$(CROSS_COMPILER) $(C_FLAGS) -o kernel/global.o kernel/global.c		
@@ -59,16 +60,18 @@ kernel/kernel.bin: $(C_SOURCES) $(C_HEADERS) lib/vsprintf.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o services/tty/tty.o services/tty/tty.c	
 	$(CROSS_COMPILER) $(C_FLAGS) -o services/init/init.o services/init/init.c	
 	$(CROSS_COMPILER) $(L_FLAGS) -o $@ kernel/asm/kernel_entry.o $(C_OBJS) \
-		lib/vsprintf.o lib/string.o lib/printx.o lib/fslib.o lib/proclib.o lib/misc.o drivers/hd/hd.o \
-		services/fs/fs.o services/tty/keyboard.o services/tty/tty.o services/init/init.o -lgcc	
+		lib/syscalls.o lib/vsprintf.o lib/string.o lib/printx.o lib/fslib.o lib/proclib.o lib/misc.o \
+		drivers/hd/hd.o services/fs/fs.o services/tty/keyboard.o services/tty/tty.o services/init/init.o -lgcc	
 	# minoscrt.a is runtime c lib, which should be independent, can only depend on syscalls	
-	ar rcs lib/minoscrt.a lib/fslib.o lib/misc.o lib/printx.o lib/proclib.o lib/string.o lib/vsprintf.o
+	ar rcs lib/minoscrt.a lib/syscalls.o lib/fslib.o lib/misc.o lib/printx.o lib/proclib.o lib/string.o lib/vsprintf.o
 	
 tar:
 	#inst.tar: command/start.asm command/echo.c	
 	nasm -I include/ -f elf32 -o commands/start.o commands/start.asm
 	gcc  -I include/ -m32 -c -fno-builtin -Wall -o commands/echo.o commands/echo.c 
+	gcc  -I include/ -m32 -c -fno-builtin -Wall -o commands/pwd.o commands/pwd.c 
 	ld -Ttext 0x1000 -m elf_i386 -o echo commands/echo.o commands/start.o lib/minoscrt.a
+	ld -Ttext 0x1000 -m elf_i386 -o pwd commands/pwd.o commands/start.o lib/minoscrt.a
 	tar vcf inst.tar echo pwd
 	# TODO: hard code ROOT_BASE INSTALL_START_SECT
 	#seek=`echo "obase=10;ibase=16;(4EFF+8000)*200"|bc`

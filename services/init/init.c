@@ -121,9 +121,14 @@ void shabby_shell(const char * tty_name)
 	close(0);
 }
 
+PRIVATE void test_1(){
+	printx(">>> testing x ...\n");
+}
+
 // first user process, parent for all user processes.
 PUBLIC void init(){
-	printx(">>> 6. init is running.\n");
+	test_1();
+	printx(">>> 5. init is running.\n");
 	int fd_stdin = open("/dev_tty0", O_RDWR);
 	assertx(fd_stdin == 0);
 	int fd_stdout = open("/dev_tty0", O_RDWR);

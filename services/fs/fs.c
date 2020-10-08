@@ -1102,7 +1102,7 @@ PRIVATE void init_fs(){
 }
 
 PUBLIC void svc_fs(){
-    printx(">>> 4. service fs is running.\n");
+    printx(">>> 3. service fs is running.\n");
     init_fs();
     KMESSAGE fs_msg; 
     struct procfd* pcaller;

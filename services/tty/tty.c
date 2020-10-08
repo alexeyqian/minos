@@ -310,7 +310,7 @@ PRIVATE void tty_dev_write(TTY *tty)
     while(tty->inbuf_count){
         char ch = retrive_char_from_tty_buf(tty);
         //printx("tty_left_cnt: %d.", tty->tty_left_cnt);
-        printx(" ch: %c ", ch);
+        //printx(" ch: %c ", ch);
         // tty_left_cnt is 0 before request from file system.
         if(tty->tty_left_cnt){
             if(ch >= ' ' && ch <= '~'){ // printable
@@ -386,7 +386,7 @@ PRIVATE void init_tty(TTY *p_tty)
 
 PUBLIC void svc_tty()
 {  
-    printx(">>> 5. service tty is running.\n"); 
+    printx(">>> 4. service tty is running.\n"); 
     TTY* p_tty;
     KMESSAGE msg;
     
