@@ -179,7 +179,7 @@ PRIVATE int msg_receive(struct proc* current, int src, KMESSAGE* m){
 			kassert(p_from->p_recvfrom == NO_TASK);
 			kassert(p_from->p_sendto == proc2pid(p_who_wanna_recv));
         }
-    }else if(src >= 0 && src < NR_TASKS + NR_PROCS){
+    }else if(src >= 0 && src < PROCTABLE_SIZE){
         // receive from a certain proc
         p_from = &proc_table[src];
         if((p_from->p_flags & SENDING) &&
@@ -257,7 +257,7 @@ PRIVATE int msg_receive(struct proc* current, int src, KMESSAGE* m){
 // implementation of system call sendrec
 PUBLIC int sys_sendrec(int function, int src_dest, KMESSAGE* pmsg, struct proc* p){
 	kassert(k_reenter == 0); // make sure we are not in ring0
-	kassert((src_dest >= 0 && src_dest <= NR_TASKS + NR_PROCS) ||
+	kassert((src_dest >= 0 && src_dest <= PROCTABLE_SIZE) ||
 		src_dest == ANY || src_dest == INTERRUPT);
 	int ret = 0;
 	int caller = proc2pid(p);
@@ -267,7 +267,7 @@ PUBLIC int sys_sendrec(int function, int src_dest, KMESSAGE* pmsg, struct proc* 
 
 	if(function == SEND){
         // TODO: wierd issue: if remove this kprintf, system will halt
-        kprintf("%d", src_dest);
+        //kprintf("%d", src_dest);
         ret = msg_send(p, src_dest, pmsg);
 		if(ret != 0) return ret;
 	}else if(function == RECEIVE){

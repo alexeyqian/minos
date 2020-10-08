@@ -1,5 +1,12 @@
 #include "kernel.h"
 
+PUBLIC void init_clock(){ // init 8253 PIT
+	out_byte(TIMER_MODE, RATE_GENERATOR);
+	out_byte(TIMER0, (uint8_t) (TIMER_FREQ/HZ) );
+	out_byte(TIMER0, (uint8_t) ((TIMER_FREQ/HZ) >> 8));
+	enable_irq(CLOCK_IRQ);	
+}
+
 // priority is fixed value, ticks is counting down.
 // when all processes ticks are 0, then reset ticks to it's priority.
 PUBLIC void schedule(){
@@ -7,7 +14,7 @@ PUBLIC void schedule(){
 	int greatest_ticks = 0;
 
 	while(!greatest_ticks){
-		for( p = proc_table; p < proc_table + NR_TASKS + NR_PROCS; p++)
+		for( p = proc_table; p < proc_table + PROCTABLE_SIZE; p++)
 			if(p->p_flags == 0){
 				if(p->ticks > greatest_ticks){
 					greatest_ticks = p->ticks;
@@ -16,45 +23,11 @@ PUBLIC void schedule(){
 			}
 
 		if(!greatest_ticks)
-			for(p = proc_table; p < proc_table + NR_TASKS + NR_PROCS; p++)
+			for(p = proc_table; p < proc_table + PROCTABLE_SIZE; p++)
 				if (p->p_flags == 0)
 					p->ticks = p->priority;
 	}
 }
-
-PUBLIC void init_clock(){ // init 8253 PIT
-	out_byte(TIMER_MODE, RATE_GENERATOR);
-	out_byte(TIMER0, (uint8_t) (TIMER_FREQ/HZ) );
-	out_byte(TIMER0, (uint8_t) ((TIMER_FREQ/HZ) >> 8));
-	//put_irq_handler(CLOCK_IRQ, clock_irq_handler); MOVED TO INTERRUPT.C
-	enable_irq(CLOCK_IRQ);	
-}
-/*
-PUBLIC void clock_task(){	
-	KMESSAGE msg; // message buffer for both input and output
-	int result;
-
-	init_clock();
-
-	// process request, nver reply
-	while(TRUE){
-		send_recv(RECEIVE, ANY, &msg);  
-		switch(msg.type){
-			case HARD_INT:
-				result = do_clocitick(&msg);
-				break;
-			default:
-				kprintf("CLOCK: illegal request. Type: %d, from %d.\n", m.type, m.source);
-		}
-	}
-
-}*/
-
-/*
-PRIVATE void delay(int milli_sec){
-    int t = get_ticks();
-    while(((get_ticks() - t) * 1000 / HZ) < milli_sec) {}
-}*/
 
 /*
 // round robin version of scheduler
@@ -66,7 +39,7 @@ PRIVATE void clock_handler_not_used(int irq){
 
 	// round robin process scheduler.
 	p_proc_ready++;
-	if(p_proc_ready >= proc_table + NR_TASKS + NR_PROCS)
+	if(p_proc_ready >= proc_table + PROCTABLE_SIZE)
 		p_proc_ready = proc_table;
 }*/
 

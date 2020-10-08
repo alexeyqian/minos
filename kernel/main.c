@@ -45,7 +45,7 @@ PRIVATE void init_tss(){
 
 // each process has one ldt descriptor in gdt.
 PRIVATE void init_ldt_descriptors_in_dgt(){
-	for(int i = 0; i < NR_TASKS + NR_PROCS; i++){
+	for(int i = 0; i < PROCTABLE_SIZE; i++){
 		memset(&proc_table[i], 0, sizeof(struct proc));
 
 		proc_table[i].ldt_sel = (uint16_t)SELECTOR_LDT_FIRST + (uint16_t)(i << 3);
@@ -64,7 +64,7 @@ PRIVATE void init_ldt_descriptors_in_dgt(){
 
 PRIVATE void kmain(){ 
 	kprintf(">>> kmain\n");		
-	init_proc_table();
+	init_proctable();
 	init_clock(); 
 	restart(); // pretenting a schedule happend to start a process.
 	// process start scheduling at this point.

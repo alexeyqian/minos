@@ -7,10 +7,12 @@
 // interrupt.c
 void init_idt();
 void irq_handler(int irq);
-void put_irq_handler(int irq, pf_irq_handler_t handler);
+ void set_key_pressed(int value);
 uint8_t read_from_kb_buf();
 
 // kprintf.c
+ void set_cursor(int offset);
+ int get_cursor();
 void kcls();
 void kputs(char* str);
 void kprintf(const char *fmt, ...);
@@ -30,7 +32,7 @@ void read_boot_params(struct boot_params* bp);
 void init_descriptor(struct descriptor* p_desc, uint32_t base, uint32_t limit, uint16_t attribute);
 
 // proc.c
-void init_proc_table();
+void init_proctable();
 
 // ipc.c
 struct kmessage;
@@ -52,13 +54,4 @@ void task_sys();   // system.c
 // TODO: move to services/fs
 void svc_fs();
 
-// pm.c
-/*int getpid();
-int wait(int* status);
-void exit(int status);
-int fork();
-int exel(const char* path, const char *arg, ...);
-int execv(const char* path, char* argv[]);
-int execl(const char* path, const char *arg, ...);
-*/
 #endif

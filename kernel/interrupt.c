@@ -31,6 +31,15 @@
 #define	INT_S_CTL	    0xA0	/* I/O port for second interrupt controller  <Slave>  */
 #define	INT_S_CTLMASK	0xA1	/* setting bits in this port disables ints   <Slave>  */
 
+// used for clock_handler to wake up TASK_TTY when a key is pressed 
+PRIVATE int key_pressed = 0; 
+
+PUBLIC pf_irq_handler_t irq_table[NR_IRQ];
+
+PUBLIC void set_key_pressed(int value){
+	key_pressed = value;
+}
+
 PUBLIC void irq_handler(int irq){
     kprintf("IRQ handler: 0x%x\n", irq);
 }
@@ -43,8 +52,8 @@ PRIVATE void clock_irq_handler(int irq){
 	if(p_proc_ready->ticks)
 		p_proc_ready->ticks--;
 
-	//if(key_pressed) TODO: enable later
-	//	inform_int(TASK_TTY);
+	if(key_pressed) 
+		inform_int(TASK_TTY);
 		
 	if(k_reenter != 0){ // interrupt re-enter
 		return;
@@ -61,7 +70,7 @@ PRIVATE void hd_irq_handler()
 	// reads the status register
 	// issues a reset, or
 	// writes to the command register
-	in_byte(REG_STATUS);
+	in_byte(REG_STATUS); // read out the status so the hd contruller can have interrupt again.
 	inform_int(TASK_HD);
 }
 
@@ -73,7 +82,7 @@ PUBLIC uint8_t read_from_kb_buf()
 	uint8_t	scan_code;
 	while (kb_in.count <= 0) {} // waiting for at least one scan code
 
-	clear_intr(); // TODO: need other atom technic
+	clear_intr(); 
 	scan_code = (uint8_t)(*(kb_in.p_tail));
 	kb_in.p_tail++;
 	if (kb_in.p_tail == kb_in.buf + KB_IN_BYTES) {
@@ -95,8 +104,10 @@ PUBLIC uint8_t read_from_kb_buf()
 // Called per interrupt
 PRIVATE void keyboard_irq_handler(int irq){
 	UNUSED(irq);
+	
 	//append scan code to kb buf
 	uint8_t scan_code = in_byte(KB_DATA);   // read out from 8042, so it can response for next key interrupt.
+	clear_intr();
 	if(kb_in.count >= KB_IN_BYTES) return;  // ignre scan code if buffer is full
 	
 	*(kb_in.p_head) = (char)scan_code; // safe convert here
@@ -106,11 +117,19 @@ PRIVATE void keyboard_irq_handler(int irq){
 		kb_in.p_head = kb_in.buf;
 	
 	kb_in.count++;	
+	set_intr();
+	//kprintf("key:[%x] ", scan_code);
+	key_pressed = 1; 
 
-	// key_pressed = 1; TODO: enable later
 }
 
-PUBLIC void put_irq_handler(int irq, pf_irq_handler_t handler){
+PRIVATE void init_kb_handler_data(){
+	// init keyboard buf
+	kb_in.count = 0;
+	kb_in.p_head = kb_in.p_tail = kb_in.buf;
+}
+
+PRIVATE void put_irq_handler(int irq, pf_irq_handler_t handler){
 	disable_irq(irq);
 	irq_table[irq] = handler;
 }
@@ -140,12 +159,9 @@ PRIVATE void init_8259a(){
 
 	// setup special handlers
 	put_irq_handler(CLOCK_IRQ, clock_irq_handler);
-	put_irq_handler(AT_WINI_IRQ, hd_irq_handler);
-
-	// init keyboard buf
-	kb_in.count = 0;
-	kb_in.p_head = kb_in.p_tail = kb_in.buf;
+	init_kb_handler_data();
 	put_irq_handler(KEYBOARD_IRQ, keyboard_irq_handler);
+	put_irq_handler(AT_WINI_IRQ, hd_irq_handler);	
 }
 
 PRIVATE void init_idt_descriptor(unsigned char vector, uint8_t desc_type, pf_int_handler_t handler, unsigned char privilege){

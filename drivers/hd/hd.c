@@ -16,7 +16,6 @@ PRIVATE void init_hd()
 		memset(&hd_info[i], 0, sizeof(hd_info[0]));
 	hd_info[0].open_cnt = 0;
 
-	//put_irq_handler(AT_WINI_IRQ, hd_irq_handler); MOVED TO INTERRUPT.C
 	enableirq(CASCADE_IRQ);
 	enableirq(AT_WINI_IRQ);
 }
@@ -316,7 +315,7 @@ PRIVATE void hd_ioctl(KMESSAGE *p)
 
 PUBLIC void drv_hd()
 {
-	printx(">>> 3. hd driver is running\n");
+	printx(">>> 3. driver hd is running.\n");
 	KMESSAGE msg;
 	init_hd();
 	while (TRUE)

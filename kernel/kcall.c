@@ -5,6 +5,7 @@ int sys_kcall(int _unused1, int func, void* param, struct proc* p_proc){
     char* str;
     void* buf;
     uint16_t* p_uint16;
+    unsigned int* p_uint;
     int* p_int;
     struct two_ints_s* two_ints;
     struct three_ints_s* three_ints;
@@ -36,9 +37,35 @@ int sys_kcall(int _unused1, int func, void* param, struct proc* p_proc){
             p_int = (int*)la_param;
             enable_irq(*p_int);
             break;
+        case KC_ENABLE_INT:
+            set_intr();
+            break;
+        case KC_DISABLE_INT:
+            clear_intr();
+            break;
+        case KC_GET_CURSOR:
+            return get_cursor();
+            break;
+        case KC_SET_CURSOR:
+            p_uint = (unsigned int*)la_param;            
+            set_cursor(*p_uint * 2); // convert position to offset (=2*position)
+            break;
+        case KC_SET_VIDEO_START_ADDR:
+            p_uint = (unsigned int*)la_param; 
+            //clear_intr(); // TODO: use some other atomic technics
+            out_byte(CRTC_ADDR_REG, CRTC_DATA_IDX_START_ADDR_H);
+            out_byte(CRTC_DATA_REG, (*p_uint >> 8) & 0xFF);
+            out_byte(CRTC_ADDR_REG, CRTC_DATA_IDX_START_ADDR_L);
+            out_byte(CRTC_DATA_REG, *p_uint & 0xFF);
+            //set_intr();
+            break;
         case KC_KEYBOARD_READ:
             return read_from_kb_buf();
-            break;            
+            break;     
+        case KC_SET_KEY_PRESSED:
+            p_int = (int*)la_param;
+            set_key_pressed(*p_int);
+            break;       
         case KC_PUTS:
             str = (char*)la_param;
             kputs(str);

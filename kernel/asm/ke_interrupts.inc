@@ -179,7 +179,7 @@ save:
 	call [irq_table + 4 * %1] ;  call interrupt handler
 	pop ecx
 	
-	cli                  ; disable interrupt again
+	cli                       ; disable interrupt again
 
 	in al, INT_M_CTLMASK ; re-enable current interrupt after complete the process
 	and al, ~(1 << %1)
@@ -190,21 +190,21 @@ save:
 
 %macro	irq_slave	1
 	call	save
-	in	al, INT_S_CTLMASK	; `.
-	or	al, (1 << (%1 - 8))	;  | 屏蔽当前中断
-	out	INT_S_CTLMASK, al	; /
-	mov	al, EOI			; `. 置EOI位(master)
-	out	INT_M_CTL, al		; /
-	nop				; `. 置EOI位(slave)
-	out	INT_S_CTL, al		; /  一定注意：slave和master都要置EOI
-	sti	; CPU在响应中断的过程中会自动关中断，这句之后就允许响应新的中断
-	push	%1			; `.
-	call	[irq_table + 4 * %1]	;  | 中断处理程序
-	pop	ecx			; /
+	in	al, INT_S_CTLMASK	
+	or	al, (1 << (%1 - 8))	;  disable current IRQ line
+	out	INT_S_CTLMASK, al	 
+	mov	al, EOI			    ; reset master EOI
+	out	INT_M_CTL, al		
+	nop				        ; reset slave EOI
+	out	INT_S_CTL, al		 
+	sti	                    ; CPU automatically disabled IF, after this command, the IF is re-open.
+	push	%1			
+	call	[irq_table + 4 * %1]	
+	pop	ecx			
 	cli
-	in	al, INT_S_CTLMASK	; `.
-	and	al, ~(1 << (%1 - 8))	;  | 恢复接受当前中断
-	out	INT_S_CTLMASK, al	; /
+	in	al, INT_S_CTLMASK	
+	and	al, ~(1 << (%1 - 8)) ; enable current IRQ line
+	out	INT_S_CTLMASK, al	
 	ret
 %endmacro
 

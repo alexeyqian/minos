@@ -1,17 +1,18 @@
 #include "kernel.h"
 
-char                task_stack[STACK_SIZE_TOTAL];
-struct task         task_table[NR_TASKS]={  						
+PRIVATE char        task_stack[STACK_SIZE_TOTAL];
+PRIVATE struct task kernel_tasks[NR_TASKS]={  						
 						{task_clock, STACK_SIZE_CLOCK, "task_clock"},
-						{task_sys,   STACK_SIZE_SYS,   "task_sys"  },
-						
+						{task_sys,   STACK_SIZE_SYS,   "task_sys"  }						
 					};
-struct task         user_proc_table[NR_PROCS]={ 	
-						{drv_hd,     STACK_SIZE_HD,  "drv_hd"},
-						{svc_fs,     STACK_SIZE_FS,  "svc_fs"},	
+PRIVATE struct task user_tasks[NR_PROCS]={ 	
+						{drv_hd,     STACK_SIZE_HD,  "drv_hd" },						
+						{svc_fs,     STACK_SIZE_FS,  "svc_fs" },											
+						{svc_tty,    STACK_SIZE_TTY, "svc_tty"},												
+						{init,       STACK_SIZE_INIT,"init"   }					
 					};	
 
-PUBLIC void init_proc_table(){
+PUBLIC void init_proctable(){
 	uint8_t privilege, rpl;
 	int i, prio;
 	uint32_t eflags;
@@ -22,15 +23,20 @@ PUBLIC void init_proc_table(){
 
 	// initialize proc_table according to task table
 	// each process has a ldt selector points to a ldt descriptor in GDT.
-	for(i = 0; i < NR_TASKS + NR_PROCS; i++, p_proc++, p_task++){	
+	for(i = 0; i < PROCTABLE_SIZE; i++, p_proc++, p_task++){	
+		if(i >= NR_TASKS + NR_PROCS){
+			p_proc->p_flags = FREE_SLOT;
+			continue;
+		}
+
 		if(i < NR_TASKS){ // tasks
-			p_task = task_table + i;
+			p_task = kernel_tasks + i;
 			privilege = PRIVILEGE_TASK; // apply system task permission
 			rpl = RPL_TASK;
 			eflags = 0x1202; // IF=1, IOPL=1, bit2 = 1
 			prio = 30;
 		}else{ // user processes
-			p_task = user_proc_table + (i - NR_TASKS);
+			p_task = user_tasks + (i - NR_TASKS);
 			privilege = PRIVILEGE_USER; // apply user process permission
 			rpl = RPL_USER;
 			eflags = 0x202; // IF=1, bit2 = 1, remove IO permission for user process
@@ -50,7 +56,7 @@ PUBLIC void init_proc_table(){
 			p_proc->ldt[INDEX_LDT_C].attr1 =  (uint8_t)(DA_C   | privilege << 5);	
 			p_proc->ldt[INDEX_LDT_RW].attr1 = (uint8_t)(DA_DRW | privilege << 5);				
 		}else{ // init process		
-			/*	
+			
 			kprintf("k_base: 0x%x, k_limit: 0x%x, NR_K: %d\n", 
 				g_boot_params.kernel_base, g_boot_params.kernel_limit,
 				4 * ((g_boot_params.kernel_base + g_boot_params.kernel_limit) >> LIMIT_4K_SHIFT));
@@ -69,7 +75,7 @@ PUBLIC void init_proc_table(){
 				0, // bytes before the entry point are not used
 				(PROC_IMAGE_SIZE_DEFAULT - 1) >> LIMIT_4K_SHIFT, 
 				//(g_boot_params.kernel_base + g_boot_params.kernel_limit) >> LIMIT_4K_SHIFT,
-				(uint16_t)(DA_32 | DA_LIMIT_4K | DA_DRW | privilege << 5));				*/
+				(uint16_t)(DA_32 | DA_LIMIT_4K | DA_DRW | privilege << 5));				
 		}
 
 		// init registers

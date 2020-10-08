@@ -8,7 +8,7 @@
 #define REG_SCREEN_CTRL 0x3D4
 #define REG_SCREEN_DATA 0X3D5
 
-PRIVATE int get_cursor(){    
+PUBLIC int get_cursor(){    
     out_byte(REG_SCREEN_CTRL, 14);
     int offset = in_byte(REG_SCREEN_DATA) << 8;
     out_byte(REG_SCREEN_CTRL, 15);
@@ -17,7 +17,8 @@ PRIVATE int get_cursor(){
     return offset * 2;
 }
 
-PRIVATE void set_cursor(int offset){
+PUBLIC void set_cursor(int offset){
+    // @attention MUST not disable interrupt here.
     //clear_intr(); // TODO: uncomment the int related code
     offset /= 2;
     out_byte(REG_SCREEN_CTRL, 14);

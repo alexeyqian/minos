@@ -38,10 +38,10 @@ PRIVATE void kb_wait(){
 } 
 
 PRIVATE void kb_ack(){
-	uint8_t kb_read;
+	uint8_t kb_byte;
 	do{
-		kb_read = inb(KB_DATA);
-	}while(kb_read != KB_ACK);
+		kb_byte = inb(KB_DATA);
+	}while(kb_byte != KB_ACK);
 }
 
 PRIVATE void set_leds(){
@@ -269,8 +269,6 @@ PUBLIC uint32_t kb_read()
 	// using 32 bits to combine make code and status, such as shift/ctrl/alt
 	uint32_t combinded_key = process_make_code(key);
     return combinded_key;
-    //TODO: return combined_key and call below func in tty
-	//hand_over_key_to_tty(p_tty, combinded_key); // TODO: use func pointer to remove the dependence.
 }
 
 PUBLIC void init_keyboard(){	
@@ -283,6 +281,5 @@ PUBLIC void init_keyboard(){
 	scroll_lock = 0;
 	set_leds();
 
-	//put_irq_handler(KEYBOARD_IRQ, keyboard_handler);
 	enableirq(KEYBOARD_IRQ);
 }

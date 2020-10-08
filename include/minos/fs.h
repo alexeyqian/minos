@@ -4,19 +4,14 @@
 #include <const.h>
 #include <sys/types.h>
 
+#define FD_STDIN  0
+#define FD_STDOUT 1
+#define FD_STDERR 2
+
 #define	NR_FILES	    64 // max files a proc can open at same time
 #define	NR_FILE_DESC	64	/* FIXME */
 #define	NR_INODE	    64	/* FIXME */
 #define	NR_SUPER_BLOCK	8
-
-#define	MAX_PATH	128
-
-#define	O_CREAT		1
-#define	O_RDWR		2
-
-#define SEEK_SET	1
-#define SEEK_CUR	2
-#define SEEK_END	3
 
 // magic number of FS v1.0
 #define MAGIC_V1 0x111

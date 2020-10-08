@@ -7,6 +7,7 @@
 #include <limits.h>
 #include <string.h>
 #include <utils.h>
+#include <stdio.h>
 
 // MINOS specific headers
 #include <minos/const.h>
@@ -14,6 +15,8 @@
 #include <minos/proto.h>
 #include <minos/fs.h>
 
+// TODO: remove hardcode, 
+// start sector of inst.tar file
 #define	INSTALL_START_SECT		0x8000
 #define	INSTALL_NR_SECTS		0x800
 

@@ -17,35 +17,43 @@
 #define	AT_WINI_IRQ	   14	/* at winchester */
 
 // TASK
-#define NR_SYSCALLS     2
-
 #define NR_TASKS        2
-#define NR_PROCS        2
-//#define NR_NATIVE_PROCS 4
+#define NR_PROCS        4
+#define NR_FREE         32
+#define PROCTABLE_SIZE  (NR_TASKS + NR_PROCS + NR_FREE) 
+// tasks
 #define TASK_CLOCK	    0  
 #define TASK_SYS	    1 
-
+// procs
 #define TASK_HD		    2 
 #define TASK_FS         3
 #define TASK_TTY        4
+#define INIT            5 // first user proc
 
-//#define INIT            6 // first user proc
-
-#define ANY		       (NR_TASKS + NR_PROCS + 10)
-#define NO_TASK		   (NR_TASKS + NR_PROCS + 20)
+#define ANY		       (PROCTABLE_SIZE + 10)
+#define NO_TASK		   (PROCTABLE_SIZE + 20)
 
 // kernel space tasks
 #define STACK_SIZE_CLOCK 0x8000  
 #define STACK_SIZE_SYS   0x8000
-#define STACK_SIZE_HD    0x8000
-
 // user space services
+#define STACK_SIZE_HD    0x8000
 #define STACK_SIZE_FS    0x8000
+#define STACK_SIZE_PM    0x8000
+#define STACK_SIZE_TTY   0x8000
+#define STACK_SIZE_INIT  0x8000
 #define STACK_SIZE_TOTAL STACK_SIZE_CLOCK+STACK_SIZE_SYS+STACK_SIZE_HD \
-	+STACK_SIZE_FS
+	+STACK_SIZE_PM+STACK_SIZE_FS+STACK_SIZE_TTY+STACK_SIZE_INIT
+
+#define	LIMIT_4K_SHIFT 12
 
 // CLOCK
 #define HZ              100
+
+// SYSTEM
+#define PROCS_BASE 0xa00000 // 10MB
+#define PROC_IMAGE_SIZE_DEFAULT 0x100000 // 1MB
+#define PROC_ORIGIN_STACK 0x400 // 1KB
 
 // TODO: add prefix: MSG_FUNC_
 // IPC

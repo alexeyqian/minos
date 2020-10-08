@@ -5,15 +5,14 @@
 // TODO: use dynamic allocation for these buffers
 #define FSBUF_BASE 0x100000
 #define FSBUF_SIZE 0X100000
+PRIVATE char*  fsbuf = (char*)FSBUF_BASE;
 
 struct procfd{
     struct file_desc* filp[NR_FILES];
 };
 
-PRIVATE char*  fsbuf = (char*)FSBUF_BASE;
-
 PRIVATE struct file_desc     fdesc_table[NR_FILE_DESC];
-PRIVATE struct procfd        procfd_table[NR_TASKS + NR_PROCS];
+PRIVATE struct procfd        procfd_table[PROCTABLE_SIZE];
 PRIVATE struct inode         inode_table[NR_INODE];
 PRIVATE struct super_block   superblock_table[NR_SUPER_BLOCK]; 
 
@@ -39,7 +38,7 @@ PRIVATE void reset_filedesc_table(){
 }
 
 PRIVATE void reset_procfd_table(){
-    for(int i = 0; i < NR_TASKS + NR_PROCS; i++){
+    for(int i = 0; i < PROCTABLE_SIZE; i++){
         for(int j = 0; j < NR_FILES; j++)
             procfd_table[i].filp[j] = 0;
     }
@@ -874,13 +873,30 @@ PUBLIC int do_stat(KMESSAGE* pmsg){
     return 0;
 }
 
-PRIVATE int fs_fork(int child_pid){
+// CALLED FROM SYSTEM
+PRIVATE int fs_fork_process(int child_pid){
     int i;
     struct procfd* child = &procfd_table[child_pid];
     for(i = 0; i < NR_FILES; i++){
         if(child->filp[i]){
             child->filp[i]->fd_cnt++;
             child->filp[i]->fd_inode->i_cnt++;
+        }
+    }
+
+    return 0;
+}
+
+// CALLED FROM SYSTEM
+PRIVATE int fs_exit_process(struct procfd* p){    
+    for(int i = 0; i < NR_FILES; i++){
+        if(p->filp[i]){
+            // release inode
+            p->filp[i]->fd_inode->i_cnt--;
+            // release file descriptor
+            if(--p->filp[i]->fd_cnt == 0)
+                p->filp[i]->fd_inode = 0;
+            p->filp[i] = 0;
         }
     }
 
@@ -1017,7 +1033,7 @@ PRIVATE void set_inodes(struct super_block* sb){
         pi->i_nr_sects = 0;
     }    
 
-    //inode of `/instl.tar'
+    //inode of `/inst.tar'
 	pi = (struct inode*)(fsbuf + (INODE_SIZE * (NR_CONSOLES + 1)));
 	pi->i_mode = I_REGULAR;
 	pi->i_size = INSTALL_NR_SECTS * SECTOR_SIZE;
@@ -1085,23 +1101,8 @@ PRIVATE void init_fs(){
     load_super_block(ROOT_DEV);
 }
 
-PRIVATE int fs_exit(struct procfd* p){    
-    for(int i = 0; i < NR_FILES; i++){
-        if(p->filp[i]){
-            // release inode
-            p->filp[i]->fd_inode->i_cnt--;
-            // release file descriptor
-            if(--p->filp[i]->fd_cnt == 0)
-                p->filp[i]->fd_inode = 0;
-            p->filp[i] = 0;
-        }
-    }
-
-    return 0;
-}
-
 PUBLIC void svc_fs(){
-    printx(">>> 4. task_fs is running\n");
+    printx(">>> 4. service fs is running.\n");
     init_fs();
     KMESSAGE fs_msg; 
     struct procfd* pcaller;
@@ -1134,10 +1135,10 @@ PUBLIC void svc_fs(){
                 src = fs_msg.PROC_NR;
              	break;
             case FORK:
-             	fs_msg.RETVAL = fs_fork(fs_msg.PID); 
+             	fs_msg.RETVAL = fs_fork_process(fs_msg.PID); 
              	break; 
             case EXIT: 
-             	fs_msg.RETVAL = fs_exit(pcaller); 
+             	fs_msg.RETVAL = fs_exit_process(pcaller); 
              	break; 
             case STAT: 
              	fs_msg.RETVAL = do_stat(&fs_msg); 

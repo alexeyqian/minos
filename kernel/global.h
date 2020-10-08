@@ -25,9 +25,6 @@ EXTERN struct gate			idt[IDT_SIZE];
 EXTERN struct tss           tss;                            // only one tss in kernel, resides in mem, and it has a descriptor in gdt.
 
 EXTERN struct proc*        p_proc_ready;                    // points to next about to run process's pcb in proc_table
-EXTERN struct proc         proc_table[NR_TASKS + NR_PROCS]; // contains array of process control block: proc
-
-EXTERN pf_irq_handler_t    irq_table[NR_IRQ];
-EXTERN syscall_t           syscall_table[NR_SYSCALLS];
+EXTERN struct proc         proc_table[PROCTABLE_SIZE]; // contains array of process control block: proc
 
 #endif

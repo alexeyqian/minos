@@ -9,7 +9,9 @@ all: clean os.img
 
 clean:	
 	@rm -rf os.img boot/*.o boot/*.bin kernel/*.o kernel/*.bin \
-	lib/*.o lib/*.a drivers/hd/*.o drivers/hd/*.bin services/fs/*.o services/fs/*.a services/tty/*.o services/tty/*.bin
+	lib/*.o lib/*.a drivers/hd/*.o drivers/hd/*.bin services/fs/*.o services/fs/*.a \
+	services/pm/*.o services/tty/*.o services/tty/*.bin \
+	services/init/*.o commands/*.o lib/*.a
 
 dev: tty/tty_main.c
 	$(CROSS_COMPILER) $(C_FLAGS) -Wsign-compare -Wconversion -o \
@@ -49,11 +51,26 @@ kernel/kernel.bin: $(C_SOURCES) $(C_HEADERS) lib/vsprintf.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o lib/vsprintf.o lib/vsprintf.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o lib/printx.o lib/printx.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o lib/fslib.o lib/fslib.c
+	$(CROSS_COMPILER) $(C_FLAGS) -o lib/proclib.o lib/proclib.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o lib/misc.o lib/misc.c
 	$(CROSS_COMPILER) $(C_FLAGS) -o drivers/hd/hd.o drivers/hd/hd.c	
-	$(CROSS_COMPILER) $(C_FLAGS) -o services/fs/fs.o services/fs/fs.c	
+	$(CROSS_COMPILER) $(C_FLAGS) -o services/fs/fs.o services/fs/fs.c		
 	$(CROSS_COMPILER) $(C_FLAGS) -o services/tty/keyboard.o services/tty/keyboard.c	
 	$(CROSS_COMPILER) $(C_FLAGS) -o services/tty/tty.o services/tty/tty.c	
+	$(CROSS_COMPILER) $(C_FLAGS) -o services/init/init.o services/init/init.c	
 	$(CROSS_COMPILER) $(L_FLAGS) -o $@ kernel/asm/kernel_entry.o $(C_OBJS) \
-		lib/vsprintf.o lib/string.o lib/printx.o lib/fslib.o lib/misc.o drivers/hd/hd.o \
-		services/fs/fs.o services/tty/keyboard.o services/tty/tty.o -lgcc	
+		lib/vsprintf.o lib/string.o lib/printx.o lib/fslib.o lib/proclib.o lib/misc.o drivers/hd/hd.o \
+		services/fs/fs.o services/tty/keyboard.o services/tty/tty.o services/init/init.o -lgcc	
+	# minoscrt.a is runtime c lib, which should be independent, can only depend on syscalls	
+	ar rcs lib/minoscrt.a lib/fslib.o lib/misc.o lib/printx.o lib/proclib.o lib/string.o lib/vsprintf.o
+	
+tar:
+	#inst.tar: command/start.asm command/echo.c	
+	nasm -I include/ -f elf32 -o commands/start.o commands/start.asm
+	gcc  -I include/ -m32 -c -fno-builtin -Wall -o commands/echo.o commands/echo.c 
+	ld -Ttext 0x1000 -m elf_i386 -o echo commands/echo.o commands/start.o lib/minoscrt.a
+	tar vcf inst.tar echo pwd
+	# TODO: hard code ROOT_BASE INSTALL_START_SECT
+	#seek=`echo "obase=10;ibase=16;(4EFF+8000)*200"|bc`
+	dd if=inst.tar of=80m.img seek=27131392 bs=1 count=`ls -l inst.tar|awk -F " " '{print $$5}'` conv=notrunc
+

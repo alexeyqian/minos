@@ -19,7 +19,6 @@ struct gate			idt[IDT_SIZE];
 struct tss          tss;                       
 
 struct proc*        p_proc_ready; // points to next about to run process's pcb in proc_table
-struct proc         proc_table[NR_TASKS + NR_PROCS];  // all processs include system tasks and user process
+struct proc         proc_table[PROCTABLE_SIZE];  // all processs include system tasks and user process
 
-pf_irq_handler_t    irq_table[NR_IRQ];
-syscall_t           syscall_table[NR_SYSCALLS] = {sys_kcall, sys_sendrec};
+syscall_t           syscall_table[2] = {sys_kcall, sys_sendrec};
